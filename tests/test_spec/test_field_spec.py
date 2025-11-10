@@ -28,14 +28,17 @@ def test_field_spec_creation(default_constraint_min, default_constraint_max):
     assert len(field.constraints) == 2
 
 
-def test_field_spec_constraint_found(default_constraint_min):
+def test_constraint_found(default_constraint_min):
     field = FieldSpec(name="age", type=int, constraints=[default_constraint_min])
     assert isinstance(field.get_constraint("min"), ConstraintSpec)
 
 
-def test_field_spec_constraint_not_founded(default_constraint_min):
+def test_get_constraint_raises_on_missing(default_constraint_min):
     field = FieldSpec(name="age", type=int, constraints=[default_constraint_min])
-    assert field.get_constraint("max") is None
+    with pytest.raises(
+        KeyError, match=r"Constraint 'max' is not defined for field: 'age'"
+    ):
+        field.get_constraint("max")
 
 
 def test_field_spec_repr(default_constraint_min):
@@ -91,4 +94,7 @@ def test_field_spec_not_optional_not_nullable(default_constraint_min):
 def test_field_spec_default_constraints():
     field = FieldSpec(name="x", type=int)
     assert field.constraints == []
-    assert field.get_constraint("min") is None
+    with pytest.raises(
+        KeyError, match=r"Constraint 'min' is not defined for field: 'x'"
+    ):
+        field.get_constraint("min")

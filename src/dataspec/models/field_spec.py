@@ -22,11 +22,13 @@ class FieldSpec:
     default: Any = _UNSET
     nullable: bool = False
 
-    def get_constraint(self, constraint_type: ConstraintType) -> ConstraintSpec | None:
+    def get_constraint(self, constraint_type: ConstraintType) -> ConstraintSpec:
         for c in self.constraints:
             if c.constraint_type == constraint_type:
                 return c
-        return None
+        raise KeyError(
+            f"Constraint '{constraint_type}' is not defined for field: '{self.name}'"
+        )
 
     def has_default(self) -> bool:
         return self.default is not _UNSET

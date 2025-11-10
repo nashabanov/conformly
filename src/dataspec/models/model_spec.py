@@ -9,14 +9,14 @@ ModelType = Literal["dataclass", "pydantic"]
 @dataclass(frozen=True)
 class ModelSpec:
     name: str
-    model_type: ModelType
+    type: ModelType
     fields: list[FieldSpec]
 
-    def get_field(self, field_name: str) -> FieldSpec | None:
+    def get_field(self, field_name: str) -> FieldSpec:
         for field in self.fields:
             if field.name == field_name:
                 return field
-        return None
+        raise KeyError(f"Field '{field_name}' is not defined in model:'{self.name}'")
 
     def get_requiered_fields(self) -> list[FieldSpec]:
         return [field for field in self.fields if not field.has_default()]
@@ -27,6 +27,6 @@ class ModelSpec:
     def __repr__(self) -> str:
         return (
             f"Model(name={self.name!r}, "
-            f"model_type={self.model_type!r}, "
-            f"fields{[repr(f) for f in self.fields]!r})"
+            f"type={self.type!r}, "
+            f"fields={[repr(f) for f in self.fields]!r})"
         )
