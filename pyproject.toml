@@ -1,0 +1,64 @@
+[project]
+name = "dataspec"
+version = "0.1.0"
+description = "Declarative specifications and test data generation for Python"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "mypy>=1.18.2",
+    "pre-commit>=4.4.0",
+    "pytest>=9.0.0",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.4",
+]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unused_configs = true
+show_error_codes = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_decorators = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+implicit_reexport = false
+warn_return_any = true
+warn_unreachable = true
+
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cahe"
+]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "C4", "TCH", "SIM", "RUF"]
+ignore = []
+fixable = ["ALL"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["dataspec"]
+required-imports = []
+combine-as-imports = true
+force-sort-within-sections = true
+section-order = ["future", "standard-library", "third-party", "first-party"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
