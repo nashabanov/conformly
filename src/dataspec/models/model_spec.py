@@ -16,7 +16,7 @@ class ModelSpec:
         for field in self.fields:
             if field.name == field_name:
                 return field
-        raise KeyError(f"Field '{field_name}' is not defined in model:'{self.name}'")
+        raise KeyError(f"Field '{field_name}' is not defined in model: '{self.name}'")
 
     def get_requiered_fields(self) -> list[FieldSpec]:
         return [field for field in self.fields if not field.has_default()]
