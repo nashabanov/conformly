@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from dataspec.models.field_spec import FieldSpec
+from .field import FieldSpec
 
 ModelType = Literal["dataclass", "pydantic"]
 

@@ -1,6 +1,6 @@
 import pytest
 
-from dataspec.models.field_spec import ConstraintSpec, FieldSpec
+from dataspec.specs import ConstraintSpec, FieldSpec
 
 
 @pytest.fixture
