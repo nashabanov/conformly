@@ -1,14 +1,15 @@
-from dataspec.parsing.adapter import Adapter
+from .protocol import ParcingAdapterProtocol
+
 from dataspec.specs import ModelSpec
 
-_adapters: list[Adapter] = []
+_adapters: list[ParcingAdapterProtocol] = []
 
 
-def register(adapter: Adapter) -> None:
+def register(adapter: ParcingAdapterProtocol) -> None:
     _adapters.append(adapter)
 
 
-def get_adapter(model: type) -> Adapter:
+def get_adapter(model: type) -> ParcingAdapterProtocol:
     for adapter in _adapters:
         if adapter.supports(model):
             return adapter

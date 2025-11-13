@@ -1,9 +1,11 @@
-from dataclasses import dataclass, field, fields
-from typing import Annotated
+from collections.abc import Callable
+from dataclasses import InitVar, dataclass, field, fields
+from typing import Annotated, ClassVar
 
 import pytest
 
 from dataspec.parsing.adapters.dataclass_adapter import (
+    _metadata_to_constraints,
     is_nullable,
     parse,
     parse_annotated_constraints,
@@ -17,7 +19,7 @@ from dataspec.parsing.adapters.dataclass_adapter import (
     supports,
 )
 from dataspec.specs import FieldSpec, ModelSpec
-from dataspec.specs.field import _UNSET
+from dataspec.specs.field import _UNSET, ConstraintSpec
 
 
 class NotDataclass:
@@ -162,12 +164,13 @@ def test_parse_default_simple():
 
 def test_parse_default_factory():
     default = parse_defaults(fields(DefaultDataclass)[1])
-    assert default == []
+    assert default is list
 
 
 def test_parse_default_factory_creates_new():
-    first = parse_defaults(fields(DefaultDataclass)[1])
-    second = parse_defaults(fields(DefaultDataclass)[1])
+    factory = parse_defaults(fields(DefaultDataclass)[1])
+    first = factory()
+    second = factory()
     assert first is not second
     assert first == second
 
@@ -189,7 +192,8 @@ def test_parse_default_factory_dict():
         config: dict = field(default_factory=dict)
 
     default = parse_defaults(fields(DictDataclass)[0])
-    assert default == {}
+    assert default is dict
+    assert default() == {}
 
 
 def test_parse_default_zero():
@@ -212,13 +216,37 @@ def test_parse_default_empty_string():
     assert default is not _UNSET
 
 
+def test_parse_default_factory_returns_callable():
+    @dataclass
+    class CallableDefault:
+        fn: Callable = field(default_factory=lambda: len)
+
+    default = parse_defaults(fields(CallableDefault)[0])
+    assert callable(default)
+    assert default() == len
+
+
+def test_parse_default_factory_exception():
+    def bad_factory():
+        raise RuntimeError("should not be called during parsing")
+
+    @dataclass
+    class BadFactory:
+        x: int = field(default_factory=bad_factory)
+
+    # Should not call factory during parsing
+    default = parse_defaults(fields(BadFactory)[0])
+    assert default is bad_factory
+
+
 # ====== TESTS FOR parse_annotated_constraints() ======
 
 
 def test_parse_annotated_constraints_exists():
     constraints = parse_annotated_constraints(Annotated[int, "min=0", "max=150"])
     assert len(constraints) == 2
-    # TODO: Verify ConstraintSpec objects
+    for c in constraints:
+        assert isinstance(c, ConstraintSpec)
 
 
 def test_parse_annotated_constraints_empty():
@@ -236,6 +264,20 @@ def test_parse_annotated_constraints_none():
     assert constraints == []
 
 
+def test_parse_annotated_constraints_dict_format_valid():
+    constraints = parse_annotated_constraints(
+        Annotated[str, {"type": "pattern", "value": "^\\w+$"}]
+    )
+    assert len(constraints) == 1
+    assert constraints[0].constraint_type == "pattern"
+    assert constraints[0].value == "^\\w+$"
+
+
+def test_parse_annotated_constraints_dict_format_invalid_key():
+    with pytest.raises(ValueError, match="Uknown constraint type"):
+        parse_annotated_constraints(Annotated[str, {"type": "unknown", "value": "x"}])
+
+
 # ====== TESTS FOR parse_metadata_constraints() ======
 
 
@@ -243,7 +285,8 @@ def test_parse_metadata_constraints_exists():
     f = fields(ConstraintsDataclass)[2]  # tags field
     constraints = parse_metadata_constraints(f)
     assert len(constraints) > 0
-    # TODO: Verify ConstraintSpec objects
+    for c in constraints:
+        assert isinstance(c, ConstraintSpec)
 
 
 def test_parse_metadata_constraints_empty():
@@ -259,6 +302,27 @@ def test_parse_metadata_constraints_custom_keys():
 
     f = fields(CustomMetadata)[0]
     with pytest.raises(ValueError):
+        parse_metadata_constraints(f)
+
+
+def test_parse_metadata_constraints_ignored_private():
+    @dataclass
+    class PrivateMeta:
+        x: int = field(metadata={"_internal": "ignored", "min": 1})
+
+    f = fields(PrivateMeta)[0]
+    constraints = parse_metadata_constraints(f)
+    assert len(constraints) == 1
+    assert constraints[0].constraint_type == "min"
+
+
+def test_parse_metadata_constraints_invalid_constraint_type():
+    @dataclass
+    class BadMeta:
+        x: int = field(metadata={"invalid_key": 42})
+
+    f = fields(BadMeta)[0]
+    with pytest.raises(ValueError, match="Uknown constraint type"):
         parse_metadata_constraints(f)
 
 
@@ -428,6 +492,19 @@ def test_parse_returns_model_spec_attributes():
     assert hasattr(spec, "fields")
 
 
+def test_parse_ignores_initvar_and_classvar():
+    @dataclass
+    class WithSpecialVars:
+        normal: str
+        init_var: InitVar[int]
+        class_var: ClassVar[str] = "shared"
+
+    spec = parse(WithSpecialVars)
+    # Only 'normal' should appear
+    assert len(spec.fields) == 1
+    assert spec.fields[0].name == "normal"
+
+
 # ====== EDGE CASES ======
 
 
@@ -495,3 +572,14 @@ def test_parse_get_optional_fields():
     assert "name" in names
     assert "email" in names
     assert "age" in names
+
+
+def test_metadata_to_constraints_constraint_spec_direct():
+    cs = ConstraintSpec("min", 0)
+    result = _metadata_to_constraints(cs)
+    assert result is cs
+
+
+def test_metadata_to_constraints_unsupported_type():
+    assert _metadata_to_constraints(42) is None
+    assert _metadata_to_constraints([1, 2]) is None

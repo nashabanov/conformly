@@ -1,7 +1,7 @@
 import pytest
 
-from dataspec.parsing.registry import get_adapter, parse_model, register
-from dataspec.specs.model import ModelSpec
+from dataspec.parsing import get_adapter, parse_model, register
+from dataspec.specs import ModelSpec
 
 
 class DummyAdapter:

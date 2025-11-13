@@ -7,9 +7,10 @@ from dataspec.specs.field import _UNSET
 
 UNION_TYPES = (Union, UnionType)
 
-ALLOWED_CONSTRAINT_TYPE = ["min", "max", "pattern", "length"]
+ALLOWED_CONSTRAINT_TYPE = frozenset({"min", "max", "pattern", "length"})
 
 # TODO: Предусмотреть кейс Annotated(Optional[str], ...)
+# TODO: docstrings и тд
 
 
 def supports(model: type) -> bool:
@@ -62,10 +63,8 @@ def parse_defaults(field: Field[Any]) -> Any:
     if field.default is not MISSING:
         return field.default
 
-    # TODO:решить нужно ли возвращать ленивую фабрику или сразу генерировать значения
-    # (скорее всего ленивую и усложнять логику спеки)
     elif field.default_factory is not MISSING:
-        return field.default_factory()
+        return field.default_factory
 
     return _UNSET
 

@@ -3,7 +3,7 @@ from typing import Protocol
 from dataspec.specs import ModelSpec
 
 
-class Adapter(Protocol):
+class ParcingAdapterProtocol(Protocol):
     """Interface that all parsing adapters must implement"""
 
     def supports(self, model: type) -> bool:
