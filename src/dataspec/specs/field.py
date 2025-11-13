@@ -7,7 +7,7 @@ _UNSET = object()
 
 @dataclass(frozen=True)
 class ConstraintSpec:
-    constraint_type: ConstraintType
+    constraint_type: str
     value: Any
 
     def __repr__(self) -> str:
