@@ -1,9 +1,9 @@
 import random
 import re
 import string
-from typing import Any, cast
+from typing import Any
 
-import rstr  # type: ignore[import-not-found]
+import rstr
 
 from dataspec.specs import ConstraintSpec
 
@@ -23,7 +23,7 @@ def _generate_valid_string(constraints: list[ConstraintSpec]) -> str:
 
     if pattern:
         if max_len is None and min_len is None:
-            return cast("str", rstr.xeger(pattern))
+            return rstr.xeger(pattern)
         else:
             return _random_pattern_with_length(pattern, min_len, max_len)
 
@@ -38,7 +38,7 @@ def _generate_invalid_string(constraints: list[ConstraintSpec]) -> str:
         return _random_string_fixed_length(max_length + 1)
 
     if pattern := get_constraint(constraints, "pattern"):
-        valid_example = cast("str", rstr.xeger(pattern))
+        valid_example = rstr.xeger(pattern)
         return _invert_pattern_string(valid_example)
 
     return "INVALID"
@@ -56,18 +56,18 @@ def get_constraint(
 def _random_string_with_length(min_len: int | None, max_len: int | None) -> str:
     if min_len and max_len is None:
         length = random.randint(min_len, min_len + 50)
-        return cast("str", rstr.rstr(string.ascii_letters + string.digits, length))
+        return rstr.rstr(string.ascii_letters + string.digits, length)
 
     if max_len and min_len is None:
         length = random.randint(1, max_len)
-        return cast("str", rstr.rstr(string.ascii_letters + string.digits, length))
+        return rstr.rstr(string.ascii_letters + string.digits, length)
 
     if min_len and max_len:
         length = random.randint(min_len, max_len)
-        return cast("str", rstr.rstr(string.ascii_letters + string.digits, length))
+        return rstr.rstr(string.ascii_letters + string.digits, length)
 
     length = random.randint(5, 15)
-    return cast("str", rstr.rstr(string.ascii_letters + string.digits, length))
+    return rstr.rstr(string.ascii_letters + string.digits, length)
 
 
 def _random_string_fixed_length(length: int) -> str:
@@ -75,7 +75,7 @@ def _random_string_fixed_length(length: int) -> str:
         raise ValueError("Length must be non-negative")
     if length == 0:
         return ""
-    return cast("str", rstr.rstr(string.ascii_letters + string.digits, length))
+    return rstr.rstr(string.ascii_letters + string.digits, length)
 
 
 def _random_pattern_with_length(
@@ -108,7 +108,7 @@ def _random_pattern_with_length(
             )
     for _ in range(20):
         try:
-            candidate = cast("str", rstr.xeger(pattern))
+            candidate = rstr.xeger(pattern)
         except Exception as e:
             raise ValueError(f"Invalid or unsupported regex pattern: {pattern}") from e
 
