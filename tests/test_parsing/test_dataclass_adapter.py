@@ -46,9 +46,9 @@ class OptionalDataclass:
 
 @dataclass
 class ConstraintsDataclass:
-    age: Annotated[int, "min=0", "max=150"]
+    age: Annotated[int, "ge=0", "le=150"]
     email: Annotated[str, "pattern=^\\w+@\\w+\\.\\w+$"]
-    tags: list = field(metadata={"min": 1, "max": 10})
+    tags: list = field(metadata={"min_length": 1, "max_length": 10})
 
 
 @dataclass
@@ -56,7 +56,7 @@ class MixedDataclass:
     id: int
     name: str = "default"
     email: str | None = None
-    age: Annotated[int, "min=0", "max=150"] = 18
+    age: Annotated[int, "ge=0", "le=150"] = 18
 
 
 # ====== TESTS FOR supports() ======
@@ -108,9 +108,9 @@ def test_resolve_type_optional():
 
 
 def test_resolve_type_annotated():
-    type_hints = {"age": Annotated[int, "min=0", "max=150"]}
+    type_hints = {"age": Annotated[int, "ge=0", "le=150"]}
     field_type = resolve_type(type_hints, "age")
-    assert field_type == Annotated[int, "min=0", "max=150"]
+    assert field_type == Annotated[int, "ge=0", "le=150"]
 
 
 def test_resolve_type_missing_field():
@@ -243,7 +243,7 @@ def test_parse_default_factory_exception():
 
 
 def test_parse_annotated_constraints_exists():
-    constraints = parse_annotated_constraints(Annotated[int, "min=0", "max=150"])
+    constraints = parse_annotated_constraints(Annotated[int, "ge=0", "le=150"])
     assert len(constraints) == 2
     for c in constraints:
         assert isinstance(c, ConstraintSpec)
@@ -308,12 +308,12 @@ def test_parse_metadata_constraints_custom_keys():
 def test_parse_metadata_constraints_ignored_private():
     @dataclass
     class PrivateMeta:
-        x: int = field(metadata={"_internal": "ignored", "min": 1})
+        x: int = field(metadata={"_internal": "ignored", "min_length": 1})
 
     f = fields(PrivateMeta)[0]
     constraints = parse_metadata_constraints(f)
     assert len(constraints) == 1
-    assert constraints[0].constraint_type == "min"
+    assert constraints[0].constraint_type == "min_length"
 
 
 def test_parse_metadata_constraints_invalid_constraint_type():
@@ -331,14 +331,14 @@ def test_parse_metadata_constraints_invalid_constraint_type():
 
 def test_parse_constraints_combined():
     f = fields(ConstraintsDataclass)[0]  # age with Annotated
-    field_type = Annotated[int, "min=0", "max=150"]
+    field_type = Annotated[int, "ge=0", "le=150"]
     constraints = parse_constraints(f, field_type)
     assert len(constraints) > 0
 
 
 def test_parse_constraints_annotated_only():
     f = fields(DummyDataclass)[0]
-    field_type = Annotated[str, "min=3"]
+    field_type = Annotated[str, "min_length=3"]
     constraints = parse_constraints(f, field_type)
     assert len(constraints) >= 1
 
@@ -375,7 +375,7 @@ def test_parse_field_with_default():
 
 def test_parse_field_with_constraints():
     f = fields(ConstraintsDataclass)[0]
-    field_type = Annotated[int, "min=0", "max=150"]
+    field_type = Annotated[int, "ge=0", "le=150"]
     field_spec = parse_field(f, field_type)
     assert len(field_spec.constraints) > 0
 

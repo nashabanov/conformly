@@ -7,7 +7,9 @@ from dataspec.specs.field import _UNSET
 
 UNION_TYPES = (Union, UnionType)
 
-ALLOWED_CONSTRAINT_TYPE = frozenset({"min", "max", "pattern", "length"})
+ALLOWED_CONSTRAINT_TYPE = frozenset(
+    {"min_length", "max_length", "pattern", "gt", "ge", "lt", "le", "multiple_of"}
+)
 
 # TODO: Предусмотреть кейс Annotated(Optional[str], ...)
 # TODO: docstrings и тд
