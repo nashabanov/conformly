@@ -4,6 +4,9 @@ from typing import Any, Literal
 ConstraintType = Literal["min", "max", "pattern", "length"]
 _UNSET = object()
 
+# TODO: зафиксировать уже логику обязательности
+# TODO: опеределить типы ограничений и место их валидацией (Literal + frozenset)
+
 
 @dataclass(frozen=True)
 class ConstraintSpec:
@@ -34,7 +37,7 @@ class FieldSpec:
         return self.default is not _UNSET
 
     def is_optional(self) -> bool:
-        return self.nullable or self.has_default()
+        return self.nullable
 
     def __repr__(self) -> str:
         return (

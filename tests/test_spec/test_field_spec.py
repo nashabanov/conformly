@@ -79,7 +79,7 @@ def test_field_spec_nullable_field_optional(default_constraint_min):
         default=100,
         nullable=False,
     )
-    assert field.is_optional()
+    assert not field.is_optional()
 
 
 def test_field_spec_not_optional_not_nullable(default_constraint_min):

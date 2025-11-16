@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from dataclasses import InitVar, dataclass, field, fields
-from typing import Annotated, Any, ClassVar, Union, get_args, get_origin
+from types import UnionType
+from typing import Annotated, Any, ClassVar, get_args, get_origin
 
 import pytest
 
@@ -141,7 +142,7 @@ def test_nested_annotated():
 def test_annotated_optional():
     type_hint = Annotated[str | None, "ge=0"]
     result = unwrap_annotated(type_hint)
-    assert get_origin(result) is Union
+    assert get_origin(result) is UnionType
     assert get_args(result) == (str, type(None))
 
 
@@ -617,11 +618,9 @@ def test_parse_get_required_fields():
 def test_parse_get_optional_fields():
     spec = parse(MixedDataclass)
     optional = spec.get_optional_fields()
-    assert len(optional) == 3
+    assert len(optional) == 1
     names = [f.name for f in optional]
-    assert "name" in names
     assert "email" in names
-    assert "age" in names
 
 
 def test_metadata_to_constraints_constraint_spec_direct():
