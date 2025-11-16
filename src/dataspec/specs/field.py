@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any
 
-ConstraintType = Literal["min", "max", "pattern", "length"]
+from dataspec.specs.constraints import ConstraintType
+
 _UNSET = object()
 
 # TODO: зафиксировать уже логику обязательности

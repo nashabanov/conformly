@@ -2,14 +2,11 @@ from dataclasses import MISSING, Field, fields, is_dataclass
 from types import UnionType
 from typing import Annotated, Any, Union, get_args, get_origin, get_type_hints
 
-from dataspec.specs import ConstraintSpec, FieldSpec, ModelSpec
+from dataspec.specs import ALLOWED_CONSTRAINT_TYPE, ConstraintSpec, FieldSpec, ModelSpec
 from dataspec.specs.field import _UNSET
 
 UNION_TYPES = (Union, UnionType)
 
-ALLOWED_CONSTRAINT_TYPE = frozenset(
-    {"min_length", "max_length", "pattern", "gt", "ge", "lt", "le", "multiple_of"}
-)
 
 # TODO: обработка Literal
 
