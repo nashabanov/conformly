@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import InitVar, dataclass, field, fields
-from typing import Annotated, ClassVar
+from typing import Annotated, Any, ClassVar, Union, get_args, get_origin
 
 import pytest
 
@@ -17,6 +17,7 @@ from dataspec.parsing.adapters.dataclass_adapter import (
     parse_name,
     resolve_type,
     supports,
+    unwrap_annotated,
 )
 from dataspec.specs import FieldSpec, ModelSpec
 from dataspec.specs.field import _UNSET, ConstraintSpec
@@ -119,6 +120,46 @@ def test_resolve_type_missing_field():
         resolve_type(type_hints, "missing_field")
 
 
+# ====== TESTS FOR resolve_annotated() =====
+
+
+def test_unwrap_annotated():
+    type_hints = Annotated[int, "ge=0"]
+    field_type = unwrap_annotated(type_hints)
+    assert field_type is int
+
+
+def test_unwrap_not_annotated():
+    assert unwrap_annotated(int) is int
+
+
+def test_nested_annotated():
+    nested = Annotated[Annotated[str, "inner"], "outer"]
+    assert unwrap_annotated(nested) is str
+
+
+def test_annotated_optional():
+    type_hint = Annotated[str | None, "ge=0"]
+    result = unwrap_annotated(type_hint)
+    assert get_origin(result) is Union
+    assert get_args(result) == (str, type(None))
+
+
+def test_annotated_generic():
+    type_hint = Annotated[list[str], "min_length=1"]
+    result = unwrap_annotated(type_hint)
+    assert get_origin(result) is list
+    assert get_args(result) == (str,)
+
+
+def test_none_type():
+    assert unwrap_annotated(type(None)) is type(None)
+
+
+def test_any_type():
+    assert unwrap_annotated(Any) is Any
+
+
 # ====== TESTS FOR is_nullable() ======
 
 
@@ -152,6 +193,14 @@ def test_is_nullable_union_without_none():
 
 def test_is_nullable_list():
     assert not is_nullable(list)
+
+
+def test_is_nullable_annotated_union():
+    assert is_nullable(Annotated[int | None, "ge=0"])
+
+
+def test_is_nullable_annotated_not_optional():
+    assert not is_nullable(Annotated[int, "ge=0"])
 
 
 # ====== TESTS FOR parse_defaults() ======
@@ -440,6 +489,7 @@ def test_parse_fields_mixed():
     assert field_specs[2].default is None
 
     assert field_specs[3].name == "age"
+    assert field_specs[3].type is int
     assert field_specs[3].default == 18
     assert field_specs[3].nullable is False
 

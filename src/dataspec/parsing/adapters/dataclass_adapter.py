@@ -11,8 +11,7 @@ ALLOWED_CONSTRAINT_TYPE = frozenset(
     {"min_length", "max_length", "pattern", "gt", "ge", "lt", "le", "multiple_of"}
 )
 
-# TODO: Предусмотреть кейс Annotated(Optional[str], ...)
-# TODO: docstrings и тд
+# TODO: обработка Literal
 
 
 def supports(model: type) -> bool:
@@ -47,17 +46,24 @@ def resolve_type(type_hints: dict[str, Any], field_name: str) -> Any:
 def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
     return FieldSpec(
         name=field.name,
-        type=field_type,
+        type=unwrap_annotated(field_type),
         constraints=parse_constraints(field, field_type),
         default=parse_defaults(field),
         nullable=is_nullable(field_type),
     )
 
 
+def unwrap_annotated(field_type: Any) -> Any:
+    if get_origin(field_type) is Annotated:
+        return get_args(field_type)[0]
+    return field_type
+
+
 def is_nullable(field_type: Any) -> bool:
-    origin = get_origin(field_type)
+    unwrapped = unwrap_annotated(field_type)
+    origin = get_origin(unwrapped)
     if origin in UNION_TYPES:
-        return type(None) in get_args(field_type)
+        return type(None) in get_args(unwrapped)
     return False
 
 
