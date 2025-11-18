@@ -5,10 +5,14 @@ from typing import Any
 
 import rstr
 
-from dataspec.specs import ConstraintSpec
+from dataspec.specs import ConstraintSpec, FieldSpec
 
 
-def generate_random_string(constraints: list[ConstraintSpec], valid: bool) -> str:
+def supports(field: FieldSpec) -> bool:
+    return field.type is str
+
+
+def generate(constraints: list[ConstraintSpec], valid: bool) -> str:
     return (
         _generate_valid_string(constraints)
         if valid

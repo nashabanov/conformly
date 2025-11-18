@@ -7,9 +7,10 @@ from dataspec.generator.types.string import (
     _generate_valid_string,
     _random_pattern_with_length,
     _random_string_with_length,
-    generate_random_string,
+    generate,
+    supports,
 )
-from dataspec.specs.field import ConstraintSpec
+from dataspec.specs.field import ConstraintSpec, FieldSpec
 
 
 def test_random_string_default():
@@ -193,16 +194,25 @@ def test_generate_invalid_pattern_only():
 
 def test_generate_random_string_valid():
     constraints = [ConstraintSpec("min_length", 3)]
-    result = generate_random_string(constraints, valid=True)
+    result = generate(constraints, valid=True)
     assert len(result) >= 3
 
 
 def test_generate_random_string_invalid():
     constraints = [ConstraintSpec("max_length", 2)]
-    result = generate_random_string(constraints, valid=False)
+    result = generate(constraints, valid=False)
     assert len(result) > 2
 
 
 def test_pattern_with_catastrophic_backtracking_safe():
     with pytest.raises((RuntimeError, ValueError)):
         _random_pattern_with_length(r"(a+)+", None, max_len=10)
+
+
+def test_supports_valid():
+    assert supports(FieldSpec(name="test", type=str))
+
+
+@pytest.mark.parametrize("_type", [int, list, float, dict, bool, set])
+def test_supports_invalid(_type):
+    assert not supports(FieldSpec(name="test", type=_type))

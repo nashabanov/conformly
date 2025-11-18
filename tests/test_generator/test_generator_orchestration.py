@@ -1,12 +1,31 @@
 import pytest
 
-from dataspec.generator.core import (
+from dataspec.generator.orchestration import (
     generate,
     generate_field,
     generate_invalid,
     generate_valid,
 )
+from dataspec.generator.registry import _generators, register
 from dataspec.specs import ConstraintSpec, FieldSpec, ModelSpec
+
+
+class TestStingGenerator:
+    def supports(self, field: FieldSpec) -> bool:
+        return field.type is str
+
+    def generate_value(self, constraints: list[ConstraintSpec], valid: bool) -> str:
+        from dataspec.generator.types.string import generate
+
+        return generate(constraints, valid)
+
+
+@pytest.fixture(autouse=True)
+def fresh_registry():
+    register(TestStingGenerator())
+    yield
+    _generators.clear()
+
 
 simple_string_field = FieldSpec(
     name="name",
@@ -73,7 +92,7 @@ def test_generate_field_optional():
     ],
 )
 def test_generate_field_invalid_type(field_type):
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(TypeError):
         generate_field(FieldSpec(name="unsupported", type=field_type), valid=True)
 
 

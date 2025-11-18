@@ -1,7 +1,7 @@
 import random
 from typing import Any
 
-from dataspec.generator.types.string import generate_random_string
+from dataspec.generator.registry import get_generator
 from dataspec.specs import FieldSpec, ModelSpec
 
 # TODO: доделать работу int/float
@@ -51,16 +51,7 @@ def generate_field(field_spec: FieldSpec, valid: bool) -> Any:
     if field_spec.has_default():
         return field_spec.default
 
-    field_type = field_spec.type
-    field_constraints = field_spec.constraints
-
-    if field_type is int:
-        return 1
-    elif field_type is str:
-        return generate_random_string(field_constraints, valid)
-    elif field_type is bool:
+    if field_spec.type is bool:
         return random.choice([True, False])
-    else:
-        raise NotImplementedError(
-            f"Unsupported field type {field_spec.name}: {field_type}"
-        )
+
+    return get_generator(field_spec).generate_value(field_spec.constraints, valid)

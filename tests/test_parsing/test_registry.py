@@ -12,6 +12,15 @@ class DummyAdapter:
         return ModelSpec(name=f"{model}", type="dataclass", fields=[])
 
 
+@pytest.fixture(autouse=True)
+def clean_registry():
+    from dataspec.parsing.registry import _adapters
+
+    _adapters.clear()
+    yield
+    _adapters.clear()
+
+
 def test_register_and_get_adapter():
     register(DummyAdapter())
     adapter = get_adapter(str)
