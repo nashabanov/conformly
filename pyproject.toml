@@ -1,5 +1,5 @@
 [project]
-name = "dataspec"
+name = "conformly"
 version = "0.1.0"
 description = "Declarative specifications and test data generation for Python"
 readme = "README.md"

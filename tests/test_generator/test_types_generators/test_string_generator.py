@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from dataspec.generator.types.string import (
+from conformly.generator.types.string import (
     _generate_invalid_string,
     _generate_valid_string,
     _random_pattern_with_length,
@@ -10,7 +10,7 @@ from dataspec.generator.types.string import (
     generate,
     supports,
 )
-from dataspec.specs.field import ConstraintSpec, FieldSpec
+from conformly.specs.field import ConstraintSpec, FieldSpec
 
 
 def test_random_string_default():

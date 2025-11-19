@@ -1,7 +1,7 @@
 import pytest
 
-from dataspec.parsing import get_adapter, parse_model, register
-from dataspec.specs import ModelSpec
+from conformly.parsing import get_adapter, parse_model, register
+from conformly.specs import ModelSpec
 
 
 class DummyAdapter:
@@ -14,7 +14,7 @@ class DummyAdapter:
 
 @pytest.fixture(autouse=True)
 def clean_registry():
-    from dataspec.parsing.registry import _adapters
+    from conformly.parsing.registry import _adapters
 
     _adapters.clear()
     yield

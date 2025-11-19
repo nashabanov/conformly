@@ -1,8 +1,8 @@
 import random
 from typing import Any
 
-from dataspec.generator.registry import get_generator
-from dataspec.specs import FieldSpec, ModelSpec
+from conformly.generator.registry import get_generator
+from conformly.specs import FieldSpec, ModelSpec
 
 # TODO: доделать работу int/float
 # TODO: расширить логику работы invalid на разные стратегии:

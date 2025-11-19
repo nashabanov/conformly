@@ -1,6 +1,6 @@
 from typing import Any, Protocol
 
-from dataspec.specs.field import ConstraintSpec, FieldSpec
+from conformly.specs.field import ConstraintSpec, FieldSpec
 
 
 class TypeGeneratorProtocol(Protocol):

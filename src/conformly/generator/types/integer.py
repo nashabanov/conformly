@@ -1,6 +1,6 @@
 from random import randint
 
-from dataspec.specs.field import ConstraintSpec
+from conformly.specs.field import ConstraintSpec
 
 
 def supports(_type: type) -> bool:

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from dataspec.specs.constraints import ConstraintType
+from conformly.specs.constraints import ConstraintType
 
 _UNSET = object()
 

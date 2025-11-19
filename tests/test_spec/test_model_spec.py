@@ -1,6 +1,6 @@
 import pytest
 
-from dataspec.specs import ConstraintSpec, FieldSpec, ModelSpec
+from conformly.specs import ConstraintSpec, FieldSpec, ModelSpec
 
 
 @pytest.fixture

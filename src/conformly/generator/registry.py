@@ -1,5 +1,5 @@
-from dataspec.generator.protocol import TypeGeneratorProtocol
-from dataspec.specs import FieldSpec
+from conformly.generator.protocol import TypeGeneratorProtocol
+from conformly.specs import FieldSpec
 
 _generators: list[TypeGeneratorProtocol] = []
 

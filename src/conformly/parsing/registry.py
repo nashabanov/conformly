@@ -1,6 +1,6 @@
 from .protocol import ParcingAdapterProtocol
 
-from dataspec.specs import ModelSpec
+from conformly.specs import ModelSpec
 
 _adapters: list[ParcingAdapterProtocol] = []
 

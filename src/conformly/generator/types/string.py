@@ -5,7 +5,7 @@ from typing import Any
 
 import rstr
 
-from dataspec.specs import ConstraintSpec, FieldSpec
+from conformly.specs import ConstraintSpec, FieldSpec
 
 
 def supports(field: FieldSpec) -> bool:

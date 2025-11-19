@@ -5,7 +5,7 @@ from typing import Annotated, Any, ClassVar, get_args, get_origin
 
 import pytest
 
-from dataspec.parsing.adapters.dataclass_adapter import (
+from conformly.parsing.adapters.dataclass_adapter import (
     _metadata_to_constraints,
     is_nullable,
     parse,
@@ -20,8 +20,8 @@ from dataspec.parsing.adapters.dataclass_adapter import (
     supports,
     unwrap_annotated,
 )
-from dataspec.specs import FieldSpec, ModelSpec
-from dataspec.specs.field import _UNSET, ConstraintSpec
+from conformly.specs import FieldSpec, ModelSpec
+from conformly.specs.field import _UNSET, ConstraintSpec
 
 
 class NotDataclass:

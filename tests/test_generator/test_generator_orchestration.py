@@ -1,13 +1,13 @@
 import pytest
 
-from dataspec.generator.orchestration import (
+from conformly.generator.orchestration import (
     generate,
     generate_field,
     generate_invalid,
     generate_valid,
 )
-from dataspec.generator.registry import _generators, register
-from dataspec.specs import ConstraintSpec, FieldSpec, ModelSpec
+from conformly.generator.registry import _generators, register
+from conformly.specs import ConstraintSpec, FieldSpec, ModelSpec
 
 
 class TestStingGenerator:
@@ -15,7 +15,7 @@ class TestStingGenerator:
         return field.type is str
 
     def generate_value(self, constraints: list[ConstraintSpec], valid: bool) -> str:
-        from dataspec.generator.types.string import generate
+        from conformly.generator.types.string import generate
 
         return generate(constraints, valid)
 

@@ -82,7 +82,7 @@ wheels = [
 ]
 
 [[package]]
-name = "dataspec"
+name = "conformly"
 version = "0.1.0"
 source = { virtual = "." }
 

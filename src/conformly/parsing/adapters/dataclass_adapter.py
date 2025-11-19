@@ -2,8 +2,13 @@ from dataclasses import MISSING, Field, fields, is_dataclass
 from types import UnionType
 from typing import Annotated, Any, Union, get_args, get_origin, get_type_hints
 
-from dataspec.specs import ALLOWED_CONSTRAINT_TYPE, ConstraintSpec, FieldSpec, ModelSpec
-from dataspec.specs.field import _UNSET
+from conformly.specs import (
+    ALLOWED_CONSTRAINT_TYPE,
+    ConstraintSpec,
+    FieldSpec,
+    ModelSpec,
+)
+from conformly.specs.field import _UNSET
 
 UNION_TYPES = (Union, UnionType)
 
