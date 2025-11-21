@@ -624,7 +624,7 @@ def test_parse_get_optional_fields():
 
 
 def test_metadata_to_constraints_constraint_spec_direct():
-    cs = ConstraintSpec("min", 0)
+    cs = ConstraintSpec("min_length", 0)
     result = _metadata_to_constraints(cs)
     assert result is cs
 

@@ -8,7 +8,7 @@ def default_field():
     return FieldSpec(
         name="name",
         type=str,
-        constraints=[ConstraintSpec(constraint_type="length", value=30)],
+        constraints=[ConstraintSpec(constraint_type="max_length", value=30)],
     )
 
 
@@ -17,7 +17,7 @@ def optional_field():
     return FieldSpec(
         name="age",
         type=int,
-        constraints=[ConstraintSpec(constraint_type="min", value=18)],
+        constraints=[ConstraintSpec(constraint_type="ge", value=18)],
         nullable=True,
         default=20,
     )
