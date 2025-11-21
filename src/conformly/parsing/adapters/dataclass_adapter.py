@@ -1,13 +1,13 @@
 from dataclasses import MISSING, Field, fields, is_dataclass
 from types import UnionType
-from typing import Annotated, Any, Union, get_args, get_origin, get_type_hints
+from typing import Annotated, Any, Union, cast, get_args, get_origin, get_type_hints
 
 from conformly.specs import (
-    ALLOWED_CONSTRAINT_TYPE,
     ConstraintSpec,
     FieldSpec,
     ModelSpec,
 )
+from conformly.specs.constraints import ALLOWED_CONSTRAINT_TYPE, ConstraintType
 from conformly.specs.field import _UNSET
 
 UNION_TYPES = (Union, UnionType)
@@ -125,18 +125,19 @@ def _metadata_to_constraints(metadata_item: Any) -> ConstraintSpec | None:
             return metadata_item
         case str() if "=" in metadata_item:
             k, v = metadata_item.split("=", 1)
-            _validate_constraint_type(k)
-            return ConstraintSpec(k, v)
+            k_validated = _validate_constraint_type(k)
+            return ConstraintSpec(k_validated, v)
         case str():
-            _validate_constraint_type(metadata_item)
-            return ConstraintSpec(metadata_item, True)
+            k_validated = _validate_constraint_type(metadata_item)
+            return ConstraintSpec(k_validated, True)
         case {"type": k, "value": v}:
-            _validate_constraint_type(k)
-            return ConstraintSpec(k, v)
+            k_validated = _validate_constraint_type(k)
+            return ConstraintSpec(k_validated, v)
         case _:
             return None
 
 
-def _validate_constraint_type(k: str) -> None:
+def _validate_constraint_type(k: str) -> ConstraintType:
     if k not in ALLOWED_CONSTRAINT_TYPE:
-        raise ValueError(f"Uknown constraint type {k!r}")
+        raise ValueError(f"Unknown constraint type {k!r}")
+    return cast("ConstraintType", k)

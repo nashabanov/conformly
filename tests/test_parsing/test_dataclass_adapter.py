@@ -324,7 +324,7 @@ def test_parse_annotated_constraints_dict_format_valid():
 
 
 def test_parse_annotated_constraints_dict_format_invalid_key():
-    with pytest.raises(ValueError, match="Uknown constraint type"):
+    with pytest.raises(ValueError, match="Unknown constraint type 'unknown'"):
         parse_annotated_constraints(Annotated[str, {"type": "unknown", "value": "x"}])
 
 
@@ -372,7 +372,7 @@ def test_parse_metadata_constraints_invalid_constraint_type():
         x: int = field(metadata={"invalid_key": 42})
 
     f = fields(BadMeta)[0]
-    with pytest.raises(ValueError, match="Uknown constraint type"):
+    with pytest.raises(ValueError, match="Unknown constraint type"):
         parse_metadata_constraints(f)
 
 
