@@ -1,33 +1,49 @@
-from collections.abc import Callable
+from __future__ import annotations
+
+from dataclasses import dataclass
 from random import choice, randint
+from typing import TYPE_CHECKING
 
-from conformly.specs.field import ConstraintSpec
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from conformly.specs import ConstraintSpec, FieldSpec
 
 
-def supports(_type: type) -> bool:
-    return _type is int
+def supports(field: FieldSpec) -> bool:
+    return field.type is int
 
 
-def generate(constraints: list[ConstraintSpec], valid: bool) -> int:
-    low, high = _get_integer_valid_borders(constraints)
-    max_offset = max(100, (high - low) * 2)
+@dataclass(frozen=True)
+class Bounds:
+    low: int
+    high: int
+
+
+def generate_value(constraints: list[ConstraintSpec], valid: bool) -> int:
+    bounds = _get_integer_valid_borders(constraints)
     if valid:
-        return randint(low, high)
+        return randint(bounds.low, bounds.high)
     else:
-        return _generate_invalid_integer(low, high, max_offset)()
+        return _generate_invalid_integer(bounds)
 
 
-def _generate_invalid_integer(
-    low: int, high: int, max_offset: int
-) -> Callable[[], int]:
-    strategies = {
-        "lower": lambda: randint(low - max_offset, low - 1),
-        "higher": lambda: randint(high + 1, high + max_offset),
-    }
-    return lambda: strategies[choice(list(strategies))]()
+def _generate_invalid_integer(bounds: Bounds) -> int:
+    max_offset = _calculate_max_offset(bounds)
+    strategies: list[Callable[[], int]] = [
+        lambda: randint(bounds.low - max_offset, bounds.low - 1),
+        lambda: randint(bounds.high + 1, bounds.high + max_offset),
+    ]
+    return choice(strategies)()
 
 
-def _get_integer_valid_borders(constraints: list[ConstraintSpec]) -> tuple[int, int]:
+def _calculate_max_offset(bounds: Bounds) -> int:
+    span = max(1, bounds.high - bounds.low)
+    base = max(100, span * 2)
+    return min(base, 10**6)
+
+
+def _get_integer_valid_borders(constraints: list[ConstraintSpec]) -> Bounds:
     low = -(2**63)
     high = 2**63 - 1
     for c in constraints:
@@ -45,4 +61,4 @@ def _get_integer_valid_borders(constraints: list[ConstraintSpec]) -> tuple[int, 
         raise ValueError(
             f"Min value cannot be higher than max value: min: {low}, high {high}"
         )
-    return (low, high)
+    return Bounds(low, high)

@@ -46,8 +46,7 @@ def generate_invalid(model_spec: ModelSpec, field_index: int) -> dict[str, Any]:
 def generate_field(field_spec: FieldSpec, valid: bool) -> Any:
     if field_spec.is_optional():
         return None
-    # if not field_spec.is_optional() and not valid:
-    # return None
+
     if field_spec.has_default():
         return field_spec.default
 

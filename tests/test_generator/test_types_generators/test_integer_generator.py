@@ -1,7 +1,14 @@
 import pytest
 
-from conformly.generator.types.integer import _get_integer_valid_borders
-from conformly.specs.field import ConstraintSpec
+from conformly.generator.types.integer import (
+    Bounds,
+    _calculate_max_offset,
+    _generate_invalid_integer,
+    _get_integer_valid_borders,
+    generate_value,
+    supports,
+)
+from conformly.specs import ConstraintSpec, FieldSpec
 
 # ===== TESTS FOR _get_integer_valid_borders() =====
 
@@ -145,9 +152,9 @@ from conformly.specs.field import ConstraintSpec
 def test_get_integer_valid_borders(
     constraints_list: list[ConstraintSpec], expected_low: int, expected_high: int
 ):
-    low, high = _get_integer_valid_borders(constraints_list)
-    assert low == expected_low
-    assert high == expected_high
+    bounds = _get_integer_valid_borders(constraints_list)
+    assert bounds.low == expected_low
+    assert bounds.high == expected_high
 
 
 @pytest.mark.parametrize(
@@ -204,14 +211,14 @@ def test_contradictory_constraints_raise_error(
 
 def test_extreme_values():
     constraints = [ConstraintSpec(constraint_type="le", value=2**63 - 1)]
-    low, high = _get_integer_valid_borders(constraints)
-    assert low == -(2**63)
-    assert high == 2**63 - 1
+    bounds = _get_integer_valid_borders(constraints)
+    assert bounds.low == -(2**63)
+    assert bounds.high == 2**63 - 1
 
     constraints = [ConstraintSpec(constraint_type="ge", value=-(2**63))]
-    low, high = _get_integer_valid_borders(constraints)
-    assert low == -(2**63)
-    assert high == 2**63 - 1
+    bounds = _get_integer_valid_borders(constraints)
+    assert bounds.low == -(2**63)
+    assert bounds.high == 2**63 - 1
 
 
 def test_zero_boundaries():
@@ -219,6 +226,113 @@ def test_zero_boundaries():
         ConstraintSpec(constraint_type="gt", value=-1),
         ConstraintSpec(constraint_type="lt", value=1),
     ]
-    low, high = _get_integer_valid_borders(constraints)
-    assert low == 0
-    assert high == 0
+    bounds = _get_integer_valid_borders(constraints)
+    assert bounds.low == 0
+    assert bounds.high == 0
+
+
+# ===== TESTS FOR _calculate_max_offset() =====
+
+
+@pytest.mark.parametrize(
+    "bounds,expected_result",
+    [
+        pytest.param(Bounds(0, 10), 100),
+        pytest.param(Bounds(5, 5), 100),
+        pytest.param(Bounds(0, 600000), 1000000),
+        pytest.param(Bounds(-100, -50), 100),
+        pytest.param(Bounds(-50000, 40000), 180000),
+    ],
+)
+def test_calculate_max_offset(bounds, expected_result):
+    assert _calculate_max_offset(bounds) == expected_result
+
+
+# ===== TESTS FOR _generate_invalid_integer() =====
+
+
+@pytest.mark.parametrize(
+    "bounds",
+    [
+        pytest.param(Bounds(0, 10)),
+        pytest.param(Bounds(5, 5)),
+        pytest.param(Bounds(-100, -50)),
+        pytest.param(Bounds(1000, 5000)),
+        pytest.param(Bounds(-50000, 40000)),
+    ],
+)
+def test_generate_invalid_integer(bounds):
+    max_offset = _calculate_max_offset(bounds)
+    for _ in range(30):  # Проверяем на нескольких итерациях для вероятностной проверки
+        val = _generate_invalid_integer(bounds)
+        assert val < bounds.low or val > bounds.high, (
+            f"Value {val} should be outside [{bounds.low}, {bounds.high}]"
+        )
+        if val < bounds.low:
+            assert bounds.low - max_offset <= val <= bounds.low - 1, (
+                f"Value {val} out of lower expected range"
+            )
+        else:
+            assert bounds.high + 1 <= val <= bounds.high + max_offset, (
+                f"Value {val} out of higher expected range"
+            )
+
+
+# ===== TESTS FOR generate() =====
+
+
+@pytest.mark.parametrize(
+    "constraints, valid",
+    [
+        (
+            [
+                ConstraintSpec(constraint_type="ge", value=0),
+                ConstraintSpec(constraint_type="le", value=10),
+            ],
+            True,
+        ),
+        (
+            [
+                ConstraintSpec(constraint_type="gt", value=5),
+                ConstraintSpec(constraint_type="lt", value=15),
+            ],
+            True,
+        ),
+        (
+            [
+                ConstraintSpec(constraint_type="ge", value=0),
+                ConstraintSpec(constraint_type="le", value=10),
+            ],
+            False,
+        ),
+        (
+            [
+                ConstraintSpec(constraint_type="gt", value=5),
+                ConstraintSpec(constraint_type="lt", value=15),
+            ],
+            False,
+        ),
+    ],
+)
+def test_generate(constraints, valid):
+    bounds = _get_integer_valid_borders(constraints)
+
+    if valid:
+        val = generate_value(constraints, valid)
+        assert bounds.low <= val <= bounds.high
+    else:
+        for _ in range(30):
+            val = generate_value(constraints, valid)
+            assert val < bounds.low or val > bounds.high
+
+
+# ===== TESTS_FOR_supports() =====
+
+
+def test_supports_valid():
+    assert supports(FieldSpec(name="is", type=int))
+
+
+@pytest.mark.parametrize("_type", [bool, list, float, dict, str, set])
+def test_supports_invalid(_type):
+    assert not supports(FieldSpec(name="is", type=_type))
