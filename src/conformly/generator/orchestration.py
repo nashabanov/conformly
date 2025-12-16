@@ -1,10 +1,9 @@
 import random
-from typing import Any
+from typing import Any, Literal, overload
 
 from conformly.generator.registry import get_generator
 from conformly.specs import FieldSpec, ModelSpec
 
-# TODO: расширить integer на использование float
 # TODO: расширить логику работы invalid на разные стратегии:
 # 1. возврат нарушений по случайному полю
 # 2. приоритезация полей по constraints, если есть заданное кол-во
@@ -15,6 +14,14 @@ from conformly.specs import FieldSpec, ModelSpec
 # TODO: протестировать полный цикл пасинг -> спеки -> генерация (валидные и невалидные)
 # TODO: сфокусироться на стратегии 1 кейс - 1 нарушение (для 0.0.1 релиза)
 # TODO: подготовиться к релизу на PYPI
+
+
+@overload
+def generate(model_spec: ModelSpec, valid: Literal[True]) -> dict[str, Any]: ...
+
+
+@overload
+def generate(model_spec: ModelSpec, valid: Literal[False]) -> list[dict[str, Any]]: ...
 
 
 def generate(
