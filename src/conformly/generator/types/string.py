@@ -43,7 +43,7 @@ def _generate_invalid_string(constraints: list[ConstraintSpec]) -> str:
 
     if pattern := get_constraint(constraints, "pattern"):
         valid_example = rstr.xeger(pattern)
-        return _invert_pattern_string(valid_example)
+        return _invert_pattern_string(valid_example, pattern)
 
     return "INVALID"
 
@@ -138,9 +138,34 @@ def _random_pattern_with_length(
     raise RuntimeError(msg)
 
 
-def _invert_pattern_string(valid_example: str) -> str:
+def _invert_pattern_string(valid_example: str, pattern: str | None = None) -> str:
     if not valid_example:
         return "x"
+
+    compiled = None
+    if pattern:
+        compiled = re.compile(pattern)
+
+    bad_chars = [" ", "!", "@", "#", "\n", "\t", "\x00"]
+
+    if compiled:
+        for ch in bad_chars:
+            candidate = valid_example + ch
+            if compiled.fullmatch(candidate) is None:
+                return candidate
+
+    if compiled:
+        for ch in bad_chars:
+            candidate = ch + valid_example
+            if compiled.fullmatch(candidate) is None:
+                return candidate
+
+    if compiled:
+        for ch in bad_chars:
+            candidate = ch + valid_example[1:]
+            if compiled.fullmatch(candidate) is None:
+                return candidate
+
     first = valid_example[0]
     if first.isalpha():
         invalid = "1"

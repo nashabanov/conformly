@@ -119,6 +119,35 @@ def parse_metadata_constraints(field: Field[Any]) -> list[ConstraintSpec]:
     return constraints
 
 
+def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
+    if k == "pattern":
+        return str(v)
+
+    if k in ("min_length", "max_length"):
+        if isinstance(v, int):
+            return v
+        if isinstance(v, str):
+            s = v.strip()
+            try:
+                return int(s)
+            except ValueError as e:
+                raise ValueError(f"Constraint {k!r} expects int, got {v!r}") from e
+        raise ValueError(f"Constraint {k!r} expects int, got {type(v).__name__}")
+
+    if k in ("gt", "ge", "lt", "le"):
+        if isinstance(v, (int, float)):
+            return v
+        if isinstance(v, str):
+            s = v.strip()
+            try:
+                if all(ch.isdigit() for ch in s.lstrip("+-")):
+                    return int(s)
+                return float(s)
+            except ValueError as e:
+                raise ValueError(f"Constraint {k!r} expects number, got {v!r}") from e
+        raise ValueError(f"Constraint {k!r} expects number, got {type(v).__name__}")
+
+
 def _metadata_to_constraints(metadata_item: Any) -> ConstraintSpec | None:
     match metadata_item:
         case ConstraintSpec():
@@ -126,13 +155,15 @@ def _metadata_to_constraints(metadata_item: Any) -> ConstraintSpec | None:
         case str() if "=" in metadata_item:
             k, v = metadata_item.split("=", 1)
             k_validated = _validate_constraint_type(k)
-            return ConstraintSpec(k_validated, v)
+            v_coerced = _coerce_constraint_value(k_validated, v)
+            return ConstraintSpec(k_validated, v_coerced)
         case str():
             k_validated = _validate_constraint_type(metadata_item)
             return ConstraintSpec(k_validated, True)
         case {"type": k, "value": v}:
             k_validated = _validate_constraint_type(k)
-            return ConstraintSpec(k_validated, v)
+            v_coerced = _coerce_constraint_value(k_validated, v)
+            return ConstraintSpec(k_validated, v_coerced)
         case _:
             return None
 

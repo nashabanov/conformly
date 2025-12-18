@@ -1,20 +1,8 @@
-import random
 from typing import Any
 
 from .registry import get_generator
 
 from conformly.specs import FieldSpec, ModelSpec
-
-# TODO: расширить логику работы invalid на разные стратегии:
-# 1. возврат нарушений по случайному полю
-# 2. приоритезация полей по constraints, если есть заданное кол-во
-# 3. нарушения для полей default (пока не думал насчет релизации)
-# 4. нарушения обязательности полей (вопрос на этом ли уровне или ниже,
-# работа на текущем логична, но повышает цикломатическую сложность значительно)
-# TODO: продумать и реализовать публичный API
-# TODO: протестировать полный цикл пасинг -> спеки -> генерация (валидные и невалидные)
-# TODO: сфокусироться на стратегии 1 кейс - 1 нарушение (для 0.0.1 релиза)
-# TODO: подготовиться к релизу на PYPI
 
 
 def generate_valid(model_spec: ModelSpec) -> dict[str, Any]:
@@ -35,13 +23,10 @@ def generate_invalid(model_spec: ModelSpec, field_index: int) -> dict[str, Any]:
 
 
 def generate_field(field_spec: FieldSpec, valid: bool) -> Any:
-    if field_spec.is_optional():
+    if field_spec.is_optional() and (valid or not field_spec.constraints):
         return None
 
-    if field_spec.has_default():
+    if field_spec.has_default() and valid:
         return field_spec.default
-
-    if field_spec.type is bool:
-        return random.choice([True, False])
 
     return get_generator(field_spec).generate_value(field_spec.constraints, valid)

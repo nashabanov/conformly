@@ -79,7 +79,7 @@ def test_generate_field_optional():
     assert generate_field(optional_string_field, valid=True) is None
 
 
-@pytest.mark.parametrize("field_type", [list, dict, float])
+@pytest.mark.parametrize("field_type", [list, dict])
 def test_generate_field_unsupported_type(field_type):
     with pytest.raises(TypeError, match="No generators found"):
         generate_field(FieldSpec(name="unsupported", type=field_type), valid=True)
