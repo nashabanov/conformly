@@ -64,6 +64,8 @@ def _select_violation_fields(
             )
         return sample(all_indices, k=count)
 
+    raise AssertionError(f"Unhandled strategy: {strategy!r}")
+
 
 # ===== case =====
 def case(

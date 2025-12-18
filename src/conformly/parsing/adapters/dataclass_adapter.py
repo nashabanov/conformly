@@ -13,9 +13,6 @@ from conformly.specs.field import _UNSET
 UNION_TYPES = (Union, UnionType)
 
 
-# TODO: обработка Literal
-
-
 def supports(model: type) -> bool:
     return is_dataclass(model)
 
