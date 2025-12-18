@@ -1,7 +1,8 @@
 import random
-from typing import Any, Literal, overload
+from typing import Any
 
-from conformly.generator.registry import get_generator
+from .registry import get_generator
+
 from conformly.specs import FieldSpec, ModelSpec
 
 # TODO: расширить логику работы invalid на разные стратегии:
@@ -14,27 +15,6 @@ from conformly.specs import FieldSpec, ModelSpec
 # TODO: протестировать полный цикл пасинг -> спеки -> генерация (валидные и невалидные)
 # TODO: сфокусироться на стратегии 1 кейс - 1 нарушение (для 0.0.1 релиза)
 # TODO: подготовиться к релизу на PYPI
-
-
-@overload
-def generate(model_spec: ModelSpec, valid: Literal[True]) -> dict[str, Any]: ...
-
-
-@overload
-def generate(model_spec: ModelSpec, valid: Literal[False]) -> list[dict[str, Any]]: ...
-
-
-def generate(
-    model_spec: ModelSpec, valid: bool = True
-) -> dict[str, Any] | list[dict[str, Any]]:
-    if valid:
-        return generate_valid(model_spec)
-
-    return [
-        generate_invalid(model_spec, i)
-        for i, field in enumerate(model_spec.fields)
-        if len(field.constraints) >= 1
-    ]
 
 
 def generate_valid(model_spec: ModelSpec) -> dict[str, Any]:

@@ -12,7 +12,7 @@ def supports(field: FieldSpec) -> bool:
     return field.type is str
 
 
-def generate(constraints: list[ConstraintSpec], valid: bool) -> str:
+def generate_value(constraints: list[ConstraintSpec], valid: bool) -> str:
     return (
         _generate_valid_string(constraints)
         if valid

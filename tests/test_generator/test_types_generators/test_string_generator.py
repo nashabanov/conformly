@@ -7,7 +7,7 @@ from conformly.generator.types.string import (
     _generate_valid_string,
     _random_pattern_with_length,
     _random_string_with_length,
-    generate,
+    generate_value,
     supports,
 )
 from conformly.specs.field import ConstraintSpec, FieldSpec
@@ -194,13 +194,13 @@ def test_generate_invalid_pattern_only():
 
 def test_generate_random_string_valid():
     constraints = [ConstraintSpec("min_length", 3)]
-    result = generate(constraints, valid=True)
+    result = generate_value(constraints, valid=True)
     assert len(result) >= 3
 
 
 def test_generate_random_string_invalid():
     constraints = [ConstraintSpec("max_length", 2)]
-    result = generate(constraints, valid=False)
+    result = generate_value(constraints, valid=False)
     assert len(result) > 2
 
 
