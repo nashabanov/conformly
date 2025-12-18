@@ -1,7 +1,15 @@
 # conformly
 
+[![PyPI](https://img.shields.io/pypi/v/conformly.svg)](https://pypi.org/project/conformly/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/conformly.svg)](https://pypi.org/project/conformly/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[![CI](https://github.com/nashabanov/conformly/actions/workflows/tests.yml/badge.svg)](https://github.com/nashabanov/conformly/actions)
+[![codecov](https://codecov.io/gh/nashabanov/conformly/branch/main/graph/badge.svg)](https://codecov.io/gh/nashabanov/conformly)
+
+[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 
 **Declarative test data generator for Python. Turns data models (now only dataclasses) and type constraints into valid fixtures and negative test cases.**
 
