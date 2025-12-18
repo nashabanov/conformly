@@ -61,7 +61,7 @@ exclude = [
     "__pycache__",
     ".mypy_cache",
     ".ruff_cache",
-    ".pytest_cahe"
+    ".pytest_cache"
 ]
 
 [tool.ruff.lint]
@@ -70,7 +70,7 @@ ignore = []
 fixable = ["ALL"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["dataspec"]
+known-first-party = ["conformly"]
 required-imports = []
 combine-as-imports = true
 force-sort-within-sections = true
