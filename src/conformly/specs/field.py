@@ -6,7 +6,6 @@ from conformly.specs.constraints import ConstraintType
 _UNSET = object()
 
 # TODO: зафиксировать уже логику обязательности
-# TODO: опеределить типы ограничений и место их валидацией (Literal + frozenset)
 
 
 @dataclass(frozen=True)
