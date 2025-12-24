@@ -1,6 +1,7 @@
 import pytest
 
-from conformly.specs import ConstraintSpec, FieldSpec, ModelSpec
+from conformly.constraints import GreaterOrEqual, MaxLength
+from conformly.specs import FieldSpec, ModelSpec
 
 
 @pytest.fixture
@@ -8,7 +9,7 @@ def default_field():
     return FieldSpec(
         name="name",
         type=str,
-        constraints=[ConstraintSpec(constraint_type="max_length", value=30)],
+        constraints=[MaxLength(30)],
     )
 
 
@@ -17,7 +18,7 @@ def optional_field():
     return FieldSpec(
         name="age",
         type=int,
-        constraints=[ConstraintSpec(constraint_type="ge", value=18)],
+        constraints=[GreaterOrEqual(18)],
         nullable=True,
         default=20,
     )

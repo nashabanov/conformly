@@ -4,10 +4,18 @@ from dataclasses import dataclass
 from random import choice, randint
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
+from conformly.constraints import (
+    Constraint,
+    GreaterOrEqual,
+    GreaterThan,
+    LessOrEqual,
+    LessThan,
+)
 
-    from conformly.specs import ConstraintSpec, FieldSpec
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from conformly.specs import FieldSpec
 
 
 def supports(field: FieldSpec) -> bool:
@@ -20,7 +28,7 @@ class Bounds:
     high: int
 
 
-def generate_value(constraints: list[ConstraintSpec], valid: bool) -> int:
+def generate_value(constraints: Sequence[Constraint], valid: bool) -> int:
     bounds = _get_integer_valid_borders(constraints)
     if valid:
         return randint(bounds.low, bounds.high)
@@ -43,19 +51,24 @@ def _calculate_max_offset(bounds: Bounds) -> int:
     return min(base, 10**6)
 
 
-def _get_integer_valid_borders(constraints: list[ConstraintSpec]) -> Bounds:
+def _get_integer_valid_borders(constraints: Sequence[Constraint]) -> Bounds:
     low = -(2**63)
     high = 2**63 - 1
-    for c in constraints:
-        v = c.value
-        match c.constraint_type:
-            case "gt":
+    for constraint in constraints:
+        if not isinstance(
+            constraint, (GreaterThan, GreaterOrEqual, LessThan, LessOrEqual)
+        ):
+            continue
+
+        v = int(constraint.value)
+        match constraint:
+            case GreaterThan():
                 low = max(low, v + 1)
-            case "ge":
+            case GreaterOrEqual():
                 low = max(low, v)
-            case "lt":
+            case LessThan():
                 high = min(high, v - 1)
-            case "le":
+            case LessOrEqual():
                 high = min(high, v)
     if low > high:
         raise ValueError(

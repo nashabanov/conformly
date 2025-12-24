@@ -1,19 +1,22 @@
+from collections.abc import Sequence
+
 import pytest
 
+from conformly.constraints import Constraint, MaxLength
 from conformly.generator.orchestration import (
     generate_field,
     generate_invalid,
     generate_valid,
 )
 from conformly.generator.registry import _generators, register
-from conformly.specs import ConstraintSpec, FieldSpec, ModelSpec
+from conformly.specs import FieldSpec, ModelSpec
 
 
 class TestStringGenerator:
     def supports(self, field: FieldSpec) -> bool:
         return field.type is str
 
-    def generate_value(self, constraints: list[ConstraintSpec], valid: bool) -> str:
+    def generate_value(self, constraints: Sequence[Constraint], valid: bool) -> str:
         from conformly.generator.types.string import generate_value
 
         return generate_value(constraints, valid)
@@ -34,7 +37,7 @@ def fresh_registry():
 simple_string_field = FieldSpec(
     name="name",
     type=str,
-    constraints=[ConstraintSpec(constraint_type="max_length", value=40)],
+    constraints=[MaxLength(40)],
 )
 
 default_string_field = FieldSpec(name="city", type=str, default="Palo Alto")

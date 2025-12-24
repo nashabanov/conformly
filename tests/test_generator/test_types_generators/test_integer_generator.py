@@ -1,5 +1,14 @@
+from collections.abc import Sequence
+
 import pytest
 
+from conformly.constraints import (
+    Constraint,
+    GreaterOrEqual,
+    GreaterThan,
+    LessOrEqual,
+    LessThan,
+)
 from conformly.generator.types.integer import (
     Bounds,
     _calculate_max_offset,
@@ -8,140 +17,118 @@ from conformly.generator.types.integer import (
     generate_value,
     supports,
 )
-from conformly.specs import ConstraintSpec, FieldSpec
+from conformly.specs import FieldSpec
+
+DEFAULT_LOW = -(2**63)
+DEFAULT_HIGH = 2**63 - 1
+
 
 # ===== TESTS FOR _get_integer_valid_borders() =====
 
 
 @pytest.mark.parametrize(
-    "constraints_list,expected_low,expected_high",
+    "constraints, expected_low, expected_high",
     [
+        # Одиночные ограничения
         pytest.param(
-            [ConstraintSpec(constraint_type="gt", value=10)],
+            [GreaterThan(10)],
             11,
-            2**63 - 1,
+            DEFAULT_HIGH,
             id="single_gt",
         ),
         pytest.param(
-            [ConstraintSpec(constraint_type="ge", value=18)],
+            [GreaterOrEqual(18)],
             18,
-            2**63 - 1,
+            DEFAULT_HIGH,
             id="single_ge",
         ),
         pytest.param(
-            [ConstraintSpec(constraint_type="lt", value=66)],
-            -(2**63),
+            [LessThan(66)],
+            DEFAULT_LOW,
             65,
             id="single_lt",
         ),
         pytest.param(
-            [ConstraintSpec(constraint_type="le", value=100)],
-            -(2**63),
+            [LessOrEqual(100)],
+            DEFAULT_LOW,
             100,
             id="single_le",
         ),
+        # Комбинации ограничений
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="gt", value=10),
-                ConstraintSpec(constraint_type="lt", value=66),
-            ],
+            [GreaterThan(10), LessThan(66)],
             11,
             65,
             id="gt_and_lt",
         ),
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="ge", value=18),
-                ConstraintSpec(constraint_type="le", value=100),
-            ],
+            [GreaterOrEqual(18), LessOrEqual(100)],
             18,
             100,
             id="ge_and_le",
         ),
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="gt", value=10),
-                ConstraintSpec(constraint_type="le", value=66),
-            ],
+            [GreaterThan(10), LessOrEqual(66)],
             11,
             66,
             id="gt_and_le",
         ),
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="ge", value=18),
-                ConstraintSpec(constraint_type="lt", value=66),
-            ],
+            [GreaterOrEqual(18), LessThan(66)],
             18,
             65,
             id="ge_and_lt",
         ),
+        # Множественные ограничения одного типа
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="gt", value=5),
-                ConstraintSpec(constraint_type="gt", value=10),
-            ],
+            [GreaterThan(5), GreaterThan(10)],
             11,
-            2**63 - 1,
+            DEFAULT_HIGH,
             id="multiple_gt_takes_max",
         ),
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="ge", value=5),
-                ConstraintSpec(constraint_type="ge", value=10),
-            ],
+            [GreaterOrEqual(5), GreaterOrEqual(10)],
             10,
-            2**63 - 1,
+            DEFAULT_HIGH,
             id="multiple_ge_takes_max",
         ),
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="lt", value=100),
-                ConstraintSpec(constraint_type="lt", value=50),
-            ],
-            -(2**63),
+            [LessThan(100), LessThan(50)],
+            DEFAULT_LOW,
             49,
             id="multiple_lt_takes_min",
         ),
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="le", value=100),
-                ConstraintSpec(constraint_type="le", value=50),
-            ],
-            -(2**63),
+            [LessOrEqual(100), LessOrEqual(50)],
+            DEFAULT_LOW,
             50,
             id="multiple_le_takes_min",
         ),
+        # Пограничные случаи
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="gt", value=10),
-                ConstraintSpec(constraint_type="lt", value=12),
-            ],
+            [GreaterThan(10), LessThan(12)],
             11,
             11,
             id="boundaries_touch_valid",
         ),
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="ge", value=10),
-                ConstraintSpec(constraint_type="le", value=10),
-            ],
+            [GreaterOrEqual(10), LessOrEqual(10)],
             10,
             10,
             id="exact_value_ge_le",
         ),
         pytest.param(
             [],
-            -(2**63),
-            2**63 - 1,
+            DEFAULT_LOW,
+            DEFAULT_HIGH,
             id="no_constraints",
         ),
         pytest.param(
             [
-                ConstraintSpec(constraint_type="gt", value=5),
-                ConstraintSpec(constraint_type="ge", value=10),
-                ConstraintSpec(constraint_type="lt", value=100),
-                ConstraintSpec(constraint_type="le", value=50),
+                GreaterThan(5),
+                GreaterOrEqual(10),
+                LessThan(100),
+                LessOrEqual(50),
             ],
             10,
             50,
@@ -150,82 +137,64 @@ from conformly.specs import ConstraintSpec, FieldSpec
     ],
 )
 def test_get_integer_valid_borders(
-    constraints_list: list[ConstraintSpec], expected_low: int, expected_high: int
+    constraints: Sequence[Constraint], expected_low: int, expected_high: int
 ):
-    bounds = _get_integer_valid_borders(constraints_list)
+    bounds = _get_integer_valid_borders(constraints)
     assert bounds.low == expected_low
     assert bounds.high == expected_high
 
 
 @pytest.mark.parametrize(
-    "constraints,error_match",
+    "constraints, error_match",
     [
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="gt", value=100),
-                ConstraintSpec(constraint_type="lt", value=50),
-            ],
+            [GreaterThan(100), LessThan(50)],
             "Min value cannot be higher than max value",
             id="gt_contradicts_lt",
         ),
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="ge", value=100),
-                ConstraintSpec(constraint_type="le", value=50),
-            ],
+            [GreaterOrEqual(100), LessOrEqual(50)],
             "Min value cannot be higher than max value",
             id="ge_contradicts_le",
         ),
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="gt", value=10),
-                ConstraintSpec(constraint_type="le", value=10),
-            ],
+            [GreaterThan(10), LessOrEqual(10)],
             "Min value cannot be higher than max value",
             id="gt_contradicts_le_same_value",
         ),
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="ge", value=10),
-                ConstraintSpec(constraint_type="lt", value=10),
-            ],
+            [GreaterOrEqual(10), LessThan(10)],
             "Min value cannot be higher than max value",
             id="ge_contradicts_lt_same_value",
         ),
         pytest.param(
-            [
-                ConstraintSpec(constraint_type="gt", value=10),
-                ConstraintSpec(constraint_type="lt", value=11),
-            ],
+            [GreaterThan(10), LessThan(11)],
             "Min value cannot be higher than max value",
             id="gt_lt_adjacent_invalid",
         ),
     ],
 )
 def test_contradictory_constraints_raise_error(
-    constraints: list[ConstraintSpec], error_match: str
+    constraints: Sequence[Constraint], error_match: str
 ):
     with pytest.raises(ValueError, match=error_match):
         _get_integer_valid_borders(constraints)
 
 
 def test_extreme_values():
-    constraints = [ConstraintSpec(constraint_type="le", value=2**63 - 1)]
+    constraints = [LessOrEqual(2**63 - 1)]
     bounds = _get_integer_valid_borders(constraints)
     assert bounds.low == -(2**63)
     assert bounds.high == 2**63 - 1
 
-    constraints = [ConstraintSpec(constraint_type="ge", value=-(2**63))]
+    constraints = [GreaterOrEqual(-(2**63))]
     bounds = _get_integer_valid_borders(constraints)
     assert bounds.low == -(2**63)
     assert bounds.high == 2**63 - 1
 
 
 def test_zero_boundaries():
-    constraints = [
-        ConstraintSpec(constraint_type="gt", value=-1),
-        ConstraintSpec(constraint_type="lt", value=1),
-    ]
+    constraints = [GreaterThan(-1), LessThan(1)]
     bounds = _get_integer_valid_borders(constraints)
     assert bounds.low == 0
     assert bounds.high == 0
@@ -278,38 +247,26 @@ def test_generate_invalid_integer(bounds):
             )
 
 
-# ===== TESTS FOR generate() =====
+# ===== TESTS FOR generate_value() =====
 
 
 @pytest.mark.parametrize(
     "constraints, valid",
     [
         (
-            [
-                ConstraintSpec(constraint_type="ge", value=0),
-                ConstraintSpec(constraint_type="le", value=10),
-            ],
+            [GreaterOrEqual(0), LessOrEqual(10)],
             True,
         ),
         (
-            [
-                ConstraintSpec(constraint_type="gt", value=5),
-                ConstraintSpec(constraint_type="lt", value=15),
-            ],
+            [GreaterThan(5), LessThan(15)],
             True,
         ),
         (
-            [
-                ConstraintSpec(constraint_type="ge", value=0),
-                ConstraintSpec(constraint_type="le", value=10),
-            ],
+            [GreaterOrEqual(0), LessOrEqual(10)],
             False,
         ),
         (
-            [
-                ConstraintSpec(constraint_type="gt", value=5),
-                ConstraintSpec(constraint_type="lt", value=15),
-            ],
+            [GreaterThan(5), LessThan(15)],
             False,
         ),
     ],

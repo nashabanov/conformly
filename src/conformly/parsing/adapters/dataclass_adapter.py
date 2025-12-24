@@ -2,12 +2,10 @@ from dataclasses import MISSING, Field, fields, is_dataclass
 from types import UnionType
 from typing import Annotated, Any, Union, cast, get_args, get_origin, get_type_hints
 
-from conformly.specs import (
-    ConstraintSpec,
-    FieldSpec,
-    ModelSpec,
-)
-from conformly.specs.constraints import ALLOWED_CONSTRAINT_TYPE, ConstraintType
+from conformly.constraints import Constraint
+from conformly.constraints.mapping import create_constraint
+from conformly.constraints.types import ALLOWED_CONSTRAINT_TYPE, ConstraintType
+from conformly.specs import FieldSpec, ModelSpec
 from conformly.specs.field import _UNSET
 
 UNION_TYPES = (Union, UnionType)
@@ -76,14 +74,14 @@ def parse_defaults(field: Field[Any]) -> Any:
     return _UNSET
 
 
-def parse_constraints(field: Field[Any], field_type: Any) -> list[ConstraintSpec]:
+def parse_constraints(field: Field[Any], field_type: Any) -> list[Constraint]:
     return [
         *parse_annotated_constraints(field_type),
         *parse_metadata_constraints(field),
     ]
 
 
-def parse_annotated_constraints(field_type: Any) -> list[ConstraintSpec]:
+def parse_annotated_constraints(field_type: Any) -> list[Constraint]:
     if get_origin(field_type) is Annotated:
         args = get_args(field_type)
         metadata = args[1:]
@@ -99,7 +97,7 @@ def parse_annotated_constraints(field_type: Any) -> list[ConstraintSpec]:
     return []
 
 
-def parse_metadata_constraints(field: Field[Any]) -> list[ConstraintSpec]:
+def parse_metadata_constraints(field: Field[Any]) -> list[Constraint]:
     if not field.metadata:
         return []
 
@@ -110,7 +108,7 @@ def parse_metadata_constraints(field: Field[Any]) -> list[ConstraintSpec]:
 
         _validate_constraint_type(k)
 
-        constraint = ConstraintSpec(constraint_type=k, value=v)
+        constraint = create_constraint(constraint_type=k, value=v)
         constraints.append(constraint)
 
     return constraints
@@ -145,22 +143,22 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
         raise ValueError(f"Constraint {k!r} expects number, got {type(v).__name__}")
 
 
-def _metadata_to_constraints(metadata_item: Any) -> ConstraintSpec | None:
+def _metadata_to_constraints(metadata_item: Any) -> Constraint | None:
     match metadata_item:
-        case ConstraintSpec():
+        case Constraint():
             return metadata_item
         case str() if "=" in metadata_item:
             k, v = metadata_item.split("=", 1)
             k_validated = _validate_constraint_type(k)
             v_coerced = _coerce_constraint_value(k_validated, v)
-            return ConstraintSpec(k_validated, v_coerced)
+            return create_constraint(k_validated, v_coerced)
         case str():
             k_validated = _validate_constraint_type(metadata_item)
-            return ConstraintSpec(k_validated, True)
+            return create_constraint(k_validated, True)
         case {"type": k, "value": v}:
             k_validated = _validate_constraint_type(k)
             v_coerced = _coerce_constraint_value(k_validated, v)
-            return ConstraintSpec(k_validated, v_coerced)
+            return create_constraint(k_validated, v_coerced)
         case _:
             return None
 

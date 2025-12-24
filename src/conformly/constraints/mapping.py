@@ -9,8 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from .base import Constraint
-
-    from conformly.specs import ConstraintSpec, ConstraintType
+    from .types import ConstraintType
 
 CONSTRAINT_MAPPING: dict[ConstraintType, Callable[[Any], Constraint]] = {
     "gt": GreaterThan,
@@ -23,6 +22,15 @@ CONSTRAINT_MAPPING: dict[ConstraintType, Callable[[Any], Constraint]] = {
 }
 
 
-def constraint_from_spec(spec: ConstraintSpec) -> Constraint:
-    cls = CONSTRAINT_MAPPING[spec.constraint_type]
-    return cls(spec.value)
+def create_constraint(constraint_type: ConstraintType, value: Any) -> Constraint:
+    try:
+        cls = CONSTRAINT_MAPPING[constraint_type]
+    except KeyError:
+        raise ValueError(f"Unsupported constraint type: {constraint_type}")
+
+    try:
+        return cls(value)
+    except (TypeError, ValueError) as e:
+        raise ValueError(
+            f"Invalid value {value!r} for constraint {constraint_type}: {e!s}"
+        ) from e
