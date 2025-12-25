@@ -6,10 +6,18 @@ from random import choice, uniform
 import sys
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
+from conformly.constraints import (
+    Constraint,
+    GreaterOrEqual,
+    GreaterThan,
+    LessOrEqual,
+    LessThan,
+)
 
-    from conformly.specs import ConstraintSpec, FieldSpec
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from conformly.specs import FieldSpec
 
 
 # INFO: Текущее ограничение нет поддержки nan/inf в явном виде
@@ -17,7 +25,7 @@ def supports(field: FieldSpec) -> bool:
     return field.type is float
 
 
-def generate_value(constraints: list[ConstraintSpec], valid: bool) -> float:
+def generate_value(constraints: Sequence[Constraint], valid: bool) -> float:
     bounds = _get_float_valid_borders(constraints)
     if valid:
         low, high = bounds.low, bounds.high
@@ -46,20 +54,25 @@ def _generate_invalid_float(bounds: FBounds) -> float:
     return choice(strategies)()
 
 
-def _get_float_valid_borders(constraints: list[ConstraintSpec]) -> FBounds:
+def _get_float_valid_borders(constraints: Sequence[Constraint]) -> FBounds:
     low = -sys.float_info.max
     high = sys.float_info.max
 
-    for c in constraints:
-        v = float(c.value)
-        match c.constraint_type:
-            case "gt":
+    for constraint in constraints:
+        if not isinstance(
+            constraint, (GreaterThan, GreaterOrEqual, LessThan, LessOrEqual)
+        ):
+            continue
+
+        v = float(constraint.value)
+        match constraint:
+            case GreaterThan():
                 low = max(low, math.nextafter(v, math.inf))
-            case "ge":
+            case GreaterOrEqual():
                 low = max(low, v)
-            case "lt":
+            case LessThan():
                 high = min(high, math.nextafter(v, -math.inf))
-            case "le":
+            case LessOrEqual():
                 high = min(high, v)
 
     if low > high:

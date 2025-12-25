@@ -5,6 +5,7 @@ from typing import Annotated, Any, ClassVar, get_args, get_origin
 
 import pytest
 
+from conformly.constraints import Constraint, MinLength, Pattern
 from conformly.parsing.adapters.dataclass_adapter import (
     _metadata_to_constraints,
     is_nullable,
@@ -21,7 +22,7 @@ from conformly.parsing.adapters.dataclass_adapter import (
     unwrap_annotated,
 )
 from conformly.specs import FieldSpec, ModelSpec
-from conformly.specs.field import _UNSET, ConstraintSpec
+from conformly.specs.field import _UNSET
 
 
 class NotDataclass:
@@ -296,7 +297,7 @@ def test_parse_annotated_constraints_exists():
     constraints = parse_annotated_constraints(Annotated[int, "ge=0", "le=150"])
     assert len(constraints) == 2
     for c in constraints:
-        assert isinstance(c, ConstraintSpec)
+        assert isinstance(c, Constraint)
 
 
 def test_parse_annotated_constraints_empty():
@@ -319,8 +320,8 @@ def test_parse_annotated_constraints_dict_format_valid():
         Annotated[str, {"type": "pattern", "value": "^\\w+$"}]
     )
     assert len(constraints) == 1
-    assert constraints[0].constraint_type == "pattern"
-    assert constraints[0].value == "^\\w+$"
+    assert isinstance(constraints[0], Pattern)
+    assert constraints[0].regex == "^\\w+$"
 
 
 def test_parse_annotated_constraints_dict_format_invalid_key():
@@ -336,7 +337,7 @@ def test_parse_metadata_constraints_exists():
     constraints = parse_metadata_constraints(f)
     assert len(constraints) > 0
     for c in constraints:
-        assert isinstance(c, ConstraintSpec)
+        assert isinstance(c, Constraint)
 
 
 def test_parse_metadata_constraints_empty():
@@ -363,7 +364,7 @@ def test_parse_metadata_constraints_ignored_private():
     f = fields(PrivateMeta)[0]
     constraints = parse_metadata_constraints(f)
     assert len(constraints) == 1
-    assert constraints[0].constraint_type == "min_length"
+    assert isinstance(constraints[0], MinLength)
 
 
 def test_parse_metadata_constraints_invalid_constraint_type():
@@ -624,7 +625,7 @@ def test_parse_get_optional_fields():
 
 
 def test_metadata_to_constraints_constraint_spec_direct():
-    cs = ConstraintSpec("min_length", 0)
+    cs = MinLength(0)
     result = _metadata_to_constraints(cs)
     assert result is cs
 

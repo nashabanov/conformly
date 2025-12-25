@@ -4,22 +4,28 @@ import re
 from typing import Annotated
 
 from conformly import case, cases
-from conformly.specs import ConstraintSpec
+from conformly.constraints import (
+    GreaterOrEqual,
+    GreaterThan,
+    LessOrEqual,
+    LessThan,
+    MaxLength,
+    MinLength,
+    Pattern,
+)
 
 
 @dataclass
 class User:
     """Social media user"""
 
-    username: Annotated[str, ConstraintSpec("min_length", 3)]
-    full_name: Annotated[
-        str, ConstraintSpec("min_length", 2), ConstraintSpec("max_length", 100)
-    ]
+    username: Annotated[str, MinLength(3)]
+    full_name: Annotated[str, MinLength(2), MaxLength(100)]
     email: Annotated[
         str,
-        ConstraintSpec("pattern", r"^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"),
+        Pattern(r"^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"),
     ]
-    bio: Annotated[str, ConstraintSpec("max_length", 500)]
+    bio: Annotated[str, MaxLength(500)]
 
 
 @dataclass
@@ -48,45 +54,37 @@ class Product:
 class CreateUserRequest:
     """User registration request"""
 
-    age: Annotated[int, ConstraintSpec("ge", 18), ConstraintSpec("le", 120)]
-    email: Annotated[str, ConstraintSpec("pattern", r"^[^\s@]+@[^\s@]+\.[^\s@]+$")]
-    password: Annotated[
-        str, ConstraintSpec("min_length", 8), ConstraintSpec("max_length", 128)
-    ]
-    nickname: Annotated[
-        str, ConstraintSpec("min_length", 3), ConstraintSpec("max_length", 30)
-    ]
+    age: Annotated[int, GreaterOrEqual(18), LessThan(120)]
+    email: Annotated[str, Pattern(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")]
+    password: Annotated[str, MinLength(8), MaxLength(128)]
+    nickname: Annotated[str, MinLength(3), MaxLength(30)]
 
 
 @dataclass
 class OrderItem:
     """Line item in an order"""
 
-    product_id: Annotated[int, ConstraintSpec("gt", 0)]
-    quantity: Annotated[int, ConstraintSpec("ge", 1), ConstraintSpec("le", 1000)]
-    unit_price: Annotated[float, ConstraintSpec("gt", 0)]
+    product_id: Annotated[int, GreaterThan(0)]
+    quantity: Annotated[int, GreaterOrEqual(1), LessOrEqual(1000)]
+    unit_price: Annotated[float, GreaterThan(0)]
 
 
 @dataclass
 class Transaction:
     """Bank transfer"""
 
-    account_id: Annotated[str, ConstraintSpec("pattern", r"^ACC[0-9]{10}$")]
-    amount: Annotated[float, ConstraintSpec("gt", 0), ConstraintSpec("le", 1_000_000)]
-    description: Annotated[
-        str, ConstraintSpec("min_length", 5), ConstraintSpec("max_length", 256)
-    ]
-    reference_code: Annotated[str, ConstraintSpec("pattern", r"^[A-Z0-9]{12}$")]
+    account_id: Annotated[str, Pattern(r"^ACC[0-9]{10}$")]
+    amount: Annotated[float, GreaterThan(0), LessOrEqual(1_000_000)]
+    description: Annotated[str, MinLength(5), MaxLength(256)]
+    reference_code: Annotated[str, Pattern(r"^[A-Z0-9]{12}$")]
 
 
 @dataclass
 class Article:
-    title: Annotated[
-        str, ConstraintSpec("min_length", 5), ConstraintSpec("max_length", 300)
-    ]
+    title: Annotated[str, MinLength(5), MaxLength(300)]
     author: str = field(metadata={"min_length": 2, "max_length": 100})
     content: Annotated[str, "min_length=50"]
-    publish_date: Annotated[int, ConstraintSpec("ge", 0)]
+    publish_date: Annotated[int, GreaterOrEqual(0)]
 
 
 class TestUserModel:

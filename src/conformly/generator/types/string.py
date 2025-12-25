@@ -1,18 +1,19 @@
+from collections.abc import Sequence
 import random
 import re
 import string
-from typing import Any
 
 import rstr
 
-from conformly.specs import ConstraintSpec, FieldSpec
+from conformly.constraints import Constraint, MaxLength, MinLength, Pattern
+from conformly.specs import FieldSpec
 
 
 def supports(field: FieldSpec) -> bool:
     return field.type is str
 
 
-def generate_value(constraints: list[ConstraintSpec], valid: bool) -> str:
+def generate_value(constraints: Sequence[Constraint], valid: bool) -> str:
     return (
         _generate_valid_string(constraints)
         if valid
@@ -20,10 +21,10 @@ def generate_value(constraints: list[ConstraintSpec], valid: bool) -> str:
     )
 
 
-def _generate_valid_string(constraints: list[ConstraintSpec]) -> str:
-    min_len = get_constraint(constraints, "min_length")
-    max_len = get_constraint(constraints, "max_length")
-    pattern = get_constraint(constraints, "pattern")
+def _generate_valid_string(constraints: Sequence[Constraint]) -> str:
+    min_len = _get_min_length(constraints)
+    max_len = _get_max_length(constraints)
+    pattern = _get_pattern(constraints)
 
     if pattern:
         if max_len is None and min_len is None:
@@ -34,26 +35,38 @@ def _generate_valid_string(constraints: list[ConstraintSpec]) -> str:
     return _random_string_with_length(min_len, max_len)
 
 
-def _generate_invalid_string(constraints: list[ConstraintSpec]) -> str:
-    if min_length := get_constraint(constraints, "min_length"):
+def _generate_invalid_string(constraints: Sequence[Constraint]) -> str:
+    if min_length := _get_min_length(constraints):
         return _random_string_fixed_length(min_length - 1)
 
-    if max_length := get_constraint(constraints, "max_length"):
+    if max_length := _get_max_length(constraints):
         return _random_string_fixed_length(max_length + 1)
 
-    if pattern := get_constraint(constraints, "pattern"):
+    if pattern := _get_pattern(constraints):
         valid_example = rstr.xeger(pattern)
         return _invert_pattern_string(valid_example, pattern)
 
     return "INVALID"
 
 
-def get_constraint(
-    constraints: list[ConstraintSpec], constraint_type: str
-) -> Any | None:
+def _get_min_length(constraints: Sequence[Constraint]) -> int | None:
     for c in constraints:
-        if c.constraint_type == constraint_type:
+        if isinstance(c, MinLength):
             return c.value
+    return None
+
+
+def _get_max_length(constraints: Sequence[Constraint]) -> int | None:
+    for c in constraints:
+        if isinstance(c, MaxLength):
+            return c.value
+    return None
+
+
+def _get_pattern(constraints: Sequence[Constraint]) -> str | None:
+    for c in constraints:
+        if isinstance(c, Pattern):
+            return c.regex
     return None
 
 

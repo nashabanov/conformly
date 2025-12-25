@@ -1,6 +1,8 @@
+from collections.abc import Sequence
 from typing import Any, Protocol
 
-from conformly.specs.field import ConstraintSpec, FieldSpec
+from conformly.constraints import Constraint
+from conformly.specs.field import FieldSpec
 
 
 class TypeGeneratorProtocol(Protocol):
@@ -10,6 +12,6 @@ class TypeGeneratorProtocol(Protocol):
         """Return True if generator returns with type"""
         ...
 
-    def generate_value(self, constraints: list[ConstraintSpec], valid: bool) -> Any:
+    def generate_value(self, constraints: Sequence[Constraint], valid: bool) -> Any:
         """Return valid or invalid value of supported type based on constraints"""
         ...

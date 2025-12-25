@@ -2,6 +2,7 @@ import re
 
 import pytest
 
+from conformly.constraints.string import MaxLength, MinLength, Pattern
 from conformly.generator.types.string import (
     _generate_invalid_string,
     _generate_valid_string,
@@ -10,7 +11,7 @@ from conformly.generator.types.string import (
     generate_value,
     supports,
 )
-from conformly.specs.field import ConstraintSpec, FieldSpec
+from conformly.specs.field import FieldSpec
 
 
 def test_random_string_default():
@@ -128,22 +129,22 @@ def test_generate_valid_no_constraints():
 
 
 def test_generate_valid_min_length_only():
-    constraints = [ConstraintSpec("min_length", 8)]
+    constraints = [MinLength(8)]
     result = _generate_valid_string(constraints)
     assert len(result) >= 8
 
 
 def test_generate_valid_pattern_only():
-    constraints = [ConstraintSpec("pattern", r"[A-Z]{3}")]
+    constraints = [Pattern(r"[A-Z]{3}")]
     result = _generate_valid_string(constraints)
     assert re.fullmatch(r"[A-Z]{3}", result)
 
 
 def test_generate_valid_all_constraints():
     constraints = [
-        ConstraintSpec("min_length", 6),
-        ConstraintSpec("max_length", 10),
-        ConstraintSpec("pattern", r"[a-z]{5,12}"),
+        MinLength(6),
+        MaxLength(10),
+        Pattern(r"[a-z]{5,12}"),
     ]
     result = _generate_valid_string(constraints)
     assert 6 <= len(result) <= 10
@@ -151,19 +152,19 @@ def test_generate_valid_all_constraints():
 
 
 def test_generate_invalid_min_length_violation():
-    constraints = [ConstraintSpec("min_length", 5)]
+    constraints = [MinLength(5)]
     result = _generate_invalid_string(constraints)
     assert len(result) == 4  # 5 - 1
 
 
 def test_generate_invalid_max_length_violation():
-    constraints = [ConstraintSpec("max_length", 3)]
+    constraints = [MaxLength(3)]
     result = _generate_invalid_string(constraints)
     assert len(result) == 4  # 3 + 1
 
 
 def test_generate_invalid_pattern_violation():
-    constraints = [ConstraintSpec("pattern", r"[a-z]{3}")]
+    constraints = [Pattern(r"[a-z]{3}")]
     result = _generate_invalid_string(constraints)
     assert not re.fullmatch(r"[a-z]{3}", result)
 
@@ -174,32 +175,32 @@ def test_generate_invalid_no_constraints():
 
 
 def test_generate_invalid_precedence_min_over_max():
-    constraints = [ConstraintSpec("min_length", 5), ConstraintSpec("max_length", 10)]
+    constraints = [MinLength(5), MaxLength(10)]
     result = _generate_invalid_string(constraints)
     assert len(result) == 4
     assert not (len(result) >= 5)
 
 
 def test_generate_invalid_precedence_max_when_no_min():
-    constraints = [ConstraintSpec("max_length", 5)]
+    constraints = [MaxLength(5)]
     result = _generate_invalid_string(constraints)
     assert len(result) == 6
 
 
 def test_generate_invalid_pattern_only():
-    constraints = [ConstraintSpec("pattern", r"\d{4}")]
+    constraints = [Pattern(r"\d{4}")]
     result = _generate_invalid_string(constraints)
     assert not re.fullmatch(r"\d{4}", result)
 
 
 def test_generate_random_string_valid():
-    constraints = [ConstraintSpec("min_length", 3)]
+    constraints = [MinLength(3)]
     result = generate_value(constraints, valid=True)
     assert len(result) >= 3
 
 
 def test_generate_random_string_invalid():
-    constraints = [ConstraintSpec("max_length", 2)]
+    constraints = [MaxLength(2)]
     result = generate_value(constraints, valid=False)
     assert len(result) > 2
 
