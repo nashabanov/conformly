@@ -1,7 +1,6 @@
 from collections.abc import Callable
 from dataclasses import InitVar, dataclass, field, fields
-from types import UnionType
-from typing import Annotated, Any, ClassVar, get_args, get_origin
+from typing import Annotated, ClassVar, Optional, Union
 
 import pytest
 
@@ -19,7 +18,7 @@ from conformly.parsing.adapters.dataclass_adapter import (
     parse_name,
     resolve_type,
     supports,
-    unwrap_annotated,
+    unwrap_base_type,
 )
 from conformly.specs import FieldSpec, ModelSpec
 from conformly.specs.field import _UNSET
@@ -122,44 +121,49 @@ def test_resolve_type_missing_field():
         resolve_type(type_hints, "missing_field")
 
 
-# ====== TESTS FOR resolve_annotated() =====
+# ====== TESTS FOR unwrap_base_type() =====
 
 
-def test_unwrap_annotated():
-    type_hints = Annotated[int, "ge=0"]
-    field_type = unwrap_annotated(type_hints)
-    assert field_type is int
+def test_unwrap_base_type_plain():
+    assert unwrap_base_type(int) is int
+    assert unwrap_base_type(DummyDataclass) is DummyDataclass
 
 
-def test_unwrap_not_annotated():
-    assert unwrap_annotated(int) is int
+def test_unwrap_base_type_optional():
+    assert unwrap_base_type(Optional[int]) is int  # noqa: UP045
+    assert unwrap_base_type(Optional[DummyDataclass]) is DummyDataclass  # noqa: UP045
 
 
-def test_nested_annotated():
-    nested = Annotated[Annotated[str, "inner"], "outer"]
-    assert unwrap_annotated(nested) is str
+def test_unwrap_base_type_union_with_none():
+    assert unwrap_base_type(DummyDataclass | None) is DummyDataclass
+    assert unwrap_base_type(Union[int, None]) is int  # noqa: UP007
 
 
-def test_annotated_optional():
-    type_hint = Annotated[str | None, "ge=0"]
-    result = unwrap_annotated(type_hint)
-    assert get_origin(result) is UnionType
-    assert get_args(result) == (str, type(None))
+def test_unwrap_base_type_annotated():
+    annotated = Annotated[DummyDataclass, "metadata"]
+    assert unwrap_base_type(annotated) is DummyDataclass
 
 
-def test_annotated_generic():
-    type_hint = Annotated[list[str], "min_length=1"]
-    result = unwrap_annotated(type_hint)
-    assert get_origin(result) is list
-    assert get_args(result) == (str,)
+def test_unwrap_base_type_annotated_optional():
+    annotated = Annotated[int | None, "metadata"]
+    assert unwrap_base_type(annotated) is int
 
 
-def test_none_type():
-    assert unwrap_annotated(type(None)) is type(None)
+def test_unwrap_base_type_annotated_union_with_none():
+    annotated = Annotated[int | None, "metadata"]
+    assert unwrap_base_type(annotated) is int
 
 
-def test_any_type():
-    assert unwrap_annotated(Any) is Any
+def test_unwrap_base_type_invalid_union():
+    with pytest.raises(TypeError):
+        unwrap_base_type(int | str)
+
+    with pytest.raises(TypeError):
+        unwrap_base_type(int | DummyDataclass | None)
+
+
+def test_unwrap_base_type_only_none():
+    assert unwrap_base_type(None) is None
 
 
 # ====== TESTS FOR is_nullable() ======
