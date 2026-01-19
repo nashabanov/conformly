@@ -4,7 +4,14 @@ from typing import Annotated, ClassVar, Optional, Union
 
 import pytest
 
-from conformly.constraints import Constraint, MinLength, Pattern
+from conformly.constraints import (
+    Constraint,
+    GreaterOrEqual,
+    LessOrEqual,
+    MinLength,
+    Pattern,
+)
+from conformly.constraints.string import MaxLength
 from conformly.parsing.adapters.dataclass_adapter import (
     _metadata_to_constraints,
     is_nullable,
@@ -637,3 +644,63 @@ def test_metadata_to_constraints_constraint_spec_direct():
 def test_metadata_to_constraints_unsupported_type():
     assert _metadata_to_constraints(42) is None
     assert _metadata_to_constraints([1, 2]) is None
+
+
+# ===== Nested models =====
+Name = Annotated[str, MinLength(3), MaxLength(50)]
+
+
+@dataclass
+class Permissions:
+    name: Name
+    id: int
+
+
+@dataclass
+class Role:
+    name: Name
+    id: int
+    permissions: Permissions
+
+
+@dataclass
+class Group:
+    name: Name
+    id: int
+
+
+@dataclass
+class User:
+    id: int
+    name: Name
+    age: Annotated[int, GreaterOrEqual(18), LessOrEqual(120)]
+    email: Annotated[str, Pattern("^\\w+@\\w+\\.\\w+$")]
+    role: Role
+    group: Group
+
+
+def test_parse_nested_models():
+    spec = parse(User)
+
+    assert spec.name == "User"
+    assert len(spec.fields) == 6
+
+    role_field = next(f for f in spec.fields if f.name == "role")
+    assert role_field.nested_model is not None
+    assert role_field.nested_model.name == "Role"
+
+    permissions_field = next(
+        f for f in role_field.nested_model.fields if f.name == "permissions"
+    )
+    assert permissions_field.nested_model is not None
+    assert permissions_field.nested_model.name == "Permissions"
+
+    name_field = next(f for f in spec.fields if f.name == "name")
+    assert len(name_field.constraints) == 2
+    assert any(isinstance(c, MinLength) for c in name_field.constraints)
+
+
+def test_parse_is_consistent():
+    spec1 = parse(User)
+    spec2 = parse(User)
+    assert repr(spec1) == repr(spec2)
