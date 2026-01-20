@@ -41,26 +41,54 @@ def resolve_type(type_hints: dict[str, Any], field_name: str) -> Any:
 
 
 def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
+    base_type = unwrap_base_type(field_type)
+
+    nested_model = None
+    if supports(base_type):
+        nested_model = parse(base_type)
+
     return FieldSpec(
         name=field.name,
-        type=unwrap_annotated(field_type),
+        type=base_type,
         constraints=parse_constraints(field, field_type),
         default=parse_defaults(field),
         nullable=is_nullable(field_type),
+        nested_model=nested_model,
     )
 
 
-def unwrap_annotated(field_type: Any) -> Any:
-    if get_origin(field_type) is Annotated:
-        return get_args(field_type)[0]
-    return field_type
+def unwrap_base_type(field_type: Any) -> Any:
+    t = field_type
+
+    if get_origin(t) is Annotated:
+        t = get_args(t)[0]
+
+    if get_origin(t) in UNION_TYPES:
+        args = get_args(t)
+        non_none = [a for a in args if a is not type(None)]
+        if len(non_none) == 1 and len(args) >= 2:
+            t = args[0]
+        else:
+            raise TypeError(
+                f"Invalid field type: {field_type!r}. "
+                "Only Optional[T], Union[T, None] is supported. "
+                f"Got Union[{', '.join(a.__name__ for a in non_none)}]"
+            )
+
+    return t
 
 
 def is_nullable(field_type: Any) -> bool:
-    unwrapped = unwrap_annotated(field_type)
-    origin = get_origin(unwrapped)
+    t = field_type
+
+    if get_origin(t) is Annotated:
+        t = get_args(t)[0]
+
+    origin = get_origin(t)
+
     if origin in UNION_TYPES:
-        return type(None) in get_args(unwrapped)
+        return type(None) in get_args(t)
+
     return False
 
 

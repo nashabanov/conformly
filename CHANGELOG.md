@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.3.0] - 2025-01-21
+
+### Added
+- Support for **nested_models** (tree structures) in parsing and generation
+- Support for selecting nested field using dotted path syntax
+  (e.g. `strategy="user.profile.email"`)
+
+### Changed
+- Field selection strategies now operate over the full tree of constrained fields (DFS order)
+
+### Fixed
+- Fixed incorrect invalid value generation in `int` and `float` generators when only one bound was present
+
+
 ## [0.2.0] - 2025-12-25
 
 ### Added
@@ -24,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Deprecated string only constraint syntax in internal logic (still supported for users)
+
 
 ## [0.1.0] - 2025-12-18
 

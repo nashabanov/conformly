@@ -206,11 +206,11 @@ def test_zero_boundaries():
 @pytest.mark.parametrize(
     "bounds,expected_result",
     [
-        pytest.param(Bounds(0, 10), 100),
-        pytest.param(Bounds(5, 5), 100),
-        pytest.param(Bounds(0, 600000), 1000000),
-        pytest.param(Bounds(-100, -50), 100),
-        pytest.param(Bounds(-50000, 40000), 180000),
+        pytest.param(Bounds(0, 10, True, True), 100),
+        pytest.param(Bounds(5, 5, True, True), 100),
+        pytest.param(Bounds(0, 600000, True, True), 1000000),
+        pytest.param(Bounds(-100, -50, True, True), 100),
+        pytest.param(Bounds(-50000, 40000, True, True), 180000),
     ],
 )
 def test_calculate_max_offset(bounds, expected_result):
@@ -223,11 +223,11 @@ def test_calculate_max_offset(bounds, expected_result):
 @pytest.mark.parametrize(
     "bounds",
     [
-        pytest.param(Bounds(0, 10)),
-        pytest.param(Bounds(5, 5)),
-        pytest.param(Bounds(-100, -50)),
-        pytest.param(Bounds(1000, 5000)),
-        pytest.param(Bounds(-50000, 40000)),
+        pytest.param(Bounds(0, 10, True, True)),
+        pytest.param(Bounds(5, 5, True, True)),
+        pytest.param(Bounds(-100, -50, True, True)),
+        pytest.param(Bounds(1000, 5000, True, True)),
+        pytest.param(Bounds(-50000, 40000, True, True)),
     ],
 )
 def test_generate_invalid_integer(bounds):

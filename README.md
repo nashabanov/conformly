@@ -69,7 +69,7 @@ Define a model:
 from dataclasses import dataclass, field
 from typing import Annotated, Optional
 from conformly import case, cases
-from conformly.constraints import MinLength, Pattern, GreaterOrEqual, LessOrEqual
+from conformly.constraints import MinLength, MaxLength, Pattern, GreaterOrEqual, LessOrEqual
 
 Username = Annotated[
     str,
@@ -118,7 +118,7 @@ case(Model, ...) # single generated object
 cases(Model, ...) # list of generated objects
 ```
 `strategy` values:
-- `<field_name>` - target specific field for invalidation
+- `<field_name>` - target specific field for invalidation (for nested fields using dot syntax `"profile.name"`)
 - `"random"` - choose a random field/constraint to violate
 - `"all"` - (for `cases`) produce all minimal invalid variations for the model
 - `"first"` -violate the first constrained field (for `case`) or take the first N constrained fields (for `cases`)
@@ -159,6 +159,62 @@ for schema-driven testing and negative case generation.
 for _ in range(500):
     invalid = case(Model, valid=False, strategy="random")
     assert validate(invalid) is False  # Should always reject
+```
+
+## Nested Models
+`Conformly` supports nested models represented as tree structures
+(e.g. dataclasses containing other dataclasses).
+
+> Cyclic references between models are not supported
+
+Constraints defined on nested fields are discovered recursively and
+can be used for both valid and invalid data generation.
+
+### Model Declaration
+```python
+from dataclasses import dataclass
+from typing import Annotated
+
+from conformly.constraints import MinLength, GreaterOrEqual, Pattern
+
+@dataclass
+class Profile:
+    email: Annotated[str, Pattern(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")]
+    phone: Annotated[str, Pattern(r"^\+[1-9]\d{1,14}$")]
+
+
+@dataclass
+class User:
+    name: Annotated[str, MinLength(3)]
+    age: Annotated[int, GreaterOrEqual(18)]
+    profile: Profile
+```
+
+### Generation Example
+```python
+from conformly import case
+
+valid_data = case(User, valid=True)
+print(valid_data)
+# {
+#     "name": "validname",
+#     "age": 25,
+#     "profile": {
+#            "email": "some@email.com",
+#            "phone": "+12025550123"
+#         }
+# }
+
+invalid_data_by_field = case(User, valid=False, strategy="profile.email")
+print(invalid_data_by_field)
+# {
+#     "name": "validname",
+#     "age": 25,
+#     "profile": {
+#            "email": "nonemailstring",
+#            "phone": "+12025550123"
+#         }
+# }
 ```
 
 ## Supported Constraints
@@ -265,7 +321,6 @@ uv run -m twine check dist/*
 
 ## Roadmap
 
-- **Nested data models**
 - **Deterministic invalid generation** - explicitly select which constraint to violate
 - **Better regex invalidation** - guarantee that invalid strings don't match patterns
 - **More adapters** - pydantic, TypedDict, attrs support

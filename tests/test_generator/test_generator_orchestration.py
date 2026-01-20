@@ -53,6 +53,50 @@ simple_model = ModelSpec(
 )
 
 
+address_spec = ModelSpec(
+    name="Address",
+    type="dataclass",
+    fields=[
+        FieldSpec(name="city", type=str, constraints=[MaxLength(30)]),
+        FieldSpec(name="zip", type=str, constraints=[MaxLength(20)]),
+    ],
+)
+
+profile_spec = ModelSpec(
+    name="Profile",
+    type="dataclass",
+    fields=[
+        FieldSpec(
+            name="email",
+            type=str,
+            constraints=[MaxLength(30)],
+        ),
+        FieldSpec(
+            name="address",
+            type=object,
+            nested_model=address_spec,
+        ),
+    ],
+)
+
+model_with_nested = ModelSpec(
+    name="User",
+    type="dataclass",
+    fields=[
+        FieldSpec(
+            name="username",
+            type=str,
+            constraints=[MaxLength(20)],
+        ),
+        FieldSpec(
+            name="profile",
+            type=object,
+            nested_model=profile_spec,
+        ),
+    ],
+)
+
+
 # ===== TESTS FOR generate_field() =====
 
 
@@ -92,7 +136,7 @@ def test_generate_field_unsupported_type(field_type):
 
 
 def test_generate_invalid_simple_model():
-    invalid_item = generate_invalid(simple_model, 0)  # нарушаем поле 0 ("name")
+    invalid_item = generate_invalid(simple_model, (0,))  # нарушаем поле 0 ("name")
     assert isinstance(invalid_item, dict)
     assert isinstance(invalid_item["name"], str)
     assert len(invalid_item["name"]) > 40
@@ -100,12 +144,23 @@ def test_generate_invalid_simple_model():
 
 
 def test_generate_invalid_skipping_fields_without_constraint():
-    # Поле 1 ("city") не имеет constraints → должно остаться валидным
-    invalid_item = generate_invalid(simple_model, 1)
-    assert isinstance(invalid_item, dict)
-    assert isinstance(invalid_item["name"], str)
-    assert len(invalid_item["name"]) <= 40  # не нарушено
-    assert invalid_item["city"] == "Palo Alto"
+    with pytest.raises(ValueError):
+        generate_invalid(simple_model, (1,))
+
+
+def test_generate_invalid_nested_top_level():
+    invalid_item = generate_invalid(model_with_nested, (0,))
+    assert len(invalid_item["username"]) > 20
+
+
+def test_generate_invalid_nested():
+    invalid_item = generate_invalid(model_with_nested, (1, 0))
+    assert len(invalid_item["profile"]["email"]) > 30
+
+
+def test_generate_invalid_deep_nested():
+    invalid_item = generate_invalid(model_with_nested, (1, 1, 1))
+    assert len(invalid_item["profile"]["address"]["zip"]) > 20
 
 
 # ===== TEST FOR generate_valid() =====
@@ -117,3 +172,13 @@ def test_generate_valid_simple_model():
     assert isinstance(valid_item["name"], str)
     assert len(valid_item["name"]) <= 40
     assert valid_item["city"] == "Palo Alto"
+
+
+def test_generate_valid_nested_model():
+    valid_item = generate_valid(model_with_nested)
+    assert isinstance(valid_item, dict)
+    assert isinstance(valid_item["profile"], dict)
+    assert isinstance(valid_item["profile"]["address"], dict)
+    assert isinstance(valid_item["profile"]["address"]["city"], str)
+    assert len(valid_item["profile"]["address"]["city"]) <= 30
+    assert len(valid_item["username"]) <= 20
