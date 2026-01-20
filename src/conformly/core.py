@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from .generator import generate_invalid, generate_valid
 from .parsing import parse_model
-from .specs import ModelSpec
+from .specs import FieldPath, ModelSpec
 
 CaseStrategy = Literal["first", "random"] | str
 CasesStrategy = Literal["first", "random", "all"] | str
@@ -15,54 +15,68 @@ def _ensure_model_or_spec(model_or_spec: ModelSpec | type) -> ModelSpec:
     return model_or_spec
 
 
+def _gather_constrained_paths(spec: ModelSpec) -> list[tuple[FieldPath, str]]:
+    result: list[tuple[FieldPath, str]] = []
+
+    def dfs(current: ModelSpec, prefix: FieldPath, names: list[str]):
+        for i, field in enumerate(current.fields):
+            path = (*prefix, i)
+            dotted = ".".join([*names, field.name])
+
+            if field.constraints:
+                result.append((path, dotted))
+
+            if field.nested_model is not None:
+                dfs(field.nested_model, path, [*names, field.name])
+
+    dfs(spec, (), [])
+    return result
+
+
 def _select_violation_fields(
     spec: ModelSpec,
     *,
     strategy: CasesStrategy,
     allow_all: bool,
     count: int = 1,
-) -> list[int]:
-    constrained_fields = [
-        (i, f.name) for i, f in enumerate(spec.fields) if f.constraints
-    ]
+) -> list[FieldPath]:
+    constrained_fields = _gather_constrained_paths(spec)
     if not constrained_fields:
         raise ValueError("Cannot generate invalid case(s): no fields have constraints")
 
-    field_to_index = {name: i for i, name in constrained_fields}
-    all_indices = [i for i, _ in constrained_fields]
+    name_to_path = {name: path for path, name in constrained_fields}
+    all_paths = [path for path, _ in constrained_fields]
 
     if strategy not in ("all", "random", "first"):
-        field_name = strategy
-        if field_name not in field_to_index:
-            available = list(field_to_index.keys())
+        if strategy not in name_to_path:
             raise ValueError(
-                f"Field '{field_name}' not found or has no constraints. "
-                f"Available constrained fields: {available}"
+                f"Field '{strategy}' not found or has no constraints. "
+                f"Available constrained fields: {list(name_to_path.keys())}"
             )
-        return [field_to_index[field_name]]
+        return [name_to_path[strategy]]
 
     if strategy == "all":
         if not allow_all:
             raise ValueError(
                 "'all' strategy is only allowed in 'cases()', not 'case()'"
             )
-        return all_indices
+        return [path for path, _ in constrained_fields]
 
     if strategy == "first":
-        if count > len(all_indices):
+        if count > len(all_paths):
             raise ValueError(
                 f"Requested {count} cases, but only "
-                f"{len(all_indices)} constrained fields available"
+                f"{len(all_paths)} constrained fields available"
             )
-        return all_indices[:count]
+        return all_paths[:count]
 
     if strategy == "random":
-        if count > len(all_indices):
+        if count > len(all_paths):
             raise ValueError(
                 f"Cannot select {count} random fields from "
-                f"{len(all_indices)} constrained fields"
+                f"{len(all_paths)} constrained fields"
             )
-        return sample(all_indices, k=count)
+        return sample(all_paths, k=count)
 
     raise AssertionError(f"Unhandled strategy: {strategy!r}")
 
@@ -83,7 +97,8 @@ def case(
         strategy: How to choose which field to violate when valid=False.
                - "first": violate the first constrained field (default)
                - "random": violate a random constrained field
-               - "field_name": violate a specific field (e.g. strategy="email")
+               - "field_name": violate a specific field
+                 (use dotted paths for nested fields e.g. strategy="user.email")
 
     Returns:
         A single dictionary representing the instance.
@@ -103,10 +118,8 @@ def case(
             "'all' strategy is not supported in 'case()' — use 'cases()' instead"
         )
 
-    indices = _select_violation_fields(
-        spec, strategy=strategy, allow_all=False, count=1
-    )
-    return generate_invalid(spec, indices[0])
+    paths = _select_violation_fields(spec, strategy=strategy, allow_all=False, count=1)
+    return generate_invalid(spec, paths[0])
 
 
 # ===== cases =====
@@ -128,6 +141,7 @@ def cases(
                - "random": take N random constrained fields
                - "all": generate one invalid case per constrained field (ignores count)
                - "field_name": generate one case violating a specific field
+                 (use dotted paths for nested fields e.g. strategy="user.email")
         count: Number of cases to generate (ignored if strategy="all").
 
     Returns:
@@ -147,16 +161,16 @@ def cases(
         return [generate_valid(spec) for _ in range(count)]
 
     if strategy == "all":
-        indices = _select_violation_fields(spec, strategy="all", allow_all=True)
-        return [generate_invalid(spec, i) for i in indices]
+        paths = _select_violation_fields(spec, strategy="all", allow_all=True)
+        return [generate_invalid(spec, p) for p in paths]
 
     if isinstance(strategy, str) and strategy not in ("first", "random"):
-        indices = _select_violation_fields(
+        paths = _select_violation_fields(
             spec, strategy=strategy, allow_all=False, count=1
         )
-        return [generate_invalid(spec, indices[0])]
+        return [generate_invalid(spec, paths[0])]
 
-    indices = _select_violation_fields(
+    paths = _select_violation_fields(
         spec, strategy=strategy, allow_all=False, count=count
     )
-    return [generate_invalid(spec, i) for i in indices]
+    return [generate_invalid(spec, p) for p in paths]
