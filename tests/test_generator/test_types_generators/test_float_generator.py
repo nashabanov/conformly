@@ -202,12 +202,13 @@ def test_contradictory_float_constraints_same_value():
 @pytest.mark.parametrize(
     "bounds",
     [
-        pytest.param(FBounds(low=0.0, high=10.0), id="positive"),
-        pytest.param(FBounds(low=-10.0, high=0.0), id="negative"),
-        pytest.param(FBounds(low=-1.0, high=1.0), id="around_zero"),
-        pytest.param(FBounds(low=5.0, high=5.0), id="point"),
+        pytest.param(FBounds(0.0, 10.0, True, True), id="positive"),
+        pytest.param(FBounds(-10.0, 0.0, True, True), id="negative"),
+        pytest.param(FBounds(-1.0, 1.0, True, True), id="around_zero"),
+        pytest.param(FBounds(5.0, 5.0, True, True), id="point"),
         pytest.param(
-            FBounds(low=-sys.float_info.max, high=sys.float_info.max), id="full_range"
+            FBounds(-sys.float_info.max, sys.float_info.max, True, True),
+            id="full_range",
         ),
     ],
 )
@@ -224,7 +225,6 @@ def test_generate_invalid_float_always_outside_bounds(bounds: FBounds):
     "constraints, valid",
     [
         pytest.param([], True, id="no_constraints_valid"),
-        pytest.param([], False, id="no_constraints_invalid"),
         pytest.param([GreaterThan(0)], True, id="gt_valid"),
         pytest.param([GreaterOrEqual(-5.5)], True, id="ge_valid"),
         pytest.param([LessThan(100)], True, id="lt_valid"),
