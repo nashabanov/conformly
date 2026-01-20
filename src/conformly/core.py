@@ -18,7 +18,7 @@ def _ensure_model_or_spec(model_or_spec: ModelSpec | type) -> ModelSpec:
 def _gather_constrained_paths(spec: ModelSpec) -> list[tuple[FieldPath, str]]:
     result: list[tuple[FieldPath, str]] = []
 
-    def dfs(current: ModelSpec, prefix: FieldPath, names: list[str]):
+    def dfs(current: ModelSpec, prefix: FieldPath, names: list[str]) -> None:
         for i, field in enumerate(current.fields):
             path = (*prefix, i)
             dotted = ".".join([*names, field.name])
