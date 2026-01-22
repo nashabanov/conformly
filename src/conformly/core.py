@@ -3,7 +3,8 @@ from typing import Any, Literal
 
 from .generator import generate_invalid, generate_valid
 from .parsing import parse_model
-from .specs import FieldPath, ModelSpec
+from .specs import ModelSpec
+from .types import FieldPath
 
 CaseStrategy = Literal["first", "random"] | str
 CasesStrategy = Literal["first", "random", "all"] | str

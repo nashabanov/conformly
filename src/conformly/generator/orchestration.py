@@ -2,7 +2,8 @@ from typing import Any
 
 from .registry import get_generator
 
-from conformly.specs import FieldPath, FieldSpec, ModelSpec
+from conformly.specs import FieldSpec, ModelSpec
+from conformly.types import FieldPath
 
 
 def generate_valid(model_spec: ModelSpec) -> dict[str, Any]:
