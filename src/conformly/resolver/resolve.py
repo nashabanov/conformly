@@ -61,7 +61,7 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
     c = field_spec.constraints
 
     if t is int:
-        valid_bounds = get_numeric_bounds(t, c)
+        valid_bounds = calculate_numeric_bounds(t, c)
         return NumericSemantic(
             kind=FieldKind.INTEGER,
             valid_range=valid_bounds,
@@ -71,7 +71,7 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
         )
 
     elif t is float:
-        valid_bounds = get_numeric_bounds(t, c)
+        valid_bounds = calculate_numeric_bounds(t, c)
         return NumericSemantic(
             kind=FieldKind.FLOAT,
             valid_range=valid_bounds,
@@ -104,7 +104,7 @@ def calculate_invalid_numeric_ranges(
             result.append(
                 Range(
                     min_value=bounds.min_value - max_offset,
-                    max_value=bounds.max_value - 1,
+                    max_value=bounds.min_value - 1,
                     has_min=True,
                     has_max=True,
                 )
@@ -129,7 +129,7 @@ def calculate_invalid_numeric_ranges(
             result.append(
                 Range(
                     min_value=-math.inf,
-                    max_value=bounds.max_value,
+                    max_value=bounds.min_value,
                     has_min=True,
                     has_max=True,
                 )
@@ -156,7 +156,7 @@ def calculate_max_offset(min_value: int, max_value: int) -> int:
     return min(base, 10**6)
 
 
-def get_numeric_bounds(field_type: type, constraints: list[Constraint]) -> Range:
+def calculate_numeric_bounds(field_type: type, constraints: list[Constraint]) -> Range:
     low = -(2**63) if field_type is int else -sys.float_info.max
     high = 2**63 - 1 if field_type is int else sys.float_info.max
     has_min = False
@@ -167,6 +167,10 @@ def get_numeric_bounds(field_type: type, constraints: list[Constraint]) -> Range
             continue
 
         v = int(c.value) if field_type is int else float(c.value)
+
+        if math.isnan(v):
+            raise ValueError("Constraint value cannot be NaN")
+
         match c:
             case GreaterThan():
                 low = max(
