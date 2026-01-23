@@ -1,9 +1,12 @@
-from dataclasses import dataclass
-from typing import Any
+from __future__ import annotations
 
-from ..types import FieldPath
-from .model import ResolvedModel
-from .semantics import FieldSemantics
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..types import FieldPath
+    from .model import ResolvedModel
+    from .semantics import FieldSemantics
 
 
 @dataclass(frozen=True)
@@ -13,5 +16,5 @@ class ResolvedField:
     py_type: type
     default: Any
     nullable: bool
-    semantics: list[FieldSemantics]
+    semantics: FieldSemantics
     nested_model: ResolvedModel | None = None

@@ -8,3 +8,4 @@ class FieldKind(Enum):
     FLOAT = "float"
     STRING = "string"
     BOOLEAN = "boolean"
+    OBJECT = "object"
