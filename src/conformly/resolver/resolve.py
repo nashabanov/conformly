@@ -1,5 +1,4 @@
 import math
-import sys
 
 from ..constraints import (
     Constraint,
@@ -12,7 +11,16 @@ from ..constraints import (
     Pattern,
 )
 from ..specs import FieldSpec, ModelSpec
-from ..types import FieldKind, FieldPath, LengthRange, Range
+from ..types import (
+    FLOAT_MAX,
+    FLOAT_MIN,
+    INT_MAX,
+    INT_MIN,
+    FieldKind,
+    FieldPath,
+    LengthRange,
+    Range,
+)
 from .field import ResolvedField
 from .model import ResolvedModel
 from .semantics import (
@@ -94,52 +102,43 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
 def calculate_invalid_numeric_ranges(
     field_type: type, bounds: Range
 ) -> tuple[Range, ...]:
+    result: list[Range] = []
+
     if field_type is int:
         max_offset = calculate_max_offset(int(bounds.min_value), int(bounds.max_value))
-        result = []
 
-        if bounds.has_min:
+        if bounds.min_value > INT_MIN:
             result.append(
                 Range(
                     min_value=bounds.min_value - max_offset,
                     max_value=bounds.min_value - 1,
-                    has_min=True,
-                    has_max=True,
                 )
             )
 
-        if bounds.has_max:
+        if bounds.max_value < INT_MAX:
             result.append(
                 Range(
                     min_value=bounds.max_value + 1,
                     max_value=bounds.max_value + max_offset,
-                    has_min=True,
-                    has_max=True,
                 )
             )
 
         return tuple(result)
 
     if field_type is float:
-        result = []
-
-        if bounds.has_min:
+        if bounds.min_value > FLOAT_MIN:
             result.append(
                 Range(
                     min_value=-math.inf,
                     max_value=bounds.min_value,
-                    has_min=True,
-                    has_max=True,
                 )
             )
 
-        if bounds.has_max:
+        if bounds.max_value < FLOAT_MAX:
             result.append(
                 Range(
                     min_value=bounds.max_value,
                     max_value=math.inf,
-                    has_min=True,
-                    has_max=True,
                 )
             )
 
@@ -155,10 +154,12 @@ def calculate_max_offset(min_value: int, max_value: int) -> int:
 
 
 def calculate_numeric_bounds(field_type: type, constraints: list[Constraint]) -> Range:
-    low = -(2**63) if field_type is int else -sys.float_info.max
-    high = 2**63 - 1 if field_type is int else sys.float_info.max
-    has_min = False
-    has_max = False
+    if field_type is int:
+        low, high = INT_MIN, INT_MAX
+    elif field_type is float:
+        low, high = FLOAT_MIN, FLOAT_MAX
+    else:
+        raise TypeError(f"Unsupported numeric type: {field_type}")
 
     for c in constraints:
         if not isinstance(c, (GreaterThan, GreaterOrEqual, LessThan, LessOrEqual)):
@@ -174,30 +175,22 @@ def calculate_numeric_bounds(field_type: type, constraints: list[Constraint]) ->
                 low = max(
                     low, v + 1 if field_type is int else math.nextafter(v, math.inf)
                 )
-                has_min = True
             case GreaterOrEqual():
                 low = max(low, v)
-                has_min = True
             case LessThan():
                 high = min(
                     high, v - 1 if field_type is int else math.nextafter(v, -math.inf)
                 )
-                has_max = True
             case LessOrEqual():
                 high = min(high, v)
-                has_max = True
     if low > high:
-        raise ValueError(
-            f"Min value cannot be higher than max value: min: {low}, max {high}"
-        )
-    return Range(min_value=low, max_value=high, has_min=has_min, has_max=has_max)
+        raise ValueError(f"Invalid numeric bounds: min {low} > max {high}")
+    return Range(min_value=low, max_value=high)
 
 
 def create_string_semantic(constraints: list[Constraint]) -> StringSemantic:
     min_length = 0
     max_length = None
-    has_min = False
-    has_max = False
     pattern = None
 
     for c in constraints:
@@ -206,13 +199,11 @@ def create_string_semantic(constraints: list[Constraint]) -> StringSemantic:
 
         match c:
             case MinLength(v):
-                if not has_min or v > min_length:
+                if min_length == 0 or v > min_length:
                     min_length = v
-                has_min = True
             case MaxLength(v):
                 if max_length is None or v < int(max_length):
                     max_length = v
-                has_max = True
             case Pattern(r):
                 if pattern is not None:
                     raise ValueError("Multiple Pattern constraints are not supported")
@@ -220,8 +211,7 @@ def create_string_semantic(constraints: list[Constraint]) -> StringSemantic:
 
     if max_length and min_length > max_length:
         raise ValueError(
-            "Min length cannot be higher than max length: "
-            f"min: {min_length}, max: {max_length}"
+            f"Invalid string length range: min {min_length} > max {max_length}"
         )
 
     return StringSemantic(
@@ -229,8 +219,6 @@ def create_string_semantic(constraints: list[Constraint]) -> StringSemantic:
         length_range=LengthRange(
             min_length=min_length,
             max_length=max_length,
-            has_min=has_min,
-            has_max=has_max,
         ),
         pattern=pattern,
     )

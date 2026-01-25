@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, auto
+import math
 
 FieldPath = tuple[int, ...]
 
@@ -31,17 +32,19 @@ class ViolationType(Enum):
     EXTRA_FIELD = auto()
 
 
+INT_MIN = -(2**63)
+INT_MAX = 2**63 - 1
+FLOAT_MIN = -math.inf
+FLOAT_MAX = math.inf
+
+
 @dataclass(frozen=True)
 class Range:
     min_value: int | float
     max_value: int | float
-    has_min: bool
-    has_max: bool
 
 
 @dataclass(frozen=True)
 class LengthRange:
     min_length: int
     max_length: int | None
-    has_min: bool
-    has_max: bool

@@ -1,5 +1,4 @@
 import math
-import sys
 
 import pytest
 
@@ -29,12 +28,16 @@ from conformly.resolver.semantics import (
     StringSemantic,
 )
 from conformly.specs import FieldSpec, ModelSpec
-from conformly.types import FieldKind, FieldPath, LengthRange, Range
-
-INT_MIN = -(2**63)
-INT_MAX = 2**63 - 1
-FLOAT_MIN = -sys.float_info.max
-FLOAT_MAX = sys.float_info.max
+from conformly.types import (
+    FLOAT_MAX,
+    FLOAT_MIN,
+    INT_MAX,
+    INT_MIN,
+    FieldKind,
+    FieldPath,
+    LengthRange,
+    Range,
+)
 
 
 @pytest.fixture
@@ -75,7 +78,7 @@ def nested_model_spec() -> ModelSpec:
             [MinLength(5), MaxLength(50), Pattern(r"[a-z]+")],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(5, 50, True, True),
+                length_range=LengthRange(5, 50),
                 pattern=r"[a-z]+",
             ),
         ),
@@ -83,7 +86,7 @@ def nested_model_spec() -> ModelSpec:
             [MinLength(3)],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(3, None, True, False),
+                length_range=LengthRange(3, None),
                 pattern=None,
             ),
         ),
@@ -91,7 +94,7 @@ def nested_model_spec() -> ModelSpec:
             [MaxLength(100)],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(0, 100, False, True),
+                length_range=LengthRange(0, 100),
                 pattern=None,
             ),
         ),
@@ -99,7 +102,7 @@ def nested_model_spec() -> ModelSpec:
             [Pattern(r"[a-z]+")],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(0, None, False, False),
+                length_range=LengthRange(0, None),
                 pattern=r"[a-z]+",
             ),
         ),
@@ -107,7 +110,7 @@ def nested_model_spec() -> ModelSpec:
             [MinLength(5), Pattern(r"[a-z]+")],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(5, None, True, False),
+                length_range=LengthRange(5, None),
                 pattern=r"[a-z]+",
             ),
         ),
@@ -115,7 +118,7 @@ def nested_model_spec() -> ModelSpec:
             [MaxLength(15), Pattern(r"[a-z]+")],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(0, 15, False, True),
+                length_range=LengthRange(0, 15),
                 pattern=r"[a-z]+",
             ),
         ),
@@ -123,7 +126,7 @@ def nested_model_spec() -> ModelSpec:
             [],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(0, None, False, False),
+                length_range=LengthRange(0, None),
                 pattern=None,
             ),
         ),
@@ -131,7 +134,7 @@ def nested_model_spec() -> ModelSpec:
             [MinLength(0)],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(0, None, True, False),
+                length_range=LengthRange(0, None),
                 pattern=None,
             ),
         ),
@@ -139,7 +142,7 @@ def nested_model_spec() -> ModelSpec:
             [MaxLength(0)],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(0, 0, False, True),
+                length_range=LengthRange(0, 0),
                 pattern=None,
             ),
         ),
@@ -147,7 +150,7 @@ def nested_model_spec() -> ModelSpec:
             [MinLength(5), MaxLength(50), Pattern(r"[a-z]+")],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(5, 50, True, True),
+                length_range=LengthRange(5, 50),
                 pattern=r"[a-z]+",
             ),
         ),
@@ -155,7 +158,7 @@ def nested_model_spec() -> ModelSpec:
             [MinLength(2), MinLength(5)],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(5, None, has_min=True, has_max=False),
+                length_range=LengthRange(5, None),
                 pattern=None,
             ),
         ),
@@ -163,7 +166,7 @@ def nested_model_spec() -> ModelSpec:
             [MaxLength(20), MaxLength(10)],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(0, 10, has_min=False, has_max=True),
+                length_range=LengthRange(0, 10),
                 pattern=None,
             ),
         ),
@@ -171,7 +174,7 @@ def nested_model_spec() -> ModelSpec:
             [MinLength(3), MinLength(7), MaxLength(15), MaxLength(10)],
             StringSemantic(
                 kind=FieldKind.STRING,
-                length_range=LengthRange(7, 10, has_min=True, has_max=True),
+                length_range=LengthRange(7, 10),
                 pattern=None,
             ),
         ),
@@ -200,34 +203,34 @@ def test_create_string_semantic_double_patten() -> None:
 @pytest.mark.parametrize(
     "field_type, constraints, expected_range",
     [
-        (int, [], Range(INT_MIN, INT_MAX, False, False)),
-        (int, [GreaterOrEqual(5)], Range(5, INT_MAX, True, False)),
-        (int, [GreaterThan(10)], Range(11, INT_MAX, True, False)),
-        (int, [LessOrEqual(100)], Range(INT_MIN, 100, False, True)),
-        (int, [LessThan(20)], Range(INT_MIN, 19, False, True)),
-        (int, [GreaterOrEqual(10), LessThan(50)], Range(10, 49, True, True)),
+        (int, [], Range(INT_MIN, INT_MAX)),
+        (int, [GreaterOrEqual(5)], Range(5, INT_MAX)),
+        (int, [GreaterThan(10)], Range(11, INT_MAX)),
+        (int, [LessOrEqual(100)], Range(INT_MIN, 100)),
+        (int, [LessThan(20)], Range(INT_MIN, 19)),
+        (int, [GreaterOrEqual(10), LessThan(50)], Range(10, 49)),
         (
             int,
             [GreaterThan(5), GreaterOrEqual(10), LessThan(100), LessOrEqual(90)],
-            Range(10, 90, True, True),
+            Range(10, 90),
         ),
-        (float, [], Range(FLOAT_MIN, FLOAT_MAX, False, False)),
-        (float, [GreaterOrEqual(2.0)], Range(2.0, FLOAT_MAX, True, False)),
+        (float, [], Range(FLOAT_MIN, FLOAT_MAX)),
+        (float, [GreaterOrEqual(2.0)], Range(2.0, FLOAT_MAX)),
         (
             float,
             [GreaterThan(1.5)],
-            Range(math.nextafter(1.5, math.inf), FLOAT_MAX, True, False),
+            Range(math.nextafter(1.5, math.inf), FLOAT_MAX),
         ),
-        (float, [LessOrEqual(4.2)], Range(FLOAT_MIN, 4.2, False, True)),
+        (float, [LessOrEqual(4.2)], Range(FLOAT_MIN, 4.2)),
         (
             float,
             [LessThan(3.7)],
-            Range(FLOAT_MIN, math.nextafter(3.7, -math.inf), False, True),
+            Range(FLOAT_MIN, math.nextafter(3.7, -math.inf)),
         ),
         (
             float,
             [GreaterOrEqual(1.0), LessThan(2.0)],
-            Range(1.0, math.nextafter(2.0, -math.inf), True, True),
+            Range(1.0, math.nextafter(2.0, -math.inf)),
         ),
     ],
 )
@@ -258,68 +261,65 @@ def test_calculate_numeric_bounds_invalid_raises(field_type, constraints):
     [
         (
             int,
-            Range(10, 20, has_min=True, has_max=True),
+            Range(10, 20),
             (
-                Range(10 - calculate_max_offset(10, 20), 9, True, True),
-                Range(21, 20 + calculate_max_offset(10, 20), True, True),
+                Range(10 - calculate_max_offset(10, 20), 9),
+                Range(21, 20 + calculate_max_offset(10, 20)),
             ),
         ),
         (
             int,
-            Range(INT_MIN, 100, has_min=True, has_max=False),
-            (
-                Range(
-                    INT_MIN - calculate_max_offset(INT_MIN, 100),
-                    INT_MIN - 1,
-                    True,
-                    True,
-                ),
-            ),
+            Range(INT_MIN, 100),
+            (Range(101, 100 + calculate_max_offset(INT_MIN, 100)),),
         ),
         (
             int,
-            Range(50, INT_MAX, has_min=False, has_max=True),
-            (
-                Range(
-                    INT_MAX + 1, INT_MAX + calculate_max_offset(50, INT_MAX), True, True
-                ),
-            ),
+            Range(50, INT_MAX),
+            (Range(50 - calculate_max_offset(50, INT_MAX), 49),),
         ),
         (
             int,
-            Range(0, 0, has_min=True, has_max=True),
-            (
-                Range(0 - calculate_max_offset(0, 0), -1, True, True),
-                Range(1, 0 + calculate_max_offset(0, 0), True, True),
-            ),
+            Range(INT_MIN, INT_MAX),
+            (),
         ),
         (
             int,
-            Range(0, 0, has_min=False, has_max=False),
+            Range(0, 0),
+            (
+                Range(0 - calculate_max_offset(0, 0), -1),
+                Range(1, 0 + calculate_max_offset(0, 0)),
+            ),
+        ),
+        (
+            float,
+            Range(1.5, 3.7),
+            (
+                Range(-math.inf, 1.5),
+                Range(3.7, math.inf),
+            ),
+        ),
+        (
+            float,
+            Range(-math.inf, 100.0),
+            (Range(100.0, math.inf),),
+        ),
+        (
+            float,
+            Range(-5.0, math.inf),
+            (Range(-math.inf, -5.0),),
+        ),
+        (
+            float,
+            Range(-math.inf, math.inf),
             (),
         ),
         (
             float,
-            Range(1.5, 3.7, has_min=True, has_max=True),
+            Range(0.0, 0.0),
             (
-                Range(-math.inf, 1.5, True, True),
-                Range(3.7, math.inf, True, True),
+                Range(-math.inf, 0.0),
+                Range(0.0, math.inf),
             ),
-        ),
-        (
-            float,
-            Range(-10.0, 100.0, has_min=True, has_max=False),
-            (Range(-math.inf, -10.0, True, True),),
-        ),
-        (
-            float,
-            Range(-5.0, 5.0, has_min=False, has_max=True),
-            (Range(5.0, math.inf, True, True),),
-        ),
-        (
-            float,
-            Range(0.0, 0.0, has_min=False, has_max=False),
-            (),
         ),
     ],
 )
@@ -330,13 +330,11 @@ def test_calculate_invalid_numeric_ranges(field_type, bounds, expected_ranges):
     for r, exp in zip(result, expected_ranges):
         assert r.min_value == exp.min_value
         assert r.max_value == exp.max_value
-        assert r.has_min == exp.has_min
-        assert r.has_max == exp.has_max
 
 
 def test_unsupported_field_type():
     with pytest.raises(TypeError, match="Field type must be int or float"):
-        calculate_invalid_numeric_ranges(str, Range(0, 1, True, True))
+        calculate_invalid_numeric_ranges(str, Range(0, 1))
 
 
 # ===== TESTS for create_string_semantic() =====
