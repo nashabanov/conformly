@@ -1,15 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from ...types import FieldKind
-
-
-@dataclass(frozen=True)
-class Range:
-    min_value: int | float
-    max_value: int | float
-    has_min: bool
-    has_max: bool
+from ...types import FieldKind, Range
 
 
 @dataclass(frozen=True)

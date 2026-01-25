@@ -12,7 +12,7 @@ from ..constraints import (
     Pattern,
 )
 from ..specs import FieldSpec, ModelSpec
-from ..types import FieldKind, FieldPath
+from ..types import FieldKind, FieldPath, LengthRange, Range
 from .field import ResolvedField
 from .model import ResolvedModel
 from .semantics import (
@@ -22,8 +22,6 @@ from .semantics import (
     ObjectSemantic,
     StringSemantic,
 )
-from .semantics.numeric import Range
-from .semantics.string import LengthRange
 
 
 def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:

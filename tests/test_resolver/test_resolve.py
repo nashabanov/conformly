@@ -28,10 +28,8 @@ from conformly.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
-from conformly.resolver.semantics.numeric import Range
-from conformly.resolver.semantics.string import LengthRange
 from conformly.specs import FieldSpec, ModelSpec
-from conformly.types import FieldKind, FieldPath
+from conformly.types import FieldKind, FieldPath, LengthRange, Range
 
 INT_MIN = -(2**63)
 INT_MAX = 2**63 - 1
