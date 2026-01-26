@@ -1,97 +1,31 @@
-from __future__ import annotations
+from random import randint
 
-from dataclasses import dataclass
-from random import choice, randint
-from typing import TYPE_CHECKING
-
-from conformly.constraints import (
-    Constraint,
-    GreaterOrEqual,
-    GreaterThan,
-    LessOrEqual,
-    LessThan,
-)
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
-
-    from conformly.specs import FieldSpec
+from ...resolver.semantics import NumericSemantic
+from ...types import ViolationType
 
 
-def supports(field: FieldSpec) -> bool:
-    return field.type is int
-
-
-@dataclass(frozen=True)
-class Bounds:
-    low: int
-    high: int
-    has_low: bool
-    has_high: bool
-
-
-def generate_value(constraints: Sequence[Constraint], valid: bool) -> int:
-    bounds = _get_integer_valid_borders(constraints)
-    if valid:
-        return randint(bounds.low, bounds.high)
+def generate_value(semantic: NumericSemantic, violation: ViolationType | None) -> int:
+    if not violation:
+        valid_range = semantic.valid_range
+        return randint(int(valid_range.min_value), int(valid_range.max_value))
     else:
-        return _generate_invalid_integer(bounds)
+        return _generate_invalid_integer(semantic, violation)
 
 
-def _generate_invalid_integer(bounds: Bounds) -> int:
-    if bounds.has_low and bounds.has_high:
-        max_offset = _calculate_max_offset(bounds)
-        strategies: list[Callable[[], int]] = [
-            lambda: randint(bounds.low - max_offset, bounds.low - 1),
-            lambda: randint(bounds.high + 1, bounds.high + max_offset),
-        ]
-        return choice(strategies)()
+def _generate_invalid_integer(
+    semantic: NumericSemantic, violation: ViolationType
+) -> int:
+    for r in semantic.invalid_ranges:
+        if (
+            violation == ViolationType.BELOW_MIN
+            and r.max_value < semantic.valid_range.min_value
+        ):
+            return randint(int(r.min_value), int(r.max_value))
 
-    if bounds.has_low and not bounds.has_high:
-        max_offset = max(1, _calculate_max_offset(bounds))
-        return randint(bounds.low - max_offset, bounds.low - 1)
-
-    if bounds.has_high and not bounds.has_low:
-        max_offset = max(1, _calculate_max_offset(bounds))
-        return randint(bounds.high + 1, bounds.high + max_offset)
+        if (
+            violation == ViolationType.ABOVE_MAX
+            and r.min_value > semantic.valid_range.max_value
+        ):
+            return randint(int(r.min_value), int(r.max_value))
 
     raise ValueError("Cannot generate invalid integer: no bounds specified")
-
-
-def _calculate_max_offset(bounds: Bounds) -> int:
-    span = max(1, bounds.high - bounds.low)
-    base = max(100, span * 2)
-    return min(base, 10**6)
-
-
-def _get_integer_valid_borders(constraints: Sequence[Constraint]) -> Bounds:
-    low = -(2**63)
-    high = 2**63 - 1
-    has_low = False
-    has_high = False
-
-    for constraint in constraints:
-        if not isinstance(
-            constraint, (GreaterThan, GreaterOrEqual, LessThan, LessOrEqual)
-        ):
-            continue
-
-        v = int(constraint.value)
-        match constraint:
-            case GreaterThan():
-                low = max(low, v + 1)
-                has_low = True
-            case GreaterOrEqual():
-                low = max(low, v)
-                has_low = True
-            case LessThan():
-                high = min(high, v - 1)
-                has_high = True
-            case LessOrEqual():
-                high = min(high, v)
-                has_high = True
-    if low > high:
-        raise ValueError(
-            f"Min value cannot be higher than max value: min: {low}, high {high}"
-        )
-    return Bounds(low, high, has_low, has_high)

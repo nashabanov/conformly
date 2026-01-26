@@ -1,90 +1,66 @@
-from collections.abc import Sequence
 import random
 import re
 import string
 
 import rstr
 
-from conformly.constraints import Constraint, MaxLength, MinLength, Pattern
-from conformly.specs import FieldSpec
+from conformly.resolver.semantics.string import StringSemantic
+from conformly.types import ViolationType
+
+DEFAULT_MIN_LENGTH = 5
+DEFAULT_MAX_LENGTH = 15
+DEFAULT_CHARSET = string.ascii_letters + string.digits
+MAX_GENERATION_ATTEMPTS = 20
+MAX_CANDIDATE_LENGTH = 1000
+BAD_CHARS_FOR_INVERSION = [" ", "!", "@", "#", "\n", "\t", "\x00"]
 
 
-def supports(field: FieldSpec) -> bool:
-    return field.type is str
-
-
-def generate_value(constraints: Sequence[Constraint], valid: bool) -> str:
+def generate_value(semantic: StringSemantic, violation: ViolationType | None) -> str:
     return (
-        _generate_valid_string(constraints)
-        if valid
-        else _generate_invalid_string(constraints)
+        _generate_valid_string(semantic)
+        if not violation
+        else _generate_invalid_string(semantic, violation)
     )
 
 
-def _generate_valid_string(constraints: Sequence[Constraint]) -> str:
-    min_len = _get_min_length(constraints)
-    max_len = _get_max_length(constraints)
-    pattern = _get_pattern(constraints)
+def _generate_valid_string(semantic: StringSemantic) -> str:
+    if semantic.pattern:
+        return _random_pattern_with_length(
+            semantic.pattern,
+            semantic.length_range.min_length,
+            semantic.length_range.max_length,
+        )
 
-    if pattern:
-        if max_len is None and min_len is None:
-            return rstr.xeger(pattern)
-        else:
-            return _random_pattern_with_length(pattern, min_len, max_len)
-
-    return _random_string_with_length(min_len, max_len)
-
-
-def _generate_invalid_string(constraints: Sequence[Constraint]) -> str:
-    if min_length := _get_min_length(constraints):
-        return _random_string_fixed_length(min_length - 1)
-
-    if max_length := _get_max_length(constraints):
-        return _random_string_fixed_length(max_length + 1)
-
-    if pattern := _get_pattern(constraints):
-        valid_example = rstr.xeger(pattern)
-        return _invert_pattern_string(valid_example, pattern)
-
-    return "INVALID"
+    return _random_string_with_length(
+        semantic.length_range.min_length, semantic.length_range.max_length
+    )
 
 
-def _get_min_length(constraints: Sequence[Constraint]) -> int | None:
-    for c in constraints:
-        if isinstance(c, MinLength):
-            return c.value
-    return None
+def _generate_invalid_string(semantic: StringSemantic, violation: ViolationType) -> str:
+    match violation:
+        case ViolationType.TOO_SHORT if semantic.length_range.min_length > 0:
+            return _random_string_fixed_length(semantic.length_range.min_length - 1)
+
+        case ViolationType.TOO_LONG if semantic.length_range.max_length is not None:
+            return _random_string_fixed_length(semantic.length_range.max_length + 1)
+
+        case ViolationType.PATTERN_MISMATCH if semantic.pattern is not None:
+            valid_example = rstr.xeger(semantic.pattern)
+            return _invert_pattern_string(valid_example, semantic.pattern)
+
+        case _:
+            return "INVALID"
 
 
-def _get_max_length(constraints: Sequence[Constraint]) -> int | None:
-    for c in constraints:
-        if isinstance(c, MaxLength):
-            return c.value
-    return None
-
-
-def _get_pattern(constraints: Sequence[Constraint]) -> str | None:
-    for c in constraints:
-        if isinstance(c, Pattern):
-            return c.regex
-    return None
-
-
-def _random_string_with_length(min_len: int | None, max_len: int | None) -> str:
-    if min_len and max_len is None:
+def _random_string_with_length(min_len: int, max_len: int | None) -> str:
+    if max_len is None:
         length = random.randint(min_len, min_len + 50)
-        return rstr.rstr(string.ascii_letters + string.digits, length)
-
-    if max_len and min_len is None:
-        length = random.randint(1, max_len)
-        return rstr.rstr(string.ascii_letters + string.digits, length)
-
-    if min_len and max_len:
+    elif min_len <= max_len:
         length = random.randint(min_len, max_len)
-        return rstr.rstr(string.ascii_letters + string.digits, length)
+    else:
+        length = random.randint(DEFAULT_MIN_LENGTH, DEFAULT_MAX_LENGTH)
 
-    length = random.randint(5, 15)
-    return rstr.rstr(string.ascii_letters + string.digits, length)
+    return rstr.rstr(DEFAULT_CHARSET, length)
 
 
 def _random_string_fixed_length(length: int) -> str:
@@ -92,18 +68,12 @@ def _random_string_fixed_length(length: int) -> str:
         raise ValueError("Length must be non-negative")
     if length == 0:
         return ""
-    return rstr.rstr(string.ascii_letters + string.digits, length)
+    return rstr.rstr(DEFAULT_CHARSET + string.digits, length)
 
 
-def _random_pattern_with_length(
-    pattern: str, min_len: int | None, max_len: int | None
-) -> str:
+def _random_pattern_with_length(pattern: str, min_len: int, max_len: int | None) -> str:
     if min_len is not None and max_len is not None and min_len > max_len:
         raise ValueError("min_len cannot be greater than max_len")
-    if min_len is not None and min_len < 0:
-        raise ValueError("min_len must be non-negative")
-    if max_len is not None and max_len < 0:
-        raise ValueError("max_len must be non-negative")
 
     compiled = None
     try:
@@ -123,23 +93,19 @@ def _random_pattern_with_length(
                 f"Pattern {pattern!r} does not allow empty string, "
                 "but min_len=max_len=0"
             )
-    for _ in range(20):
+    for _ in range(MAX_GENERATION_ATTEMPTS):
         try:
             candidate = rstr.xeger(pattern)
         except Exception as e:
             raise ValueError(f"Invalid or unsupported regex pattern: {pattern}") from e
 
-        if len(candidate) > 1000:
+        if len(candidate) > MAX_CANDIDATE_LENGTH:
             continue
-
-        n = len(candidate)
-
         if not compiled.fullmatch(candidate):
             continue
-
-        if min_len is not None and n < min_len:
+        if len(candidate) < min_len:
             continue
-        if max_len is not None and n > max_len:
+        if max_len is not None and len(candidate) > max_len:
             continue
 
         return candidate
@@ -151,33 +117,26 @@ def _random_pattern_with_length(
     raise RuntimeError(msg)
 
 
-def _invert_pattern_string(valid_example: str, pattern: str | None = None) -> str:
+def _invert_pattern_string(valid_example: str, pattern: str) -> str:
     if not valid_example:
         return "x"
 
-    compiled = None
-    if pattern:
-        compiled = re.compile(pattern)
+    compiled = re.compile(pattern)
 
-    bad_chars = [" ", "!", "@", "#", "\n", "\t", "\x00"]
+    for ch in BAD_CHARS_FOR_INVERSION:
+        candidate = valid_example + ch
+        if compiled.fullmatch(candidate) is None:
+            return candidate
 
-    if compiled:
-        for ch in bad_chars:
-            candidate = valid_example + ch
-            if compiled.fullmatch(candidate) is None:
-                return candidate
+    for ch in BAD_CHARS_FOR_INVERSION:
+        candidate = ch + valid_example
+        if compiled.fullmatch(candidate) is None:
+            return candidate
 
-    if compiled:
-        for ch in bad_chars:
-            candidate = ch + valid_example
-            if compiled.fullmatch(candidate) is None:
-                return candidate
-
-    if compiled:
-        for ch in bad_chars:
-            candidate = ch + valid_example[1:]
-            if compiled.fullmatch(candidate) is None:
-                return candidate
+    for ch in BAD_CHARS_FOR_INVERSION:
+        candidate = ch + valid_example[1:]
+        if compiled.fullmatch(candidate) is None:
+            return candidate
 
     first = valid_example[0]
     if first.isalpha():
