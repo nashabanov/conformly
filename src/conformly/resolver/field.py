@@ -16,5 +16,5 @@ class ResolvedField:
     py_type: type
     default: Any
     nullable: bool
-    semantics: FieldSemantics
+    semantic: FieldSemantics
     nested_model: ResolvedModel | None = None

@@ -55,7 +55,7 @@ def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
         py_type=field_spec.type,
         default=field_spec.default,
         nullable=field_spec.nullable,
-        semantics=create_field_semantic(field_spec),
+        semantic=create_field_semantic(field_spec),
         nested_model=resolve_model(field_spec.nested_model, path)
         if field_spec.nested_model
         else None,

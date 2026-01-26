@@ -391,7 +391,7 @@ def test_resolve_field_flat() -> None:
     assert resolved.py_type is int
     assert resolved.default == 43
     assert resolved.nullable is False
-    assert isinstance(resolved.semantics, NumericSemantic)
+    assert isinstance(resolved.semantic, NumericSemantic)
     assert resolved.nested_model is None
 
 
@@ -424,17 +424,17 @@ def test_resolve_model_flat(simple_model_spec):
     id_field = resolved.fields[0]
     assert id_field.name == "id"
     assert id_field.path == (0,)
-    assert isinstance(id_field.semantics, NumericSemantic)
+    assert isinstance(id_field.semantic, NumericSemantic)
 
     name_field = resolved.fields[1]
     assert name_field.name == "name"
     assert name_field.path == (1,)
-    assert isinstance(name_field.semantics, StringSemantic)
+    assert isinstance(name_field.semantic, StringSemantic)
 
     active_field = resolved.fields[2]
     assert active_field.name == "active"
     assert active_field.path == (2,)
-    assert isinstance(active_field.semantics, BooleanSemantic)
+    assert isinstance(active_field.semantic, BooleanSemantic)
 
 
 def test_resolve_model_nested(nested_model_spec):
