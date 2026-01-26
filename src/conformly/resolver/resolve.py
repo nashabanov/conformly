@@ -35,16 +35,18 @@ from .semantics import (
 def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:
     return ResolvedModel(
         name=spec.name,
-        fields=[
-            resolve_field(
-                f,
-                (
-                    *_prefix,
-                    i,
-                ),
-            )
-            for i, f in enumerate(spec.fields)
-        ],
+        fields=tuple(
+            [
+                resolve_field(
+                    f,
+                    (
+                        *_prefix,
+                        i,
+                    ),
+                )
+                for i, f in enumerate(spec.fields)
+            ]
+        ),
     )
 
 

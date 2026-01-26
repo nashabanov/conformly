@@ -1,5 +1,5 @@
-from ..resolver import ResolvedField, ResolvedModel
-from ..resolver.semantics import NumericSemantic, StringSemantic
+from ..resolver import ResolvedModel
+from ..resolver.semantics import FieldSemantics, NumericSemantic, StringSemantic
 from ..types import (
     FieldKind,
     FieldPath,
@@ -9,18 +9,13 @@ from .planned_case import PlannedTask
 
 
 def plan_violation_task(model: ResolvedModel, path: FieldPath) -> PlannedTask:
-    field = find_resolved_field(model, path)
-    return PlannedTask(path, define_allowed_violation_types(field))
-
-
-def find_resolved_field(model: ResolvedModel, path: FieldPath) -> ResolvedField: ...
+    field = model.get_field(path)
+    return PlannedTask(path, define_allowed_violation_types(field.semantic))
 
 
 def define_allowed_violation_types(
-    field: ResolvedField,
+    semantic: FieldSemantics,
 ) -> tuple[ViolationType, ...]:
-    semantic = field.semantic
-
     match semantic:
         case StringSemantic(kind=FieldKind.STRING):
             return define_string_violations(semantic)
@@ -41,6 +36,15 @@ def define_numeric_violations(
     semantic: NumericSemantic,
 ) -> tuple[ViolationType, ...]:
     result: list[ViolationType] = []
+    valid = semantic.valid_range
+    invalid_ranges = semantic.invalid_ranges
+
+    for r in invalid_ranges:
+        if r.max_value < valid.min_value:
+            result.append(ViolationType.BELOW_MIN)
+
+        if r.min_value > valid.max_value:
+            result.append(ViolationType.ABOVE_MAX)
 
     return tuple(result)
 
@@ -50,13 +54,13 @@ def define_string_violations(
 ) -> tuple[ViolationType, ...]:
     result: list[ViolationType] = []
 
-    if semantic.pattern is not None:
-        result.append(ViolationType.PATTERN_MISMATCH)
+    if semantic.length_range.min_length > 0:
+        result.append(ViolationType.TOO_SHORT)
 
     if semantic.length_range.max_length is not None:
         result.append(ViolationType.TOO_LONG)
 
-    if semantic.length_range.min_length > 0:
-        result.append(ViolationType.TOO_SHORT)
+    if semantic.pattern is not None:
+        result.append(ViolationType.PATTERN_MISMATCH)
 
     return tuple(result)

@@ -458,4 +458,4 @@ def test_resolve_model_empty():
     spec = ModelSpec("Empty", "dataclass", [])
     resolved = resolve_model(spec)
     assert resolved.name == "Empty"
-    assert resolved.fields == []
+    assert resolved.fields == ()
