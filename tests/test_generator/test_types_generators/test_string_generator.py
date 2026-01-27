@@ -2,22 +2,16 @@ import re
 
 import pytest
 
-from conformly.constraints.string import MaxLength, MinLength, Pattern
 from conformly.generator.types.string import (
     _generate_invalid_string,
     _generate_valid_string,
+    _invert_pattern_string,
     _random_pattern_with_length,
     _random_string_with_length,
     generate_value,
-    supports,
 )
-from conformly.specs.field import FieldSpec
-
-
-def test_random_string_default():
-    result = _random_string_with_length(None, None)
-    assert isinstance(result, str)
-    assert 5 <= len(result) <= 15
+from conformly.resolver.semantics import StringSemantic
+from conformly.types import FieldKind, LengthRange, ViolationType
 
 
 def test_random_string_min_only():
@@ -27,9 +21,9 @@ def test_random_string_min_only():
 
 
 def test_random_string_max_only():
-    result = _random_string_with_length(None, 7)
+    result = _random_string_with_length(0, 7)
     assert isinstance(result, str)
-    assert 1 <= len(result) <= 7
+    assert 0 <= len(result) <= 7
 
 
 def test_random_string_min_max():
@@ -40,13 +34,18 @@ def test_random_string_min_max():
 
 def test_pattern_no_length_constraints():
     pattern = r"[a-z]{3}"
-    result = _random_pattern_with_length(pattern, None, None)
+    result = _random_pattern_with_length(pattern, 0, None)
     assert isinstance(result, str)
     assert re.fullmatch(pattern, result) is not None
 
 
+def test_invert_pattern_empty_string():
+    result = _invert_pattern_string("", r"a*")
+    assert result == "x"
+
+
 def test_simple_pattern():
-    s = _random_pattern_with_length(r"[a-z]{5}", None, None)
+    s = _random_pattern_with_length(r"[a-z]{5}", 0, None)
     assert re.fullmatch(r"[a-z]{5}", s)
     assert len(s) == 5
 
@@ -64,7 +63,7 @@ def test_fixed_length_within_bounds():
 
 def test_pattern_always_too_long():
     with pytest.raises(RuntimeError, match="Could not generate"):
-        _random_pattern_with_length(r"a{10}", None, max_len=5)
+        _random_pattern_with_length(r"a{10}", 0, max_len=5)
 
 
 def test_pattern_always_too_short():
@@ -74,7 +73,7 @@ def test_pattern_always_too_short():
 
 def test_invalid_regex():
     with pytest.raises(ValueError, match="Invalid or unsupported regex"):
-        _random_pattern_with_length(r"[", None, None)
+        _random_pattern_with_length(r"[", 0, None)
 
 
 def test_min_greater_than_max():
@@ -94,18 +93,18 @@ def test_pattern_empty_string_allowed():
 
 
 def test_pattern_with_unicode():
-    s = _random_pattern_with_length(r"[а-яё]{3}", None, None)  # noqa: RUF001
+    s = _random_pattern_with_length(r"[а-яё]{3}", 0, None)  # noqa: RUF001
     assert re.fullmatch(r"[а-яё]{3}", s, re.IGNORECASE)  # noqa: RUF001
 
 
 def test_pattern_with_anchors():
-    s = _random_pattern_with_length(r"^[A-Z]{2}\d{3}$", None, None)
+    s = _random_pattern_with_length(r"^[A-Z]{2}\d{3}$", 0, None)
     assert re.fullmatch(r"[A-Z]{2}\d{3}", s)
 
 
 def test_pattern_max_length_zero():
     with pytest.raises(RuntimeError):
-        _random_pattern_with_length(r"[a-z]+", None, max_len=0)
+        _random_pattern_with_length(r"[a-z]+", 0, max_len=0)
 
 
 def test_pattern_min_length_zero():
@@ -123,97 +122,130 @@ def test_pattern_complex_but_compatible():
 
 
 def test_generate_valid_no_constraints():
-    result = _generate_valid_string([])
+    result = _generate_valid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(0, None), None)
+    )
     assert isinstance(result, str)
-    assert 5 <= len(result) <= 15
+    assert 0 <= len(result) <= 50
 
 
 def test_generate_valid_min_length_only():
-    constraints = [MinLength(8)]
-    result = _generate_valid_string(constraints)
+    result = _generate_valid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(8, None), None)
+    )
     assert len(result) >= 8
 
 
 def test_generate_valid_pattern_only():
-    constraints = [Pattern(r"[A-Z]{3}")]
-    result = _generate_valid_string(constraints)
+    result = _generate_valid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(0, None), r"[A-Z]{3}")
+    )
     assert re.fullmatch(r"[A-Z]{3}", result)
 
 
 def test_generate_valid_all_constraints():
-    constraints = [
-        MinLength(6),
-        MaxLength(10),
-        Pattern(r"[a-z]{5,12}"),
-    ]
-    result = _generate_valid_string(constraints)
+    result = _generate_valid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(6, 10), r"[a-z]{5,12}")
+    )
     assert 6 <= len(result) <= 10
     assert re.fullmatch(r"[a-z]{5,12}", result)
 
 
 def test_generate_invalid_min_length_violation():
-    constraints = [MinLength(5)]
-    result = _generate_invalid_string(constraints)
-    assert len(result) == 4  # 5 - 1
+    result = _generate_invalid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(5, None), None),
+        ViolationType.TOO_SHORT,
+    )
+    assert len(result) == 4
 
 
 def test_generate_invalid_max_length_violation():
-    constraints = [MaxLength(3)]
-    result = _generate_invalid_string(constraints)
-    assert len(result) == 4  # 3 + 1
+    result = _generate_invalid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(0, 3), None),
+        ViolationType.TOO_LONG,
+    )
+    assert len(result) == 4
 
 
 def test_generate_invalid_pattern_violation():
-    constraints = [Pattern(r"[a-z]{3}")]
-    result = _generate_invalid_string(constraints)
+    result = _generate_invalid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(0, None), r"[a-z]{3}"),
+        ViolationType.PATTERN_MISMATCH,
+    )
     assert not re.fullmatch(r"[a-z]{3}", result)
 
 
 def test_generate_invalid_no_constraints():
-    result = _generate_invalid_string([])
+    result = _generate_invalid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(0, None), None), None
+    )
+    assert result == "INVALID"
+
+
+def test_generate_invalid_string_too_short_with_min_0():
+    result = _generate_invalid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(0, None), None),
+        ViolationType.TOO_SHORT,
+    )
+    assert result == "INVALID"
+
+
+def test_generate_invalid_string_too_long_with_max_none():
+    result = _generate_invalid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(5, None), None),
+        ViolationType.TOO_LONG,
+    )
+    assert result == "INVALID"
+
+
+def test_generate_invalid_string_pattern_mismatch_without_pattern():
+    result = _generate_invalid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(0, None), None),
+        ViolationType.PATTERN_MISMATCH,
+    )
     assert result == "INVALID"
 
 
 def test_generate_invalid_precedence_min_over_max():
-    constraints = [MinLength(5), MaxLength(10)]
-    result = _generate_invalid_string(constraints)
+    result = _generate_invalid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(5, 10), None),
+        ViolationType.TOO_SHORT,
+    )
     assert len(result) == 4
     assert not (len(result) >= 5)
 
 
 def test_generate_invalid_precedence_max_when_no_min():
-    constraints = [MaxLength(5)]
-    result = _generate_invalid_string(constraints)
+    result = _generate_invalid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(0, 5), None),
+        ViolationType.TOO_LONG,
+    )
     assert len(result) == 6
 
 
 def test_generate_invalid_pattern_only():
-    constraints = [Pattern(r"\d{4}")]
-    result = _generate_invalid_string(constraints)
+    result = _generate_invalid_string(
+        StringSemantic(FieldKind.STRING, LengthRange(0, None), r"\d{4}"),
+        ViolationType.PATTERN_MISMATCH,
+    )
     assert not re.fullmatch(r"\d{4}", result)
 
 
 def test_generate_random_string_valid():
-    constraints = [MinLength(3)]
-    result = generate_value(constraints, valid=True)
+    result = generate_value(
+        StringSemantic(FieldKind.STRING, LengthRange(3, None), None), None
+    )
     assert len(result) >= 3
 
 
 def test_generate_random_string_invalid():
-    constraints = [MaxLength(2)]
-    result = generate_value(constraints, valid=False)
+    result = generate_value(
+        StringSemantic(FieldKind.STRING, LengthRange(0, 2), None),
+        ViolationType.TOO_LONG,
+    )
     assert len(result) > 2
 
 
 def test_pattern_with_catastrophic_backtracking_safe():
     with pytest.raises((RuntimeError, ValueError)):
-        _random_pattern_with_length(r"(a+)+", None, max_len=10)
-
-
-def test_supports_valid():
-    assert supports(FieldSpec(name="test", type=str))
-
-
-@pytest.mark.parametrize("_type", [int, list, float, dict, bool, set])
-def test_supports_invalid(_type):
-    assert not supports(FieldSpec(name="test", type=_type))
+        _random_pattern_with_length(r"(a+)+", 0, 10)

@@ -36,7 +36,9 @@ def _generate_valid_string(semantic: StringSemantic) -> str:
     )
 
 
-def _generate_invalid_string(semantic: StringSemantic, violation: ViolationType) -> str:
+def _generate_invalid_string(
+    semantic: StringSemantic, violation: ViolationType | None
+) -> str:
     match violation:
         case ViolationType.TOO_SHORT if semantic.length_range.min_length > 0:
             return _random_string_fixed_length(semantic.length_range.min_length - 1)
@@ -55,10 +57,8 @@ def _generate_invalid_string(semantic: StringSemantic, violation: ViolationType)
 def _random_string_with_length(min_len: int, max_len: int | None) -> str:
     if max_len is None:
         length = random.randint(min_len, min_len + 50)
-    elif min_len <= max_len:
-        length = random.randint(min_len, max_len)
     else:
-        length = random.randint(DEFAULT_MIN_LENGTH, DEFAULT_MAX_LENGTH)
+        length = random.randint(min_len, max_len)
 
     return rstr.rstr(DEFAULT_CHARSET, length)
 

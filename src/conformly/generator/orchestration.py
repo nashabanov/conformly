@@ -12,6 +12,14 @@ def generate_valid(model: ResolvedModel) -> dict[str, Any]:
 
 
 def generate_invalid(model: ResolvedModel, task: PlannedTask) -> dict[str, Any]:
+    target_index = task.path[0]
+
+    if not (0 <= target_index < len(model.fields)):
+        raise IndexError(
+            f"Path index {target_index} out of range for model "
+            f"'{model.name}' with {len(model.fields)} fields"
+        )
+
     result: dict[str, Any] = {}
 
     for i, field in enumerate(model.fields):
@@ -26,7 +34,8 @@ def generate_invalid(model: ResolvedModel, task: PlannedTask) -> dict[str, Any]:
             continue
 
         if field.nested_model is None:
-            raise ValueError(f"Field '{field.name}' if not nested model")
+            raise ValueError(f"Field '{field.name}' is not nested model")
+
         result[field.name] = generate_invalid(
             field.nested_model,
             PlannedTask(path=task.path[1:], allowed_violations=task.allowed_violations),
