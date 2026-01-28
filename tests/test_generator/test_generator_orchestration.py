@@ -14,6 +14,7 @@ from conformly.resolver.semantics import (
     StringSemantic,
 )
 from conformly.types import (
+    _UNSET,
     INT_MAX,
     INT_MIN,
     FieldKind,
@@ -26,9 +27,9 @@ simple_string_field = ResolvedField(
     name="name",
     path=(0,),
     py_type=str,
-    default=None,
+    default=_UNSET,
     nullable=False,
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None),
+    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, True),
 )
 
 default_string_field = ResolvedField(
@@ -37,7 +38,7 @@ default_string_field = ResolvedField(
     py_type=str,
     default="Palo Alto",
     nullable=False,
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 40), None),
+    semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 40), None, True),
 )
 
 optional_string_field = ResolvedField(
@@ -46,7 +47,7 @@ optional_string_field = ResolvedField(
     py_type=str,
     nullable=True,
     default="simple description",
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 60), None),
+    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 60), None, True),
 )
 
 bool_field = ResolvedField(
@@ -54,7 +55,7 @@ bool_field = ResolvedField(
     path=(4,),
     py_type=bool,
     nullable=False,
-    default=None,
+    default=_UNSET,
     semantic=BooleanSemantic(FieldKind.BOOLEAN),
 )
 
@@ -66,19 +67,23 @@ nested_model = ResolvedModel(
             path=(1, 0),
             py_type=str,
             nullable=True,
-            default=None,
-            semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 25), None),
+            default=_UNSET,
+            semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 25), None, True),
         ),
         ResolvedField(
             name="age",
             path=(1, 1),
             py_type=int,
             nullable=False,
-            default=None,
+            default=_UNSET,
             semantic=NumericSemantic(
                 kind=FieldKind.INTEGER,
                 valid_range=Range(18, 120),
-                invalid_ranges=(Range(INT_MIN, 17), Range(121, INT_MAX)),
+                invalid_ranges=(
+                    Range(INT_MIN, 17),
+                    Range(121, INT_MAX),
+                ),
+                has_constraints=True,
             ),
         ),
     ),
@@ -89,7 +94,7 @@ nested_field = ResolvedField(
     path=(1,),
     py_type=object,
     nullable=False,
-    default=None,
+    default=_UNSET,
     nested_model=nested_model,
     semantic=ObjectSemantic(kind=FieldKind.OBJECT),
 )

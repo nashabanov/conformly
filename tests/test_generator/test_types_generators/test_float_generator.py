@@ -20,6 +20,7 @@ semantic_10_20 = NumericSemantic(
     kind=FieldKind.FLOAT,
     valid_range=valid_range_10_20,
     invalid_ranges=invalid_ranges_10_20,
+    has_constraints=True,
 )
 
 
@@ -54,6 +55,7 @@ def test_generate_invalid_float_no_matching_range_raises():
         kind=FieldKind.FLOAT,
         valid_range=Range(0.0, 1.0),
         invalid_ranges=(Range(2.0, 3.0),),
+        has_constraints=True,
     )
 
     with pytest.raises(ValueError, match="No invalid ranges available for violation"):
@@ -67,24 +69,28 @@ bounded_semantic = NumericSemantic(
     kind=FieldKind.FLOAT,
     valid_range=Range(10.0, 20.0),
     invalid_ranges=(Range(-100.0, 9.9), Range(20.1, 100.0)),
+    has_constraints=True,
 )
 
 upper_bounded_semantic = NumericSemantic(
     kind=FieldKind.FLOAT,
     valid_range=Range(FLOAT_MIN, 5.0),
     invalid_ranges=(Range(5.1, 100.0),),
+    has_constraints=True,
 )
 
 lower_bounded_semantic = NumericSemantic(
     kind=FieldKind.FLOAT,
     valid_range=Range(-3.0, FLOAT_MAX),
     invalid_ranges=(Range(-100.0, -3.1),),
+    has_constraints=True,
 )
 
 unbounded_semantic = NumericSemantic(
     kind=FieldKind.FLOAT,
     valid_range=Range(FLOAT_MIN, FLOAT_MAX),
     invalid_ranges=(),
+    has_constraints=False,
 )
 
 

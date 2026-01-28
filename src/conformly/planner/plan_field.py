@@ -5,7 +5,7 @@ from ..types import (
     FieldPath,
     ViolationType,
 )
-from .planned_case import PlannedTask
+from .planned_task import PlannedTask
 
 
 def plan_violation_task(model: ResolvedModel, path: FieldPath) -> PlannedTask:
@@ -16,6 +16,7 @@ def plan_violation_task(model: ResolvedModel, path: FieldPath) -> PlannedTask:
 def define_allowed_violation_types(
     semantic: FieldSemantics,
 ) -> tuple[ViolationType, ...]:
+    print(semantic)
     match semantic:
         case StringSemantic(kind=FieldKind.STRING):
             return define_string_violations(semantic)
@@ -40,10 +41,10 @@ def define_numeric_violations(
     invalid_ranges = semantic.invalid_ranges
 
     for r in invalid_ranges:
-        if r.max_value < valid.min_value:
+        if r.max_value <= valid.min_value:
             result.append(ViolationType.BELOW_MIN)
 
-        if r.min_value > valid.max_value:
+        if r.min_value >= valid.max_value:
             result.append(ViolationType.ABOVE_MAX)
 
     return tuple(result)

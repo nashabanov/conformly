@@ -9,3 +9,4 @@ class NumericSemantic:
     kind: Literal[FieldKind.INTEGER, FieldKind.FLOAT]
     valid_range: Range
     invalid_ranges: tuple[Range, ...]
+    has_constraints: bool

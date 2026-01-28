@@ -18,13 +18,13 @@ def _generate_invalid_integer(
     for r in semantic.invalid_ranges:
         if (
             violation == ViolationType.BELOW_MIN
-            and r.max_value < semantic.valid_range.min_value
+            and r.max_value <= semantic.valid_range.min_value
         ):
             return randint(int(r.min_value), int(r.max_value))
 
         if (
             violation == ViolationType.ABOVE_MAX
-            and r.min_value > semantic.valid_range.max_value
+            and r.min_value >= semantic.valid_range.max_value
         ):
             return randint(int(r.min_value), int(r.max_value))
 

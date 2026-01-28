@@ -25,13 +25,19 @@ def _generate_invalid_float(
     for r in semantic.invalid_ranges:
         if (
             violation == ViolationType.BELOW_MIN
-            and r.max_value < semantic.valid_range.min_value
+            and r.max_value <= semantic.valid_range.min_value
         ):
-            return math.nextafter(r.min_value, r.max_value)
+            if math.isfinite(r.max_value):
+                return math.nextafter(r.max_value, -math.inf)
+            else:
+                return -1e308
         if (
             violation == ViolationType.ABOVE_MAX
-            and r.min_value > semantic.valid_range.max_value
+            and r.min_value >= semantic.valid_range.max_value
         ):
-            return math.nextafter(r.min_value, r.max_value)
+            if math.isfinite(r.min_value):
+                return math.nextafter(r.min_value, math.inf)
+            else:
+                return 1e308
 
     raise ValueError(f"No invalid ranges available for violation: {violation}")

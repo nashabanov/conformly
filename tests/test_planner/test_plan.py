@@ -1,12 +1,12 @@
 import pytest
 
-from conformly.planner.plan import (
+from conformly.planner.plan_field import (
     define_allowed_violation_types,
     define_numeric_violations,
     define_string_violations,
     plan_violation_task,
 )
-from conformly.planner.planned_case import PlannedTask
+from conformly.planner.planned_task import PlannedTask
 from conformly.resolver import ResolvedField, ResolvedModel
 from conformly.resolver.semantics import (
     BooleanSemantic,
@@ -38,24 +38,34 @@ from conformly.types import (
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, None),
                 pattern=r"/\d+/",
+                has_constraints=True,
             ),
             (ViolationType.PATTERN_MISMATCH,),
         ),
         (
             StringSemantic(
-                kind=FieldKind.STRING, length_range=LengthRange(5, None), pattern=None
+                kind=FieldKind.STRING,
+                length_range=LengthRange(5, None),
+                pattern=None,
+                has_constraints=True,
             ),
             (ViolationType.TOO_SHORT,),
         ),
         (
             StringSemantic(
-                kind=FieldKind.STRING, length_range=LengthRange(0, 10), pattern=None
+                kind=FieldKind.STRING,
+                length_range=LengthRange(0, 10),
+                pattern=None,
+                has_constraints=True,
             ),
             (ViolationType.TOO_LONG,),
         ),
         (
             StringSemantic(
-                kind=FieldKind.STRING, length_range=LengthRange(5, 15), pattern=None
+                kind=FieldKind.STRING,
+                length_range=LengthRange(5, 15),
+                pattern=None,
+                has_constraints=True,
             ),
             (
                 ViolationType.TOO_SHORT,
@@ -64,7 +74,10 @@ from conformly.types import (
         ),
         (
             StringSemantic(
-                kind=FieldKind.STRING, length_range=LengthRange(5, 15), pattern=r"/\d+/"
+                kind=FieldKind.STRING,
+                length_range=LengthRange(5, 15),
+                pattern=r"/\d+/",
+                has_constraints=True,
             ),
             (
                 ViolationType.TOO_SHORT,
@@ -74,13 +87,19 @@ from conformly.types import (
         ),
         (
             StringSemantic(
-                kind=FieldKind.STRING, length_range=LengthRange(0, 0), pattern=None
+                kind=FieldKind.STRING,
+                length_range=LengthRange(0, 0),
+                pattern=None,
+                has_constraints=True,
             ),
             (ViolationType.TOO_LONG,),
         ),
         (
             StringSemantic(
-                kind=FieldKind.STRING, length_range=LengthRange(0, None), pattern=None
+                kind=FieldKind.STRING,
+                length_range=LengthRange(0, None),
+                pattern=None,
+                has_constraints=False,
             ),
             (),
         ),
@@ -103,6 +122,7 @@ def test_define_string_violations(
                 kind=FieldKind.INTEGER,
                 valid_range=Range(2, 10),
                 invalid_ranges=(Range(INT_MIN, 1), Range(11, INT_MAX)),
+                has_constraints=True,
             ),
             (ViolationType.BELOW_MIN, ViolationType.ABOVE_MAX),
         ),
@@ -111,6 +131,7 @@ def test_define_string_violations(
                 kind=FieldKind.FLOAT,
                 valid_range=Range(-0.1, FLOAT_MAX),
                 invalid_ranges=(Range(FLOAT_MIN, -0.2),),
+                has_constraints=True,
             ),
             (ViolationType.BELOW_MIN,),
         ),
@@ -119,6 +140,7 @@ def test_define_string_violations(
                 kind=FieldKind.INTEGER,
                 valid_range=Range(INT_MIN, 120),
                 invalid_ranges=(Range(121, INT_MAX),),
+                has_constraints=True,
             ),
             (ViolationType.ABOVE_MAX,),
         ),
@@ -127,6 +149,7 @@ def test_define_string_violations(
                 kind=FieldKind.FLOAT,
                 valid_range=Range(FLOAT_MIN, FLOAT_MAX),
                 invalid_ranges=(),
+                has_constraints=False,
             ),
             (),
         ),
@@ -135,6 +158,7 @@ def test_define_string_violations(
                 kind=FieldKind.FLOAT,
                 valid_range=Range(10.1, 11102.3),
                 invalid_ranges=(Range(FLOAT_MIN, 10.0), Range(11102.4, FLOAT_MAX)),
+                has_constraints=True,
             ),
             (ViolationType.BELOW_MIN, ViolationType.ABOVE_MAX),
         ),
@@ -157,12 +181,16 @@ def test_define_numeric_violations(
                 kind=FieldKind.INTEGER,
                 valid_range=Range(2, 10),
                 invalid_ranges=(Range(INT_MIN, 1), Range(11, INT_MAX)),
+                has_constraints=True,
             ),
             (ViolationType.BELOW_MIN, ViolationType.ABOVE_MAX),
         ),
         (
             StringSemantic(
-                kind=FieldKind.STRING, length_range=LengthRange(5, 15), pattern=r"/\d+/"
+                kind=FieldKind.STRING,
+                length_range=LengthRange(5, 15),
+                pattern=r"/\d+/",
+                has_constraints=True,
             ),
             (
                 ViolationType.TOO_SHORT,
@@ -195,7 +223,7 @@ city_field = ResolvedField(
     py_type=str,
     default=None,
     nullable=False,
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, None), None),
+    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, None), None, False),
 )
 
 zip_field = ResolvedField(
@@ -204,7 +232,7 @@ zip_field = ResolvedField(
     py_type=str,
     default=None,
     nullable=False,
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 120), None),
+    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 120), None, True),
 )
 
 second_nested = ResolvedModel("Address", (city_field, zip_field))
@@ -215,7 +243,7 @@ address_field = ResolvedField(
     py_type=object,
     default=None,
     nullable=False,
-    semantic=ObjectSemantic(FieldKind.OBJECT),
+    semantic=ObjectSemantic(FieldKind.OBJECT, False),
     nested_model=second_nested,
 )
 
@@ -225,7 +253,7 @@ phone_field = ResolvedField(
     py_type=str,
     default=None,
     nullable=True,
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None),
+    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, False),
 )
 
 first_nested = ResolvedModel("Profile", (address_field, phone_field))
@@ -236,7 +264,9 @@ name_field = ResolvedField(
     py_type=str,
     default=None,
     nullable=False,
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, None), pattern=None),
+    semantic=StringSemantic(
+        FieldKind.STRING, LengthRange(0, None), pattern=None, has_constraints=True
+    ),
 )
 
 age_field = ResolvedField(
@@ -246,7 +276,10 @@ age_field = ResolvedField(
     default=None,
     nullable=False,
     semantic=NumericSemantic(
-        FieldKind.INTEGER, Range(18, 120), (Range(INT_MIN, 17), Range(121, INT_MAX))
+        FieldKind.INTEGER,
+        Range(18, 120),
+        (Range(INT_MIN, 17), Range(121, INT_MAX)),
+        True,
     ),
 )
 
@@ -256,7 +289,7 @@ profile_field = ResolvedField(
     py_type=object,
     default=None,
     nullable=False,
-    semantic=ObjectSemantic(FieldKind.OBJECT),
+    semantic=ObjectSemantic(FieldKind.OBJECT, False),
     nested_model=first_nested,
 )
 

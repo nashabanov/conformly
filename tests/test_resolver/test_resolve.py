@@ -80,6 +80,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(5, 50),
                 pattern=r"[a-z]+",
+                has_constraints=True,
             ),
         ),
         (
@@ -88,6 +89,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(3, None),
                 pattern=None,
+                has_constraints=True,
             ),
         ),
         (
@@ -96,6 +98,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, 100),
                 pattern=None,
+                has_constraints=True,
             ),
         ),
         (
@@ -104,6 +107,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, None),
                 pattern=r"[a-z]+",
+                has_constraints=True,
             ),
         ),
         (
@@ -112,6 +116,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(5, None),
                 pattern=r"[a-z]+",
+                has_constraints=True,
             ),
         ),
         (
@@ -120,6 +125,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, 15),
                 pattern=r"[a-z]+",
+                has_constraints=True,
             ),
         ),
         (
@@ -128,6 +134,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, None),
                 pattern=None,
+                has_constraints=False,
             ),
         ),
         (
@@ -136,6 +143,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, None),
                 pattern=None,
+                has_constraints=True,
             ),
         ),
         (
@@ -144,6 +152,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, 0),
                 pattern=None,
+                has_constraints=True,
             ),
         ),
         (
@@ -152,6 +161,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(5, 50),
                 pattern=r"[a-z]+",
+                has_constraints=True,
             ),
         ),
         (
@@ -160,6 +170,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(5, None),
                 pattern=None,
+                has_constraints=True,
             ),
         ),
         (
@@ -168,6 +179,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, 10),
                 pattern=None,
+                has_constraints=True,
             ),
         ),
         (
@@ -176,6 +188,7 @@ def nested_model_spec() -> ModelSpec:
                 kind=FieldKind.STRING,
                 length_range=LengthRange(7, 10),
                 pattern=None,
+                has_constraints=True,
             ),
         ),
     ],
@@ -393,6 +406,7 @@ def test_resolve_field_flat() -> None:
     assert resolved.nullable is False
     assert isinstance(resolved.semantic, NumericSemantic)
     assert resolved.nested_model is None
+    assert resolved.semantic.has_constraints is True
 
 
 def test_resolve_field_with_nested_model():

@@ -14,18 +14,21 @@ int_semantic_10_20 = NumericSemantic(
         Range(-100, 9),
         Range(21, 100),
     ),
+    has_constraints=True,
 )
 
 int_semantic_ge5 = NumericSemantic(
     kind=FieldKind.INTEGER,
     valid_range=Range(5, INT_MAX),
     invalid_ranges=(Range(-50, 4),),
+    has_constraints=True,
 )
 
 int_semantic_le100 = NumericSemantic(
     kind=FieldKind.INTEGER,
     valid_range=Range(INT_MIN, 100),
     invalid_ranges=(Range(101, 200),),
+    has_constraints=True,
 )
 
 
@@ -59,6 +62,7 @@ def test_generate_invalid_integer_no_matching_range_raises():
         kind=FieldKind.INTEGER,
         valid_range=Range(0.0, 10.0),
         invalid_ranges=(Range(11.0, 20.0),),
+        has_constraints=True,
     )
 
     with pytest.raises(ValueError):

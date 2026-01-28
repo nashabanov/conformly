@@ -1,8 +1,13 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 import math
+from typing import Literal
 
 FieldPath = tuple[int, ...]
+
+
+CaseStrategy = Literal["first", "random"] | str
+CasesStrategy = Literal["first", "random", "all"] | str
 
 
 class FieldKind(Enum):
@@ -48,3 +53,6 @@ class Range:
 class LengthRange:
     min_length: int
     max_length: int | None
+
+
+_UNSET = object()

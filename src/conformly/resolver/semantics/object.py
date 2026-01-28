@@ -7,3 +7,4 @@ from ...types import FieldKind
 @dataclass(frozen=True)
 class ObjectSemantic:
     kind: Literal[FieldKind.OBJECT]
+    has_constraints: bool = False

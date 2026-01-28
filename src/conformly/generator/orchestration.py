@@ -3,7 +3,7 @@ from typing import Any
 
 from ..planner import PlannedTask
 from ..resolver import ResolvedField, ResolvedModel
-from ..types import ViolationType
+from ..types import _UNSET, ViolationType
 from .registry import get_generator
 
 
@@ -47,11 +47,12 @@ def generate_invalid(model: ResolvedModel, task: PlannedTask) -> dict[str, Any]:
 def generate_field(
     field: ResolvedField, violations: tuple[ViolationType, ...] | None = None
 ) -> Any:
-    if field.nullable and violations is None:
-        return None
+    if violations is None:
+        if field.nullable:
+            return None
 
-    if field.default and violations is None:
-        return field.default
+        if field.default is not _UNSET:
+            return field.default
 
     if field.nested_model:
         return generate_valid(field.nested_model)

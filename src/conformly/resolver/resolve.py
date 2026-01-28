@@ -39,10 +39,7 @@ def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:
             [
                 resolve_field(
                     f,
-                    (
-                        *_prefix,
-                        i,
-                    ),
+                    (*_prefix, i),
                 )
                 for i, f in enumerate(spec.fields)
             ]
@@ -76,6 +73,7 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
             invalid_ranges=calculate_invalid_numeric_ranges(
                 field_type=t, bounds=valid_bounds
             ),
+            has_constraints=field_spec.has_constraints(),
         )
 
     elif t is float:
@@ -86,16 +84,17 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
             invalid_ranges=calculate_invalid_numeric_ranges(
                 field_type=t, bounds=valid_bounds
             ),
+            has_constraints=field_spec.has_constraints(),
         )
 
     elif t is str:
         return create_string_semantic(c)
 
     elif field_spec.nested_model is not None:
-        return ObjectSemantic(FieldKind.OBJECT)
+        return ObjectSemantic(FieldKind.OBJECT, field_spec.has_constraints())
 
     elif t is bool:
-        return BooleanSemantic(FieldKind.BOOLEAN)
+        return BooleanSemantic(FieldKind.BOOLEAN, field_spec.has_constraints())
 
     else:
         raise NotImplementedError(f"No semantics for field with type: {t} ")
@@ -128,21 +127,15 @@ def calculate_invalid_numeric_ranges(
         return tuple(result)
 
     if field_type is float:
-        if bounds.min_value > FLOAT_MIN:
-            result.append(
-                Range(
-                    min_value=-math.inf,
-                    max_value=bounds.min_value,
-                )
-            )
+        if bounds.min_value == math.nextafter(0.0, math.inf):
+            result.append(Range(min_value=-math.inf, max_value=0.0))
+        elif bounds.min_value > FLOAT_MIN:
+            result.append(Range(min_value=-math.inf, max_value=bounds.min_value))
 
-        if bounds.max_value < FLOAT_MAX:
-            result.append(
-                Range(
-                    min_value=bounds.max_value,
-                    max_value=math.inf,
-                )
-            )
+        if bounds.max_value == math.nextafter(0.0, -math.inf):
+            result.append(Range(min_value=0.0, max_value=math.inf))
+        elif bounds.max_value < FLOAT_MAX:
+            result.append(Range(min_value=bounds.max_value, max_value=math.inf))
 
         return tuple(result)
 
@@ -191,6 +184,7 @@ def calculate_numeric_bounds(field_type: type, constraints: list[Constraint]) ->
 
 
 def create_string_semantic(constraints: list[Constraint]) -> StringSemantic:
+    has_constraints = len(constraints) > 0
     min_length = 0
     max_length = None
     pattern = None
@@ -223,4 +217,5 @@ def create_string_semantic(constraints: list[Constraint]) -> StringSemantic:
             max_length=max_length,
         ),
         pattern=pattern,
+        has_constraints=has_constraints,
     )
