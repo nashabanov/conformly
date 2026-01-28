@@ -50,6 +50,7 @@ no_implicit_optional = true
 implicit_reexport = false
 warn_return_any = true
 warn_unreachable = true
+pretty = true
 
 
 [tool.ruff]

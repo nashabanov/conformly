@@ -1,15 +1,17 @@
-from conformly.generator.protocol import TypeGeneratorProtocol
-from conformly.specs import FieldSpec
+from ..types import FieldKind
+from .protocol import TypeGeneratorProtocol
+from .types import boolean, float, integer, string
 
-_generators: list[TypeGeneratorProtocol] = []
+_GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
+    FieldKind.STRING: string,
+    FieldKind.BOOLEAN: boolean,
+    FieldKind.FLOAT: float,
+    FieldKind.INTEGER: integer,
+}
 
 
-def register(generator: TypeGeneratorProtocol) -> None:
-    _generators.append(generator)
-
-
-def get_generator(field: FieldSpec) -> TypeGeneratorProtocol:
-    for generator in _generators:
-        if generator.supports(field):
-            return generator
-    raise TypeError(f"No generators found for {field.type}")
+def get_generator(kind: FieldKind) -> TypeGeneratorProtocol:
+    try:
+        return _GENERATORS[kind]
+    except KeyError:
+        raise TypeError(f"No generators found for {kind}")

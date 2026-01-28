@@ -1,184 +1,241 @@
-from collections.abc import Sequence
-
 import pytest
 
-from conformly.constraints import Constraint, MaxLength
 from conformly.generator.orchestration import (
     generate_field,
     generate_invalid,
     generate_valid,
 )
-from conformly.generator.registry import _generators, register
-from conformly.specs import FieldSpec, ModelSpec
+from conformly.planner import PlannedTask
+from conformly.resolver import ResolvedField, ResolvedModel
+from conformly.resolver.semantics import (
+    BooleanSemantic,
+    NumericSemantic,
+    ObjectSemantic,
+    StringSemantic,
+)
+from conformly.types import (
+    _UNSET,
+    INT_MAX,
+    INT_MIN,
+    FieldKind,
+    LengthRange,
+    Range,
+    ViolationType,
+)
 
-
-class TestStringGenerator:
-    def supports(self, field: FieldSpec) -> bool:
-        return field.type is str
-
-    def generate_value(self, constraints: Sequence[Constraint], valid: bool) -> str:
-        from conformly.generator.types.string import generate_value
-
-        return generate_value(constraints, valid)
-
-
-@pytest.fixture(autouse=True)
-def fresh_registry():
-    original = list(_generators)
-    register(TestStringGenerator())
-    yield
-    _generators.clear()
-    for gen in original:
-        _generators.append(gen)
-
-
-# --- Поля ---
-
-simple_string_field = FieldSpec(
+simple_string_field = ResolvedField(
     name="name",
-    type=str,
-    constraints=[MaxLength(40)],
+    path=(0,),
+    py_type=str,
+    default=_UNSET,
+    nullable=False,
+    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, True),
 )
 
-default_string_field = FieldSpec(name="city", type=str, default="Palo Alto")
-
-optional_string_field = FieldSpec(
-    name="description", type=str, nullable=True, default="simple description"
+default_string_field = ResolvedField(
+    name="city",
+    path=(0, 1),
+    py_type=str,
+    default="Palo Alto",
+    nullable=False,
+    semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 40), None, True),
 )
 
-bool_field = FieldSpec(name="is_admin", type=bool)
-
-simple_model = ModelSpec(
-    name="User", type="dataclass", fields=[simple_string_field, default_string_field]
+optional_string_field = ResolvedField(
+    name="description",
+    path=(3,),
+    py_type=str,
+    nullable=True,
+    default="simple description",
+    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 60), None, True),
 )
 
-
-address_spec = ModelSpec(
-    name="Address",
-    type="dataclass",
-    fields=[
-        FieldSpec(name="city", type=str, constraints=[MaxLength(30)]),
-        FieldSpec(name="zip", type=str, constraints=[MaxLength(20)]),
-    ],
+bool_field = ResolvedField(
+    name="is_admin",
+    path=(4,),
+    py_type=bool,
+    nullable=False,
+    default=_UNSET,
+    semantic=BooleanSemantic(FieldKind.BOOLEAN),
 )
 
-profile_spec = ModelSpec(
+nested_model = ResolvedModel(
     name="Profile",
-    type="dataclass",
-    fields=[
-        FieldSpec(
-            name="email",
-            type=str,
-            constraints=[MaxLength(30)],
-        ),
-        FieldSpec(
+    fields=(
+        ResolvedField(
             name="address",
-            type=object,
-            nested_model=address_spec,
+            path=(1, 0),
+            py_type=str,
+            nullable=True,
+            default=_UNSET,
+            semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 25), None, True),
         ),
-    ],
+        ResolvedField(
+            name="age",
+            path=(1, 1),
+            py_type=int,
+            nullable=False,
+            default=_UNSET,
+            semantic=NumericSemantic(
+                kind=FieldKind.INTEGER,
+                valid_range=Range(18, 120),
+                invalid_ranges=(
+                    Range(INT_MIN, 17),
+                    Range(121, INT_MAX),
+                ),
+                has_constraints=True,
+            ),
+        ),
+    ),
 )
 
-model_with_nested = ModelSpec(
-    name="User",
-    type="dataclass",
-    fields=[
-        FieldSpec(
-            name="username",
-            type=str,
-            constraints=[MaxLength(20)],
-        ),
-        FieldSpec(
-            name="profile",
-            type=object,
-            nested_model=profile_spec,
-        ),
-    ],
+nested_field = ResolvedField(
+    name="profile",
+    path=(1,),
+    py_type=object,
+    nullable=False,
+    default=_UNSET,
+    nested_model=nested_model,
+    semantic=ObjectSemantic(kind=FieldKind.OBJECT),
 )
 
 
-# ===== TESTS FOR generate_field() =====
+# ===== TESTS for generate_field() =====
 
 
-def test_generate_field_valid_simple_string():
-    field_value = generate_field(simple_string_field, valid=True)
+def test_generate_field_valid_simple_string() -> None:
+    field_value = generate_field(simple_string_field, None)
     assert isinstance(field_value, str)
-    assert len(field_value) <= 40
+    assert len(field_value) <= 15
 
 
-def test_generate_field_invalid_simple_string():
-    field_value = generate_field(simple_string_field, valid=False)
+def test_generate_field_invalid_simple_string() -> None:
+    field_value = generate_field(simple_string_field, (ViolationType.TOO_LONG,))
     assert isinstance(field_value, str)
-    assert len(field_value) > 40
+    assert len(field_value) > 15
 
 
-def test_generate_field_valid_bool():
-    value = generate_field(bool_field, valid=True)
+def test_generate_field_valid_bool() -> None:
+    value = generate_field(bool_field, None)
     assert isinstance(value, bool)
 
 
-def test_generate_field_valid_default():
-    assert generate_field(default_string_field, valid=True) == "Palo Alto"
+def test_generate_field_valid_default() -> None:
+    assert generate_field(default_string_field, None) == "Palo Alto"
 
 
-def test_generate_field_optional():
-    # Поведение: если поле optional (nullable=True), возвращаем None даже при valid=True
-    assert generate_field(optional_string_field, valid=True) is None
+def test_generate_field_invalid_default() -> None:
+    field_value = generate_field(
+        default_string_field, (ViolationType.TOO_SHORT, ViolationType.TOO_LONG)
+    )
+    assert isinstance(field_value, str)
+    assert len(field_value) < 5 or len(field_value) > 40
 
 
-@pytest.mark.parametrize("field_type", [list, dict])
-def test_generate_field_unsupported_type(field_type):
-    with pytest.raises(TypeError, match="No generators found"):
-        generate_field(FieldSpec(name="unsupported", type=field_type), valid=True)
+def test_generate_field_valid_optional() -> None:
+    assert generate_field(optional_string_field, None) is None
 
 
-# ===== TEST FOR generate_invalid() =====
+def test_generate_field_invalid_optional() -> None:
+    field_value = generate_field(optional_string_field, (ViolationType.TOO_LONG,))
+    assert isinstance(field_value, str)
+    assert len(field_value) > 60
 
 
-def test_generate_invalid_simple_model():
-    invalid_item = generate_invalid(simple_model, (0,))  # нарушаем поле 0 ("name")
-    assert isinstance(invalid_item, dict)
-    assert isinstance(invalid_item["name"], str)
-    assert len(invalid_item["name"]) > 40
-    assert invalid_item["city"] == "Palo Alto"
+# ===== TESTS for generate_invalid() =====
 
 
-def test_generate_invalid_skipping_fields_without_constraint():
+def test_generate_invalid_flat() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field, bool_field))
+    task = PlannedTask(path=(0,), allowed_violations=(ViolationType.TOO_LONG,))
+
+    result = generate_invalid(model, task)
+
+    assert isinstance(result["name"], str)
+    assert len(result["name"]) > 15
+    assert isinstance(result["is_admin"], bool)
+
+
+def test_generate_invalid_empty_violations() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field, bool_field))
+    task = PlannedTask(path=(0,), allowed_violations=())
+
     with pytest.raises(ValueError):
-        generate_invalid(simple_model, (1,))
+        generate_invalid(model, task)
 
 
-def test_generate_invalid_nested_top_level():
-    invalid_item = generate_invalid(model_with_nested, (0,))
-    assert len(invalid_item["username"]) > 20
+def test_generate_invalid_nested() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field, nested_field))
+    task = PlannedTask(
+        path=(1, 1),
+        allowed_violations=(ViolationType.BELOW_MIN, ViolationType.ABOVE_MAX),
+    )
+
+    result = generate_invalid(model, task)
+
+    assert isinstance(result["name"], str)
+    assert len(result["name"]) <= 15
+    assert isinstance(result["profile"], dict)
+    assert result["profile"]["address"] is None
+    assert isinstance(result["profile"]["age"], int)
+    assert result["profile"]["age"] < 18 or result["profile"]["age"] > 120
 
 
-def test_generate_invalid_nested():
-    invalid_item = generate_invalid(model_with_nested, (1, 0))
-    assert len(invalid_item["profile"]["email"]) > 30
+def test_generate_invalid_path_into_non_nested_field() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field,))
+    task = PlannedTask((0, 1), (ViolationType.BELOW_MIN,))
+
+    with pytest.raises(ValueError):
+        generate_invalid(model, task)
 
 
-def test_generate_invalid_deep_nested():
-    invalid_item = generate_invalid(model_with_nested, (1, 1, 1))
-    assert len(invalid_item["profile"]["address"]["zip"]) > 20
+def test_generate_invalid_ureacheble_index() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field,))
+    task = PlannedTask((1,), (ViolationType.ABOVE_MAX,))
+
+    with pytest.raises(IndexError):
+        generate_invalid(model, task)
 
 
-# ===== TEST FOR generate_valid() =====
+def test_generate_invalid_ureacheble_index_nested() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field, nested_field))
+    task = PlannedTask(
+        path=(1, 4),
+        allowed_violations=(ViolationType.BELOW_MIN, ViolationType.ABOVE_MAX),
+    )
+
+    with pytest.raises(IndexError):
+        generate_invalid(model, task)
 
 
-def test_generate_valid_simple_model():
-    valid_item = generate_valid(simple_model)
-    assert isinstance(valid_item, dict)
-    assert isinstance(valid_item["name"], str)
-    assert len(valid_item["name"]) <= 40
-    assert valid_item["city"] == "Palo Alto"
+# ===== TESTS for generate_valid() =====
 
 
-def test_generate_valid_nested_model():
-    valid_item = generate_valid(model_with_nested)
-    assert isinstance(valid_item, dict)
-    assert isinstance(valid_item["profile"], dict)
-    assert isinstance(valid_item["profile"]["address"], dict)
-    assert isinstance(valid_item["profile"]["address"]["city"], str)
-    assert len(valid_item["profile"]["address"]["city"]) <= 30
-    assert len(valid_item["username"]) <= 20
+def test_generate_valid_flat() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field, bool_field))
+
+    result = generate_valid(model)
+
+    assert isinstance(result, dict)
+    assert result.keys() == {"name", "is_admin"}
+    assert isinstance(result["name"], str)
+    assert len(result["name"]) <= 15
+    assert isinstance(result["is_admin"], bool)
+
+
+def test_generate_valid_nested() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field, nested_field))
+
+    result = generate_valid(model)
+
+    assert isinstance(result, dict)
+    assert result.keys() == {"name", "profile"}
+    assert isinstance(result["name"], str)
+    assert len(result["name"]) <= 15
+    assert isinstance(result["profile"], dict)
+
+    nested_result = result["profile"]
+
+    assert nested_result["address"] is None
+    assert isinstance(nested_result["age"], int)
+    assert nested_result["age"] <= 120 and nested_result["age"] >= 18

@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.3.1] - 2025-01-28
+
+### Added
+- Semantic relover  (`ModelSpec -> ResolvedModel`)
+- Field semantics layer that stores executable representation of constraints
+- Field level planner for invalid generation that select constrained violations based on field semantic
+- Session level planner that search for fields allowed for violating for selected strategy
+
+### Changed
+- Restructured generation pipeline to include resolver and planner stages (`model -> parser -> resolver -> planner -> generator -> dict`)
+- Removed strategy planning and fields searching logic from `core.py` now its `planner` responsibility
+- Removed bounds calculating from `generator` now is works with semantics and execute pre-calculated violations
+- Moved common types and constants in `types.py`
+- Field violations now selecting randomly
+
+### Fixed
+- `nan`/`inf` handling for numeric bounds calculation and generation
+- Some incorrect bounds calculation cases
+
+
+
 ## [0.3.0] - 2025-01-21
 
 ### Added

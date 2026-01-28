@@ -3,12 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from ..types import _UNSET
+
 if TYPE_CHECKING:
+    from ..constraints import Constraint
     from .model import ModelSpec
-
-    from conformly.constraints import Constraint
-
-_UNSET = object()
 
 # TODO: зафиксировать уже логику обязательности
 
@@ -27,6 +26,9 @@ class FieldSpec:
 
     def is_optional(self) -> bool:
         return self.nullable
+
+    def has_constraints(self) -> bool:
+        return len(self.constraints) > 0
 
     def __repr__(self) -> str:
         parts = [
