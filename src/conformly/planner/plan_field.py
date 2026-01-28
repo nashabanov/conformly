@@ -16,7 +16,6 @@ def plan_violation_task(model: ResolvedModel, path: FieldPath) -> PlannedTask:
 def define_allowed_violation_types(
     semantic: FieldSemantics,
 ) -> tuple[ViolationType, ...]:
-    print(semantic)
     match semantic:
         case StringSemantic(kind=FieldKind.STRING):
             return define_string_violations(semantic)

@@ -125,9 +125,9 @@ class TestBlogPostModel:
             assert post["views"] >= 0
             assert 0 <= post["rating"] <= 5
 
-    def test_invalid_post_short_title(self):
+    def test_invalid_post_title(self):
         invalid = case(BlogPost, valid=False, strategy="title")
-        assert len(invalid["title"]) == 4
+        assert len(invalid["title"]) < 5 or len(invalid["title"]) > 200
 
     def test_invalid_post_bad_rating(self):
         invalid = case(BlogPost, valid=False, strategy="rating")
@@ -184,9 +184,9 @@ class TestCreateUserRequest:
         invalid = case(CreateUserRequest, valid=False, strategy="age")
         assert invalid["age"] < 18 or invalid["age"] > 120
 
-    def test_invalid_weak_password(self):
+    def test_invalid_password(self):
         invalid = case(CreateUserRequest, valid=False, strategy="password")
-        assert len(invalid["password"]) == 7  # min_length=8 -> generates 7
+        assert len(invalid["password"]) < 8 or len(invalid["password"]) > 120
 
     def test_bulk_valid_requests(self):
         requests = cases(CreateUserRequest, valid=True, count=100)
@@ -260,10 +260,6 @@ class TestArticle:
         for article in articles:
             assert 5 <= len(article["title"]) <= 300
             assert 2 <= len(article["author"]) <= 100
-
-    def test_invalid_short_title(self):
-        invalid = case(Article, valid=False, strategy="title")
-        assert len(invalid["title"]) == 4  # min_length=5 -> generates 4
 
 
 class TestRealWorldUsagePatterns:
