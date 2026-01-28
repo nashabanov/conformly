@@ -10,7 +10,7 @@ ModelType = Literal["dataclass", "pydantic"]
 class ModelSpec:
     name: str
     type: ModelType
-    fields: list[FieldSpec]
+    fields: tuple[FieldSpec, ...]
 
     def get_field(self, field_name: str) -> FieldSpec:
         for field in self.fields:
