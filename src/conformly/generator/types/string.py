@@ -72,7 +72,7 @@ def _random_string_fixed_length(length: int) -> str:
 
 
 def _random_pattern_with_length(pattern: str, min_len: int, max_len: int | None) -> str:
-    if min_len is not None and max_len is not None and min_len > max_len:
+    if max_len is not None and min_len > max_len:
         raise ValueError("min_len cannot be greater than max_len")
 
     compiled = None
@@ -111,7 +111,7 @@ def _random_pattern_with_length(pattern: str, min_len: int, max_len: int | None)
         return candidate
 
     msg = f"Could not generate a string matching pattern {pattern!r}"
-    if min_len is not None or max_len is not None:
+    if max_len is not None:
         msg += f" with length constraints min={min_len}, max={max_len}"
     msg += " after 20 attempts."
     raise RuntimeError(msg)

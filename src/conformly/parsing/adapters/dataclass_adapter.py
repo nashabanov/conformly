@@ -2,11 +2,11 @@ from dataclasses import MISSING, Field, fields, is_dataclass
 from types import UnionType
 from typing import Annotated, Any, Union, cast, get_args, get_origin, get_type_hints
 
-from conformly.constraints import Constraint
-from conformly.constraints.mapping import create_constraint
-from conformly.constraints.types import ALLOWED_CONSTRAINT_TYPE, ConstraintType
-from conformly.specs import FieldSpec, ModelSpec
-from conformly.specs.field import _UNSET
+from ...constraints import Constraint
+from ...constraints.mapping import create_constraint
+from ...constraints.types import ALLOWED_CONSTRAINT_TYPE, ConstraintType
+from ...specs import FieldSpec, ModelSpec
+from ...types import _UNSET
 
 UNION_TYPES = (Union, UnionType)
 

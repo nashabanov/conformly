@@ -150,34 +150,63 @@ def calculate_max_offset(min_value: int, max_value: int) -> int:
 
 def calculate_numeric_bounds(field_type: type, constraints: list[Constraint]) -> Range:
     if field_type is int:
-        low, high = INT_MIN, INT_MAX
-    elif field_type is float:
-        low, high = FLOAT_MIN, FLOAT_MAX
-    else:
-        raise TypeError(f"Unsupported numeric type: {field_type}")
+        return _calculate_int_bounds(constraints)
+
+    if field_type is float:
+        return _calculate_float_bounds(constraints)
+
+    raise TypeError(f"Unsupported numeric type: {field_type}")
+
+
+def _calculate_int_bounds(constraints: list[Constraint]) -> Range:
+    low: int = INT_MIN
+    high: int = INT_MAX
 
     for c in constraints:
         if not isinstance(c, (GreaterThan, GreaterOrEqual, LessThan, LessOrEqual)):
             continue
 
-        v = int(c.value) if field_type is int else float(c.value)
+        v = int(c.value)
+        if isinstance(c.value, float) and math.isnan(c.value):
+            raise ValueError("Constraint value cannot be NaN")
 
+        match c:
+            case GreaterThan():
+                low = max(low, v + 1)
+            case GreaterOrEqual():
+                low = max(low, v)
+            case LessThan():
+                high = min(high, v - 1)
+            case LessOrEqual():
+                high = min(high, v)
+
+    if low > high:
+        raise ValueError(f"Invalid numeric bounds: min {low} > max {high}")
+    return Range(min_value=low, max_value=high)
+
+
+def _calculate_float_bounds(constraints: list[Constraint]) -> Range:
+    low: float = FLOAT_MIN
+    high: float = FLOAT_MAX
+
+    for c in constraints:
+        if not isinstance(c, (GreaterThan, GreaterOrEqual, LessThan, LessOrEqual)):
+            continue
+
+        v = float(c.value)
         if math.isnan(v):
             raise ValueError("Constraint value cannot be NaN")
 
         match c:
             case GreaterThan():
-                low = max(
-                    low, v + 1 if field_type is int else math.nextafter(v, math.inf)
-                )
+                low = max(low, math.nextafter(v, math.inf))
             case GreaterOrEqual():
                 low = max(low, v)
             case LessThan():
-                high = min(
-                    high, v - 1 if field_type is int else math.nextafter(v, -math.inf)
-                )
+                high = min(high, math.nextafter(v, -math.inf))
             case LessOrEqual():
                 high = min(high, v)
+
     if low > high:
         raise ValueError(f"Invalid numeric bounds: min {low} > max {high}")
     return Range(min_value=low, max_value=high)
