@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from dataclasses import InitVar, dataclass, field, fields
-from typing import Annotated, ClassVar, Optional, Union
+from enum import Enum, EnumMeta
+from typing import Annotated, ClassVar, Literal, Optional, Union
 
 import pytest
 
@@ -11,9 +12,11 @@ from conformly.constraints import (
     MinLength,
     Pattern,
 )
+from conformly.constraints.enum import OneOf
 from conformly.constraints.string import MaxLength
 from conformly.parsing.adapters.dataclass_adapter import (
     _metadata_to_constraints,
+    is_constraints_consistent,
     is_nullable,
     parse,
     parse_annotated_constraints,
@@ -21,6 +24,7 @@ from conformly.parsing.adapters.dataclass_adapter import (
     parse_defaults,
     parse_field,
     parse_fields,
+    parse_intrinsic_type_constraints,
     parse_metadata_constraints,
     resolve_type,
     supports,
@@ -65,6 +69,11 @@ class MixedDataclass:
     name: str = "default"
     email: str | None = None
     age: Annotated[int, "ge=0", "le=150"] = 18
+
+
+class BaseEnum(Enum):
+    a = "a"
+    b = "b"
 
 
 # ====== TESTS FOR supports() ======
@@ -155,6 +164,24 @@ def test_unwrap_base_type_invalid_union():
 
 def test_unwrap_base_type_only_none():
     assert unwrap_base_type(None) is None
+
+
+def test_unwrap_base_type_literal():
+    assert unwrap_base_type(Literal[1, 2]) is Literal[1, 2]
+
+
+def test_unwrap_base_type_optional_literal():
+    assert unwrap_base_type(Optional[Literal[1, 2]]) is Literal[1, 2]  # noqa: UP045
+
+
+def test_unwrap_base_type_literal_union_with_none():
+    assert unwrap_base_type(Literal["a", "b"] | None) is Literal["a", "b"]
+
+
+def test_unwrap_base_type_enum():
+    unwrapped_enum = unwrap_base_type(BaseEnum)
+    assert unwrapped_enum is BaseEnum
+    assert isinstance(unwrapped_enum, EnumMeta)
 
 
 # ====== TESTS FOR is_nullable() ======
@@ -372,7 +399,36 @@ def test_parse_metadata_constraints_invalid_constraint_type():
         parse_metadata_constraints(f)
 
 
-# ====== TESTS FOR parse_constraints() ======
+# ===== TESTS for parse_intrisic_type_constraints() =====
+
+
+def test_parse_intrisic_type_constraints_literal():
+    assert parse_intrinsic_type_constraints(Literal[1, 2]) == (OneOf((1, 2)),)
+
+
+def test_parse_intrisic_type_constraints_enum():
+    assert parse_intrinsic_type_constraints(BaseEnum) == (OneOf(("a", "b")),)
+
+
+@pytest.mark.parametrize("py_type", [str, int, DummyDataclass, None])
+def test_parse_intrisic_type_constraints_other_types(py_type):
+    assert parse_intrinsic_type_constraints(py_type) == ()
+
+
+# ===== TESTS for is_constraints_consistent() =====
+
+
+def test_is_constraints_consistent_valid():
+    constraints = (OneOf((1, 2)),)
+    assert is_constraints_consistent(constraints)
+
+
+def test_is_constraints_consistent_invalid():
+    constraints = (OneOf((1, 2)), GreaterOrEqual(1))
+    assert not is_constraints_consistent(constraints)
+
+
+# ===== TESTS FOR parse_constraints() =====
 
 
 def test_parse_constraints_combined():
@@ -400,6 +456,20 @@ def test_parse_constraints_no_constraints():
     f = fields(DummyDataclass)[0]
     constraints = parse_constraints(f, str)
     assert constraints == ()
+
+
+def test_parse_constraints_not_consistent_one_of():
+    @dataclass
+    class NotConsistent:
+        field1: Annotated[Literal["asd", "asdads"], MaxLength(4)]
+        field2: Annotated[BaseEnum, MinLength(23)]
+
+    with pytest.raises(TypeError):
+        parse_constraints(
+            fields(NotConsistent)[0], Annotated[Literal["asd", "asdads"], MaxLength(4)]
+        )
+    with pytest.raises(TypeError):
+        parse_constraints(fields(NotConsistent)[1], Annotated[BaseEnum, MinLength(23)])
 
 
 # ====== TESTS FOR parse_field() ======

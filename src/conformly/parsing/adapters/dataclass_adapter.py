@@ -1,8 +1,18 @@
 from dataclasses import MISSING, Field, fields, is_dataclass
+from enum import Enum
 from types import UnionType
-from typing import Annotated, Any, Union, cast, get_args, get_origin, get_type_hints
+from typing import (
+    Annotated,
+    Any,
+    Literal,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
-from ...constraints import Constraint
+from ...constraints import Constraint, OneOf
 from ...constraints.mapping import create_constraint
 from ...constraints.types import ALLOWED_CONSTRAINT_TYPE, ConstraintType
 from ...specs import FieldSpec, ModelSpec
@@ -97,10 +107,23 @@ def parse_defaults(field: Field[Any]) -> Any:
 
 
 def parse_constraints(field: Field[Any], field_type: Any) -> tuple[Constraint, ...]:
-    return (
+    constraints = (
         *parse_annotated_constraints(field_type),
         *parse_metadata_constraints(field),
+        *parse_intrinsic_type_constraints(field_type),
     )
+    if not is_constraints_consistent(constraints):
+        raise TypeError(
+            f"Field '{field.name}': Literal/Enum types define a closed set of values "
+            f"and cannot be combined with other constraints. "
+            f"Found conflicting constraints: {[type(c).__name__ for c in constraints]}"
+        )
+    return constraints
+
+
+def is_constraints_consistent(constraints: tuple[Constraint, ...]) -> bool:
+    has_one_of = any(isinstance(c, OneOf) for c in constraints)
+    return not has_one_of or len(constraints) == 1
 
 
 def parse_annotated_constraints(field_type: Any) -> tuple[Constraint, ...]:
@@ -134,6 +157,20 @@ def parse_metadata_constraints(field: Field[Any]) -> tuple[Constraint, ...]:
         constraints.append(constraint)
 
     return tuple(constraints)
+
+
+def parse_intrinsic_type_constraints(field_type: Any) -> tuple[Constraint, ...]:
+    base_type = unwrap_base_type(
+        field_type
+    )  # NOTE: needed to find non consistent constraints
+
+    if get_origin(base_type) is Literal:
+        return (OneOf(get_args(base_type)),)
+
+    if isinstance(base_type, type) and issubclass(base_type, Enum):
+        return (OneOf(tuple(member.value for member in base_type)),)
+
+    return ()
 
 
 def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
