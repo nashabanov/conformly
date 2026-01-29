@@ -22,7 +22,6 @@ from conformly.parsing.adapters.dataclass_adapter import (
     parse_field,
     parse_fields,
     parse_metadata_constraints,
-    parse_name,
     resolve_type,
     supports,
     unwrap_base_type,
@@ -81,21 +80,6 @@ def test_supports_not_dataclass():
 
 def test_supports_int():
     assert not supports(int)
-
-
-# ====== TESTS FOR parse_name() ======
-
-
-def test_parse_name():
-    assert parse_name(DummyDataclass) == "DummyDataclass"
-
-
-def test_parse_name_complex():
-    assert parse_name(OptionalDataclass) == "OptionalDataclass"
-
-
-def test_parse_name_constraints():
-    assert parse_name(ConstraintsDataclass) == "ConstraintsDataclass"
 
 
 # ====== TESTS FOR resolve_type() ======
@@ -313,7 +297,7 @@ def test_parse_annotated_constraints_exists():
 
 def test_parse_annotated_constraints_empty():
     constraints = parse_annotated_constraints(str)
-    assert constraints == []
+    assert constraints == ()
 
 
 def test_parse_annotated_constraints_single():
@@ -323,7 +307,7 @@ def test_parse_annotated_constraints_single():
 
 def test_parse_annotated_constraints_none():
     constraints = parse_annotated_constraints(type(None))
-    assert constraints == []
+    assert constraints == ()
 
 
 def test_parse_annotated_constraints_dict_format_valid():
@@ -354,7 +338,7 @@ def test_parse_metadata_constraints_exists():
 def test_parse_metadata_constraints_empty():
     f = fields(DummyDataclass)[0]
     constraints = parse_metadata_constraints(f)
-    assert constraints == []
+    assert constraints == ()
 
 
 def test_parse_metadata_constraints_custom_keys():
@@ -415,7 +399,7 @@ def test_parse_constraints_metadata_only():
 def test_parse_constraints_no_constraints():
     f = fields(DummyDataclass)[0]
     constraints = parse_constraints(f, str)
-    assert constraints == []
+    assert constraints == ()
 
 
 # ====== TESTS FOR parse_field() ======
@@ -533,7 +517,7 @@ def test_parse_model_type():
 
 def test_parse_model_fields():
     spec = parse(DummyDataclass)
-    assert isinstance(spec.fields, list)
+    assert isinstance(spec.fields, tuple)
     assert len(spec.fields) == 2
 
 

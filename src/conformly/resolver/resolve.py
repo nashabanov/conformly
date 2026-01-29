@@ -148,7 +148,9 @@ def calculate_max_offset(min_value: int, max_value: int) -> int:
     return min(base, 10**6)
 
 
-def calculate_numeric_bounds(field_type: type, constraints: list[Constraint]) -> Range:
+def calculate_numeric_bounds(
+    field_type: type, constraints: tuple[Constraint, ...]
+) -> Range:
     if field_type is int:
         return _calculate_int_bounds(constraints)
 
@@ -158,7 +160,7 @@ def calculate_numeric_bounds(field_type: type, constraints: list[Constraint]) ->
     raise TypeError(f"Unsupported numeric type: {field_type}")
 
 
-def _calculate_int_bounds(constraints: list[Constraint]) -> Range:
+def _calculate_int_bounds(constraints: tuple[Constraint, ...]) -> Range:
     low: int = INT_MIN
     high: int = INT_MAX
 
@@ -185,7 +187,7 @@ def _calculate_int_bounds(constraints: list[Constraint]) -> Range:
     return Range(min_value=low, max_value=high)
 
 
-def _calculate_float_bounds(constraints: list[Constraint]) -> Range:
+def _calculate_float_bounds(constraints: tuple[Constraint, ...]) -> Range:
     low: float = FLOAT_MIN
     high: float = FLOAT_MAX
 
@@ -212,7 +214,7 @@ def _calculate_float_bounds(constraints: list[Constraint]) -> Range:
     return Range(min_value=low, max_value=high)
 
 
-def create_string_semantic(constraints: list[Constraint]) -> StringSemantic:
+def create_string_semantic(constraints: tuple[Constraint, ...]) -> StringSemantic:
     has_constraints = len(constraints) > 0
     min_length = 0
     max_length = None

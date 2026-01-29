@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from ..types import _UNSET
@@ -9,14 +9,12 @@ if TYPE_CHECKING:
     from ..constraints import Constraint
     from .model import ModelSpec
 
-# TODO: зафиксировать уже логику обязательности
-
 
 @dataclass(frozen=True)
 class FieldSpec:
     name: str
     type: type
-    constraints: list[Constraint] = field(default_factory=list)
+    constraints: tuple[Constraint, ...] = ()
     default: Any = _UNSET
     nullable: bool = False
     nested_model: ModelSpec | None = None

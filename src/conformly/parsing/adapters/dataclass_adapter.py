@@ -19,21 +19,15 @@ def parse(model: type) -> ModelSpec:
     if not supports(model):
         raise TypeError(f"Unsupported model type: {model}. Expected dataclass.")
 
-    return ModelSpec(
-        name=parse_name(model), type="dataclass", fields=parse_fields(model)
-    )
+    return ModelSpec(name=model.__name__, type="dataclass", fields=parse_fields(model))
 
 
-def parse_name(model: type) -> str:
-    return model.__name__
-
-
-def parse_fields(model: type) -> list[FieldSpec]:
+def parse_fields(model: type) -> tuple[FieldSpec, ...]:
     type_hints = get_type_hints(model, include_extras=True)
-    return [
+    return tuple(
         parse_field(field, resolve_type(type_hints, field.name))
         for field in fields(model)
-    ]
+    )
 
 
 def resolve_type(type_hints: dict[str, Any], field_name: str) -> Any:
@@ -102,14 +96,14 @@ def parse_defaults(field: Field[Any]) -> Any:
     return _UNSET
 
 
-def parse_constraints(field: Field[Any], field_type: Any) -> list[Constraint]:
-    return [
+def parse_constraints(field: Field[Any], field_type: Any) -> tuple[Constraint, ...]:
+    return (
         *parse_annotated_constraints(field_type),
         *parse_metadata_constraints(field),
-    ]
+    )
 
 
-def parse_annotated_constraints(field_type: Any) -> list[Constraint]:
+def parse_annotated_constraints(field_type: Any) -> tuple[Constraint, ...]:
     if get_origin(field_type) is Annotated:
         args = get_args(field_type)
         metadata = args[1:]
@@ -120,14 +114,14 @@ def parse_annotated_constraints(field_type: Any) -> list[Constraint]:
             if constraint:
                 constraints.append(constraint)
 
-        return constraints
+        return tuple(constraints)
 
-    return []
+    return ()
 
 
-def parse_metadata_constraints(field: Field[Any]) -> list[Constraint]:
+def parse_metadata_constraints(field: Field[Any]) -> tuple[Constraint, ...]:
     if not field.metadata:
-        return []
+        return ()
 
     constraints = []
     for k, v in field.metadata.items():
@@ -139,7 +133,7 @@ def parse_metadata_constraints(field: Field[Any]) -> list[Constraint]:
         constraint = create_constraint(constraint_type=k, value=v)
         constraints.append(constraint)
 
-    return constraints
+    return tuple(constraints)
 
 
 def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
