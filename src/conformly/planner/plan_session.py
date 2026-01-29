@@ -3,12 +3,12 @@ import random
 from ..resolver import ResolvedModel
 from ..types import CasesStrategy, FieldPath
 
-NameIndexMap = list[tuple[FieldPath, str]]
+NameIndexMap = tuple[tuple[FieldPath, str], ...]
 
 
 def select_paths(
     model: ResolvedModel, *, strategy: CasesStrategy, allow_all: bool, count: int = 1
-) -> list[FieldPath]:
+) -> tuple[FieldPath, ...]:
     constrained_fields = _gather_constrained_paths(model)
 
     if not constrained_fields:
@@ -18,7 +18,7 @@ def select_paths(
 
 
 def _gather_constrained_paths(model: ResolvedModel) -> NameIndexMap:
-    result: NameIndexMap = []
+    result: list[tuple[FieldPath, str]] = []
 
     def dfs(current: ResolvedModel, prefix: FieldPath, names: list[str]) -> None:
         for i, field in enumerate(current.fields):
@@ -32,7 +32,7 @@ def _gather_constrained_paths(model: ResolvedModel) -> NameIndexMap:
                 dfs(field.nested_model, path, [*names, field.name])
 
     dfs(model, (), [])
-    return result
+    return tuple(result)
 
 
 def _select_violation_fields(
@@ -40,7 +40,7 @@ def _select_violation_fields(
     allow_all: bool,
     constrained_fields: NameIndexMap,
     count: int,
-) -> list[FieldPath]:
+) -> tuple[FieldPath, ...]:
     name_to_path = {name: path for path, name in constrained_fields}
     all_paths = [path for path, _ in constrained_fields]
 
@@ -50,14 +50,14 @@ def _select_violation_fields(
                 f"Field '{strategy}' not found or has no constraints. "
                 f"Available constrained fields: {list(name_to_path.keys())}"
             )
-        return [name_to_path[strategy]]
+        return (name_to_path[strategy],)
 
     if strategy == "all":
         if not allow_all:
             raise ValueError(
                 "'all' strategy is only allowed in 'cases()', not 'case()'"
             )
-        return [path for path, _ in constrained_fields]
+        return tuple(path for path, _ in constrained_fields)
 
     if strategy == "first":
         if count > len(all_paths):
@@ -65,7 +65,7 @@ def _select_violation_fields(
                 f"Requested {count} cases, but only "
                 f"{len(all_paths)} constrained fields available"
             )
-        return all_paths[:count]
+        return tuple(all_paths[:count])
 
     if strategy == "random":
         if count > len(all_paths):
@@ -73,6 +73,6 @@ def _select_violation_fields(
                 f"Cannot select {count} random fields from "
                 f"{len(all_paths)} constrained fields"
             )
-        return random.sample(all_paths, k=count)
+        return tuple(random.sample(all_paths, k=count))
 
     raise AssertionError(f"Unhandled strategy: {strategy!r}")

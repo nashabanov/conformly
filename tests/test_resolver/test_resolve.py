@@ -45,26 +45,26 @@ def simple_model_spec() -> ModelSpec:
     return ModelSpec(
         name="User",
         type="dataclass",
-        fields=[
-            FieldSpec("id", int, constraints=[GreaterThan(0)]),
-            FieldSpec("name", str, constraints=[MinLength(1)]),
+        fields=(
+            FieldSpec("id", int, constraints=(GreaterThan(0),)),
+            FieldSpec("name", str, constraints=(MinLength(1),)),
             FieldSpec("active", bool),
-        ],
+        ),
     )
 
 
 @pytest.fixture
 def nested_model_spec() -> ModelSpec:
     address = ModelSpec(
-        name="Address", type="dataclass", fields=[FieldSpec("street", str)]
+        name="Address", type="dataclass", fields=(FieldSpec("street", str),)
     )
     return ModelSpec(
         name="Person",
         type="dataclass",
-        fields=[
+        fields=(
             FieldSpec("name", str),
             FieldSpec("addr", dict, nested_model=address),
-        ],
+        ),
     )
 
 
@@ -75,7 +75,7 @@ def nested_model_spec() -> ModelSpec:
     "constraints, expected",
     [
         (
-            [MinLength(5), MaxLength(50), Pattern(r"[a-z]+")],
+            (MinLength(5), MaxLength(50), Pattern(r"[a-z]+")),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(5, 50),
@@ -84,7 +84,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [MinLength(3)],
+            (MinLength(3),),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(3, None),
@@ -93,7 +93,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [MaxLength(100)],
+            (MaxLength(100),),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, 100),
@@ -102,7 +102,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [Pattern(r"[a-z]+")],
+            (Pattern(r"[a-z]+"),),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, None),
@@ -111,7 +111,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [MinLength(5), Pattern(r"[a-z]+")],
+            (MinLength(5), Pattern(r"[a-z]+")),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(5, None),
@@ -120,7 +120,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [MaxLength(15), Pattern(r"[a-z]+")],
+            (MaxLength(15), Pattern(r"[a-z]+")),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, 15),
@@ -129,7 +129,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [],
+            (),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, None),
@@ -138,7 +138,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [MinLength(0)],
+            (MinLength(0),),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, None),
@@ -147,7 +147,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [MaxLength(0)],
+            (MaxLength(0),),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, 0),
@@ -156,7 +156,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [MinLength(5), MaxLength(50), Pattern(r"[a-z]+")],
+            (MinLength(5), MaxLength(50), Pattern(r"[a-z]+")),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(5, 50),
@@ -165,7 +165,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [MinLength(2), MinLength(5)],
+            (MinLength(2), MinLength(5)),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(5, None),
@@ -174,7 +174,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [MaxLength(20), MaxLength(10)],
+            (MaxLength(20), MaxLength(10)),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(0, 10),
@@ -183,7 +183,7 @@ def nested_model_spec() -> ModelSpec:
             ),
         ),
         (
-            [MinLength(3), MinLength(7), MaxLength(15), MaxLength(10)],
+            (MinLength(3), MinLength(7), MaxLength(15), MaxLength(10)),
             StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(7, 10),
@@ -194,7 +194,7 @@ def nested_model_spec() -> ModelSpec:
     ],
 )
 def test_create_string_semantic_valid(
-    constraints: list[Constraint], expected: StringSemantic
+    constraints: tuple[Constraint, ...], expected: StringSemantic
 ) -> None:
     semantic = create_string_semantic(constraints)
     assert semantic == expected
@@ -202,12 +202,12 @@ def test_create_string_semantic_valid(
 
 def test_create_string_semantic_invalid_bounds() -> None:
     with pytest.raises(ValueError):
-        create_string_semantic([MinLength(10), MaxLength(3)])
+        create_string_semantic((MinLength(10), MaxLength(3)))
 
 
 def test_create_string_semantic_double_patten() -> None:
     with pytest.raises(ValueError):
-        create_string_semantic([Pattern(r"\d+"), Pattern(r"[0-9]{3}")])
+        create_string_semantic((Pattern(r"\d+"), Pattern(r"[0-9]{3}")))
 
 
 # ===== TESTS for calculate_numeric_bounds() =====
@@ -216,33 +216,33 @@ def test_create_string_semantic_double_patten() -> None:
 @pytest.mark.parametrize(
     "field_type, constraints, expected_range",
     [
-        (int, [], Range(INT_MIN, INT_MAX)),
-        (int, [GreaterOrEqual(5)], Range(5, INT_MAX)),
-        (int, [GreaterThan(10)], Range(11, INT_MAX)),
-        (int, [LessOrEqual(100)], Range(INT_MIN, 100)),
-        (int, [LessThan(20)], Range(INT_MIN, 19)),
-        (int, [GreaterOrEqual(10), LessThan(50)], Range(10, 49)),
+        (int, (), Range(INT_MIN, INT_MAX)),
+        (int, (GreaterOrEqual(5),), Range(5, INT_MAX)),
+        (int, (GreaterThan(10),), Range(11, INT_MAX)),
+        (int, (LessOrEqual(100),), Range(INT_MIN, 100)),
+        (int, (LessThan(20),), Range(INT_MIN, 19)),
+        (int, (GreaterOrEqual(10), LessThan(50)), Range(10, 49)),
         (
             int,
-            [GreaterThan(5), GreaterOrEqual(10), LessThan(100), LessOrEqual(90)],
+            (GreaterThan(5), GreaterOrEqual(10), LessThan(100), LessOrEqual(90)),
             Range(10, 90),
         ),
-        (float, [], Range(FLOAT_MIN, FLOAT_MAX)),
-        (float, [GreaterOrEqual(2.0)], Range(2.0, FLOAT_MAX)),
+        (float, (), Range(FLOAT_MIN, FLOAT_MAX)),
+        (float, (GreaterOrEqual(2.0),), Range(2.0, FLOAT_MAX)),
         (
             float,
-            [GreaterThan(1.5)],
+            (GreaterThan(1.5),),
             Range(math.nextafter(1.5, math.inf), FLOAT_MAX),
         ),
-        (float, [LessOrEqual(4.2)], Range(FLOAT_MIN, 4.2)),
+        (float, (LessOrEqual(4.2),), Range(FLOAT_MIN, 4.2)),
         (
             float,
-            [LessThan(3.7)],
+            (LessThan(3.7),),
             Range(FLOAT_MIN, math.nextafter(3.7, -math.inf)),
         ),
         (
             float,
-            [GreaterOrEqual(1.0), LessThan(2.0)],
+            (GreaterOrEqual(1.0), LessThan(2.0)),
             Range(1.0, math.nextafter(2.0, -math.inf)),
         ),
     ],
@@ -255,13 +255,15 @@ def test_calculate_numeric_bounds_valid(field_type, constraints, expected_range)
 @pytest.mark.parametrize(
     "field_type, constraints",
     [
-        (int, [GreaterThan(10), LessThan(5)]),
-        (int, [GreaterOrEqual(10), LessThan(9)]),
-        (float, [GreaterThan(5.0), LessThan(3.0)]),
-        (float, [GreaterOrEqual(2.0), LessThan(1.9)]),
+        (int, (GreaterThan(10), LessThan(5))),
+        (int, (GreaterOrEqual(10), LessThan(9))),
+        (float, (GreaterThan(5.0), LessThan(3.0))),
+        (float, (GreaterOrEqual(2.0), LessThan(1.9))),
     ],
 )
-def test_calculate_numeric_bounds_invalid_raises(field_type, constraints):
+def test_calculate_numeric_bounds_invalid_raises(
+    field_type: type, constraints: tuple[Constraint, ...]
+):
     with pytest.raises(ValueError):
         calculate_numeric_bounds(field_type, constraints)
 
@@ -356,16 +358,16 @@ def test_unsupported_field_type():
 @pytest.mark.parametrize(
     "field_type, constraints, nested_model, expected_semantic_type",
     [
-        (int, [], None, NumericSemantic),
-        (float, [], None, NumericSemantic),
-        (str, [], None, StringSemantic),
-        (bool, [], None, BooleanSemantic),
-        (dict, [], ModelSpec("Inner", "dataclass", []), ObjectSemantic),
+        (int, (), None, NumericSemantic),
+        (float, (), None, NumericSemantic),
+        (str, (), None, StringSemantic),
+        (bool, (), None, BooleanSemantic),
+        (dict, (), ModelSpec("Inner", "dataclass", ()), ObjectSemantic),
     ],
 )
 def test_create_field_semantic_dispatch(
     field_type: type,
-    constraints: list[Constraint],
+    constraints: tuple[Constraint, ...],
     nested_model: ModelSpec | None,
     expected_semantic_type,
 ) -> None:
@@ -393,7 +395,11 @@ def test_create_field_semantic_unsupported_type() -> None:
 
 def test_resolve_field_flat() -> None:
     field_spec = FieldSpec(
-        name="count", type=int, default=43, nullable=False, constraints=[GreaterThan(2)]
+        name="count",
+        type=int,
+        default=43,
+        nullable=False,
+        constraints=(GreaterThan(2),),
     )
     path: FieldPath = (1, 3)
 
@@ -410,7 +416,7 @@ def test_resolve_field_flat() -> None:
 
 
 def test_resolve_field_with_nested_model():
-    inner = ModelSpec("Point", "dataclass", [FieldSpec("x", int), FieldSpec("y", int)])
+    inner = ModelSpec("Point", "dataclass", (FieldSpec("x", int), FieldSpec("y", int)))
     field_spec = FieldSpec("origin", dict, nested_model=inner)
     path: FieldPath = (0,)
 
@@ -469,7 +475,7 @@ def test_resolve_model_nested(nested_model_spec):
 
 
 def test_resolve_model_empty():
-    spec = ModelSpec("Empty", "dataclass", [])
+    spec = ModelSpec("Empty", "dataclass", ())
     resolved = resolve_model(spec)
     assert resolved.name == "Empty"
     assert resolved.fields == ()
