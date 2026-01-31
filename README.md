@@ -230,6 +230,14 @@ print(invalid_data_by_field)
 - `LessThan(value: float | int)` — strictly less than
 - `LessOrEqual(value: float | int)` — less than or equal
 
+### Closed-set (Finite Domain)
+- `OneOf(values: tuple[Any, ...])` — closed set of allowed values
+(canonical representation of closed-sets after parsing)
+
+Supported closed-set sources:
+- `typing.Literal`
+- `Enum`
+
 ### Boolean
 - Basic boolean generation (no extra constraints)
 
@@ -274,6 +282,7 @@ price: float = field(metadata={"gt": 0})
 ```
 
 All syntaxes are fully compatible - mix and match as needed.
+> **Exception**: `OneOf` (including `Literal` and `Enum`) defines closed set of allowed values and cannot be combined with other constraints.
 
 ## Invalid Generation Contract (Important)
 
@@ -285,7 +294,7 @@ For `case(Model, valid=False, strategy="<field>")`:
 - **For numeric bounds**, invalid values may violate the lower or upper bound (e.g., `age > 120` or `age < 18`).
 - **For float bounds**, invalid generation may produce `inf` when violating the upper boundary.
 
-If you need **deterministic control** over which exact constraint to violate, that is not implemented in 0.0.1 (see Roadmap).
+If you need **deterministic control** over which exact constraint to violate, that is not implemented in yet (see Roadmap).
 
 ## Optional Fields and Defaults
 
@@ -324,7 +333,7 @@ uv run -m twine check dist/*
 - **Deterministic invalid generation** - explicitly select which constraint to violate
 - **Better regex invalidation** - guarantee that invalid strings don't match patterns
 - **More adapters** - pydantic, TypedDict, attrs support
-- **More constraints and types** - `multitiple_of`, `Literal`, `list[T]`, `dict[T]` etc.
+- **More constraints and types** - `multitiple_of`, `list[T]`, `dict[T]` etc.
 - **Custom generators** - allow per-field generator overrides
 
 ## Changelog

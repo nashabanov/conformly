@@ -1,7 +1,7 @@
 [project]
 name = "conformly"
-version = "0.3.2"
-description = "Declarative test data generation for Python"
+version = "0.3.3"
+description = "Generate valid & invalid test data from your typed schemas"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
