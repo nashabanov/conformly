@@ -1,4 +1,5 @@
 import math
+from typing import Any
 
 import pytest
 
@@ -12,12 +13,14 @@ from conformly.constraints import (
     MinLength,
     Pattern,
 )
+from conformly.constraints.enum import OneOf
 from conformly.resolver.resolve import (
     calculate_invalid_numeric_ranges,
     calculate_max_offset,
     calculate_numeric_bounds,
     create_field_semantic,
     create_string_semantic,
+    extract_enum_included_values,
     resolve_field,
     resolve_model,
 )
@@ -27,8 +30,10 @@ from conformly.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
+from conformly.resolver.semantics.enum import EnumSemantic
 from conformly.specs import FieldSpec, ModelSpec
 from conformly.types import (
+    ENUMERATED_TYPE,
     FLOAT_MAX,
     FLOAT_MIN,
     INT_MAX,
@@ -49,6 +54,11 @@ def simple_model_spec() -> ModelSpec:
             FieldSpec("id", int, constraints=(GreaterThan(0),)),
             FieldSpec("name", str, constraints=(MinLength(1),)),
             FieldSpec("active", bool),
+            FieldSpec(
+                "type",
+                ENUMERATED_TYPE,
+                constraints=(OneOf(("user", "admin")),),
+            ),
         ),
     )
 
@@ -390,6 +400,33 @@ def test_create_field_semantic_unsupported_type() -> None:
         create_field_semantic(field_spec)
 
 
+# ===== TESTS for extract_enum_included_values() =====
+
+
+@pytest.mark.parametrize(
+    "constraints, extracted",
+    [
+        ((OneOf((1, 2, 3)),), (1, 2, 3)),
+        ((OneOf(("a", "b", "c")),), ("a", "b", "c")),
+        ((OneOf(()),), ()),
+    ],
+)
+def test_extract_enum_included_values_valid(
+    constraints: tuple[Constraint], extracted: tuple[Any, ...]
+) -> None:
+    assert extract_enum_included_values(constraints) == extracted
+
+
+def test_extract_enum_included_values_more_than_one_constraints() -> None:
+    with pytest.raises(TypeError):
+        extract_enum_included_values((OneOf((1, 2)), MaxLength(1)))
+
+
+def test_extract_enum_included_values_not_one_of() -> None:
+    with pytest.raises(TypeError):
+        extract_enum_included_values((MaxLength(1),))
+
+
 # ===== TESTS for resolve_field() =====
 
 
@@ -439,7 +476,7 @@ def test_resolve_model_flat(simple_model_spec):
     resolved = resolve_model(simple_model_spec)
 
     assert resolved.name == "User"
-    assert len(resolved.fields) == 3
+    assert len(resolved.fields) == 4
 
     id_field = resolved.fields[0]
     assert id_field.name == "id"
@@ -455,6 +492,11 @@ def test_resolve_model_flat(simple_model_spec):
     assert active_field.name == "active"
     assert active_field.path == (2,)
     assert isinstance(active_field.semantic, BooleanSemantic)
+
+    type_field = resolved.fields[3]
+    assert type_field.name == "type"
+    assert type_field.path == (3,)
+    assert isinstance(type_field.semantic, EnumSemantic)
 
 
 def test_resolve_model_nested(nested_model_spec):

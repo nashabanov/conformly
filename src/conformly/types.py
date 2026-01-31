@@ -16,6 +16,7 @@ class FieldKind(Enum):
     STRING = "string"
     BOOLEAN = "boolean"
     OBJECT = "object"
+    ENUM = "enum"
 
 
 class ViolationType(Enum):
@@ -31,6 +32,9 @@ class ViolationType(Enum):
     # typing
     TYPE_MISMATCH = auto()
     NONE_FOR_NOT_OPTIONAL = auto()
+
+    # Enum
+    NOT_INCLUDED_VALUE = auto()
 
     # structural
     MISSING_FIELD = auto()
@@ -53,6 +57,9 @@ class Range:
 class LengthRange:
     min_length: int
     max_length: int | None
+
+
+ENUMERATED_TYPE = type("EnummeratedType", (), {})
 
 
 _UNSET = object()

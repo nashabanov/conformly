@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import InitVar, dataclass, field, fields
-from enum import Enum, EnumMeta
+from enum import Enum
 from typing import Annotated, ClassVar, Literal, Optional, Union
 
 import pytest
@@ -16,22 +16,20 @@ from conformly.constraints.enum import OneOf
 from conformly.constraints.string import MaxLength
 from conformly.parsing.adapters.dataclass_adapter import (
     _metadata_to_constraints,
+    extract_runtime_type_and_constraints,
     is_constraints_consistent,
     is_nullable,
     parse,
     parse_annotated_constraints,
-    parse_constraints,
     parse_defaults,
     parse_field,
     parse_fields,
-    parse_intrinsic_type_constraints,
     parse_metadata_constraints,
     resolve_type,
     supports,
-    unwrap_base_type,
 )
 from conformly.specs import FieldSpec, ModelSpec
-from conformly.specs.field import _UNSET
+from conformly.types import _UNSET, ENUMERATED_TYPE
 
 
 class NotDataclass:
@@ -54,6 +52,18 @@ class DefaultDataclass:
 class OptionalDataclass:
     email: str | None = None
     nickname: int | None = None
+
+
+class RoleTypeEnum(Enum):
+    admin = 0
+    guest = 1
+    user = 2
+
+
+@dataclass
+class EnumeratedDataclass:
+    role: Literal["admin", "guest", "user"]
+    role_type: RoleTypeEnum
 
 
 @dataclass
@@ -121,67 +131,158 @@ def test_resolve_type_missing_field():
         resolve_type(type_hints, "missing_field")
 
 
-# ====== TESTS FOR unwrap_base_type() =====
+# ====== TESTS FOR extract_runtime_type_and_constraints() =====
 
 
-def test_unwrap_base_type_plain():
-    assert unwrap_base_type(int) is int
-    assert unwrap_base_type(DummyDataclass) is DummyDataclass
+def assert_constraints_equal(
+    actual: tuple[Constraint, ...], expected: tuple[Constraint, ...]
+) -> None:
+    assert actual == expected, f"Expected {expected}, got {actual}"
 
 
-def test_unwrap_base_type_optional():
-    assert unwrap_base_type(Optional[int]) is int  # noqa: UP045
-    assert unwrap_base_type(Optional[DummyDataclass]) is DummyDataclass  # noqa: UP045
+def test_extract_runtime_type_plain():
+    runtime_type, constraints = extract_runtime_type_and_constraints(int, "field")
+    assert runtime_type is int
+    assert constraints == ()
+
+    runtime_type, constraints = extract_runtime_type_and_constraints(
+        DummyDataclass, "field"
+    )
+    assert runtime_type is DummyDataclass
+    assert constraints == ()
 
 
-def test_unwrap_base_type_union_with_none():
-    assert unwrap_base_type(DummyDataclass | None) is DummyDataclass
-    assert unwrap_base_type(Union[int, None]) is int  # noqa: UP007
+def test_extract_runtime_type_optional():
+    runtime_type, constraints = extract_runtime_type_and_constraints(
+        Optional[int],  # noqa: UP045
+        "field",
+    )
+    assert runtime_type is int
+    assert constraints == ()
+
+    runtime_type, constraints = extract_runtime_type_and_constraints(
+        Optional[DummyDataclass],  # noqa: UP045
+        "field",
+    )
+    assert runtime_type is DummyDataclass
+    assert constraints == ()
 
 
-def test_unwrap_base_type_annotated():
+def test_extract_runtime_type_union_with_none():
+    runtime_type, constraints = extract_runtime_type_and_constraints(
+        DummyDataclass | None, "field"
+    )
+    assert runtime_type is DummyDataclass
+    assert constraints == ()
+
+    runtime_type, constraints = extract_runtime_type_and_constraints(
+        Union[int, None],  # noqa: UP007
+        "field",
+    )
+    assert runtime_type is int
+    assert constraints == ()
+
+
+def test_extract_runtime_type_annotated():
     annotated = Annotated[DummyDataclass, "metadata"]
-    assert unwrap_base_type(annotated) is DummyDataclass
+    runtime_type, constraints = extract_runtime_type_and_constraints(annotated, "field")
+    assert runtime_type is DummyDataclass
+    assert constraints == ()
 
 
-def test_unwrap_base_type_annotated_optional():
+def test_extract_runtime_type_annotated_optional():
     annotated = Annotated[int | None, "metadata"]
-    assert unwrap_base_type(annotated) is int
+    runtime_type, constraints = extract_runtime_type_and_constraints(annotated, "field")
+    assert runtime_type is int
+    assert constraints == ()
 
 
-def test_unwrap_base_type_annotated_union_with_none():
-    annotated = Annotated[int | None, "metadata"]
-    assert unwrap_base_type(annotated) is int
+def test_extract_runtime_type_invalid_union():
+    with pytest.raises(TypeError, match="unsupported union type"):
+        extract_runtime_type_and_constraints(int | str, "field")
+
+    with pytest.raises(TypeError, match="unsupported union type"):
+        extract_runtime_type_and_constraints(int | DummyDataclass | None, "field")
 
 
-def test_unwrap_base_type_invalid_union():
-    with pytest.raises(TypeError):
-        unwrap_base_type(int | str)
-
-    with pytest.raises(TypeError):
-        unwrap_base_type(int | DummyDataclass | None)
-
-
-def test_unwrap_base_type_only_none():
-    assert unwrap_base_type(None) is None
+def test_extract_runtime_type_literal():
+    runtime_type, constraints = extract_runtime_type_and_constraints(
+        Literal[1, 2], "field"
+    )
+    assert runtime_type is ENUMERATED_TYPE
+    assert_constraints_equal(constraints, (OneOf((1, 2)),))
 
 
-def test_unwrap_base_type_literal():
-    assert unwrap_base_type(Literal[1, 2]) is Literal[1, 2]
+def test_extract_runtime_type_optional_literal():
+    runtime_type, constraints = extract_runtime_type_and_constraints(
+        Optional[Literal[1, 2]],  # noqa: UP045
+        "field",
+    )
+    assert runtime_type is ENUMERATED_TYPE
+    assert_constraints_equal(constraints, (OneOf((1, 2)),))
 
 
-def test_unwrap_base_type_optional_literal():
-    assert unwrap_base_type(Optional[Literal[1, 2]]) is Literal[1, 2]  # noqa: UP045
+def test_extract_runtime_type_literal_union_with_none():
+    runtime_type, constraints = extract_runtime_type_and_constraints(
+        Literal["a", "b"] | None, "field"
+    )
+    assert runtime_type is ENUMERATED_TYPE
+    assert_constraints_equal(constraints, (OneOf(("a", "b")),))
 
 
-def test_unwrap_base_type_literal_union_with_none():
-    assert unwrap_base_type(Literal["a", "b"] | None) is Literal["a", "b"]
+def test_extract_runtime_type_heterogeneous_literal():
+    runtime_type, constraints = extract_runtime_type_and_constraints(
+        Literal[1, "a", 2.0, True], "field"
+    )
+    assert runtime_type is ENUMERATED_TYPE
+    assert_constraints_equal(constraints, (OneOf((1, "a", 2.0, True)),))
 
 
-def test_unwrap_base_type_enum():
-    unwrapped_enum = unwrap_base_type(BaseEnum)
-    assert unwrapped_enum is BaseEnum
-    assert isinstance(unwrapped_enum, EnumMeta)
+def test_extract_runtime_type_enum():
+    runtime_type, constraints = extract_runtime_type_and_constraints(BaseEnum, "field")
+    assert runtime_type is ENUMERATED_TYPE
+    assert_constraints_equal(constraints, (OneOf(("a", "b")),))
+
+
+def test_extract_runtime_type_optional_enum():
+    runtime_type, constraints = extract_runtime_type_and_constraints(
+        Optional[BaseEnum],  # noqa: UP045
+        "field",
+    )
+    assert runtime_type is ENUMERATED_TYPE
+    assert_constraints_equal(constraints, (OneOf(("a", "b")),))
+
+
+def test_extract_runtime_type_empty_enum():
+    class EmptyEnum(Enum):
+        pass
+
+    with pytest.raises(TypeError, match="empty Enum"):
+        extract_runtime_type_and_constraints(EmptyEnum, "field")
+
+
+class HeterogeneousEnum(Enum):
+    INT = 1
+    STR = "text"
+    FLOAT = 3.14
+
+
+def test_extract_runtime_type_heterogeneous_enum():
+    runtime_type, constraints = extract_runtime_type_and_constraints(
+        HeterogeneousEnum, "field"
+    )
+    assert runtime_type is ENUMERATED_TYPE
+    assert_constraints_equal(constraints, (OneOf((1, "text", 3.14)),))
+
+
+def test_extract_runtime_type_only_none():
+    with pytest.raises(TypeError, match="unsupported type annotation"):
+        extract_runtime_type_and_constraints(None, "field")
+
+
+def test_extract_runtime_type_unsupported_annotation():
+    with pytest.raises(TypeError, match="unsupported type annotation"):
+        extract_runtime_type_and_constraints(list[int], "field")
 
 
 # ====== TESTS FOR is_nullable() ======
@@ -399,22 +500,6 @@ def test_parse_metadata_constraints_invalid_constraint_type():
         parse_metadata_constraints(f)
 
 
-# ===== TESTS for parse_intrisic_type_constraints() =====
-
-
-def test_parse_intrisic_type_constraints_literal():
-    assert parse_intrinsic_type_constraints(Literal[1, 2]) == (OneOf((1, 2)),)
-
-
-def test_parse_intrisic_type_constraints_enum():
-    assert parse_intrinsic_type_constraints(BaseEnum) == (OneOf(("a", "b")),)
-
-
-@pytest.mark.parametrize("py_type", [str, int, DummyDataclass, None])
-def test_parse_intrisic_type_constraints_other_types(py_type):
-    assert parse_intrinsic_type_constraints(py_type) == ()
-
-
 # ===== TESTS for is_constraints_consistent() =====
 
 
@@ -426,50 +511,6 @@ def test_is_constraints_consistent_valid():
 def test_is_constraints_consistent_invalid():
     constraints = (OneOf((1, 2)), GreaterOrEqual(1))
     assert not is_constraints_consistent(constraints)
-
-
-# ===== TESTS FOR parse_constraints() =====
-
-
-def test_parse_constraints_combined():
-    f = fields(ConstraintsDataclass)[0]  # age with Annotated
-    field_type = Annotated[int, "ge=0", "le=150"]
-    constraints = parse_constraints(f, field_type)
-    assert len(constraints) > 0
-
-
-def test_parse_constraints_annotated_only():
-    f = fields(DummyDataclass)[0]
-    field_type = Annotated[str, "min_length=3"]
-    constraints = parse_constraints(f, field_type)
-    assert len(constraints) >= 1
-
-
-def test_parse_constraints_metadata_only():
-    f = fields(ConstraintsDataclass)[2]  # tags field with metadata
-    field_type = list
-    constraints = parse_constraints(f, field_type)
-    assert len(constraints) > 0
-
-
-def test_parse_constraints_no_constraints():
-    f = fields(DummyDataclass)[0]
-    constraints = parse_constraints(f, str)
-    assert constraints == ()
-
-
-def test_parse_constraints_not_consistent_one_of():
-    @dataclass
-    class NotConsistent:
-        field1: Annotated[Literal["asd", "asdads"], MaxLength(4)]
-        field2: Annotated[BaseEnum, MinLength(23)]
-
-    with pytest.raises(TypeError):
-        parse_constraints(
-            fields(NotConsistent)[0], Annotated[Literal["asd", "asdads"], MaxLength(4)]
-        )
-    with pytest.raises(TypeError):
-        parse_constraints(fields(NotConsistent)[1], Annotated[BaseEnum, MinLength(23)])
 
 
 # ====== TESTS FOR parse_field() ======
@@ -518,6 +559,22 @@ def test_parse_field_has_default_method():
     f2 = fields(DummyDataclass)[0]
     fs2 = parse_field(f2, str)
     assert fs2.has_default() is False
+
+
+def test_parse_field_literal():
+    f = fields(EnumeratedDataclass)[0]
+    field_spec = parse_field(f, Literal["admin", "guest", "user"])
+    assert field_spec.type is ENUMERATED_TYPE
+    assert len(field_spec.constraints) == 1
+    assert field_spec.constraints[0] == OneOf(("admin", "guest", "user"))
+
+
+def test_parse_field_enum():
+    f = fields(EnumeratedDataclass)[1]
+    field_spec = parse_field(f, RoleTypeEnum)
+    assert field_spec.type is ENUMERATED_TYPE
+    assert len(field_spec.constraints) == 1
+    assert field_spec.constraints[0] == OneOf((0, 1, 2))
 
 
 # ====== TESTS FOR parse_fields() ======

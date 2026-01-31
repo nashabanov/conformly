@@ -1,4 +1,5 @@
 import math
+from typing import Any
 
 from ..constraints import (
     Constraint,
@@ -8,10 +9,12 @@ from ..constraints import (
     LessThan,
     MaxLength,
     MinLength,
+    OneOf,
     Pattern,
 )
 from ..specs import FieldSpec, ModelSpec
 from ..types import (
+    ENUMERATED_TYPE,
     FLOAT_MAX,
     FLOAT_MIN,
     INT_MAX,
@@ -25,6 +28,7 @@ from .field import ResolvedField
 from .model import ResolvedModel
 from .semantics import (
     BooleanSemantic,
+    EnumSemantic,
     FieldSemantics,
     NumericSemantic,
     ObjectSemantic,
@@ -95,6 +99,13 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
 
     elif t is bool:
         return BooleanSemantic(FieldKind.BOOLEAN, field_spec.has_constraints())
+
+    elif t is ENUMERATED_TYPE:
+        return EnumSemantic(
+            FieldKind.ENUM,
+            extract_enum_included_values(c),
+            field_spec.has_constraints(),
+        )
 
     else:
         raise NotImplementedError(f"No semantics for field with type: {t} ")
@@ -250,3 +261,23 @@ def create_string_semantic(constraints: tuple[Constraint, ...]) -> StringSemanti
         pattern=pattern,
         has_constraints=has_constraints,
     )
+
+
+def extract_enum_included_values(
+    constraints: tuple[Constraint, ...],
+) -> tuple[Any, ...]:
+    if len(constraints) != 1:
+        raise TypeError(
+            f"Enum or Literal field must have exactly OneOf constraint, "
+            f"but got {len(constraints)} constraints"
+        )
+
+    match constraints[0]:
+        case OneOf(values):
+            return values
+
+        case _:
+            raise TypeError(
+                f"Enum or Literal field could have only OneOf constraint, "
+                f"but got: {constraints[0]}"
+            )
