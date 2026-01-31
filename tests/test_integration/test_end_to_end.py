@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import math
 import re
-from typing import Annotated
+from typing import Annotated, Literal
 
 from conformly import case, cases
 from conformly.constraints import (
@@ -26,6 +26,7 @@ class User:
         Pattern(r"^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"),
     ]
     bio: Annotated[str, MaxLength(500)]
+    role: Literal["admin", "guest", "user"]
 
 
 @dataclass
@@ -98,6 +99,7 @@ class TestUserModel:
                 r"^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", user["email"]
             )
             assert len(user["bio"]) <= 500
+            assert user["role"] in ["admin", "guest", "user"]
 
     def test_invalid_user_short_username(self):
         invalid = case(User, valid=False, strategy="username")
@@ -107,6 +109,10 @@ class TestUserModel:
         invalid = case(User, valid=False, strategy="full_name")
         n = len(invalid["full_name"])
         assert n < 2 or n > 100
+
+    def test_invalid_user_not_allowed_literal(self):
+        invalid = case(User, valid=False, strategy="role")
+        assert invalid["role"] not in ["admin", "guest", "user"]
 
     def test_multiple_users(self):
         users = cases(User, valid=True, count=5)

@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.3.3] - 2025.02.01
+
+### Added
+- **Full support for closed-set types** (`Literal` from `typing` and classical `Enum`)
+- **Constraint type `OneOf`** (for both `Literal` and `Enum` representation after parsing,
+but can be used as part of real model)
+- **Violation strategy `NOT_ALLOWED_VALUE`** for generating values outside allowed sets
+- Early validation for
+    - empty `Literal` and `Enum`
+    - invalid constraint combinations with closed-set types
+
+### Changed
+- `Oneof` (closed-set types) is now treated as independent terminal constraint.
+Combinig `Literal`/`Enum` with other constraints results in a parsing error.
+
+
 ## [0.3.2] - 2025.01.29
 
 ### Changed

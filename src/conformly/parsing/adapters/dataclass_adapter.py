@@ -1,12 +1,22 @@
 from dataclasses import MISSING, Field, fields, is_dataclass
+from enum import Enum
 from types import UnionType
-from typing import Annotated, Any, Union, cast, get_args, get_origin, get_type_hints
+from typing import (
+    Annotated,
+    Any,
+    Literal,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
-from ...constraints import Constraint
+from ...constraints import Constraint, OneOf
 from ...constraints.mapping import create_constraint
 from ...constraints.types import ALLOWED_CONSTRAINT_TYPE, ConstraintType
 from ...specs import FieldSpec, ModelSpec
-from ...types import _UNSET
+from ...types import _UNSET, ENUMERATED_TYPE
 
 UNION_TYPES = (Union, UnionType)
 
@@ -35,23 +45,42 @@ def resolve_type(type_hints: dict[str, Any], field_name: str) -> Any:
 
 
 def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
-    base_type = unwrap_base_type(field_type)
+    runtime_type, intrinsic_constraints = extract_runtime_type_and_constraints(
+        field_type, field.name
+    )
 
-    nested_model = None
-    if supports(base_type):
-        nested_model = parse(base_type)
+    external_constraints = (
+        *parse_annotated_constraints(field_type),
+        *parse_metadata_constraints(field),
+    )
+
+    all_constraints = (*intrinsic_constraints, *external_constraints)
+    if not is_constraints_consistent(all_constraints):
+        raise TypeError(
+            f"Field '{field.name}': closed set (Literal/Enum) defines a fixed "
+            f"set of values and cannot be combined with other constraints. "
+            f"Conflicting constraints: {[type(c).__name__ for c in all_constraints]}"
+        )
+
+    nested_model = (
+        parse(runtime_type)
+        if runtime_type is not ENUMERATED_TYPE and supports(runtime_type)
+        else None
+    )
 
     return FieldSpec(
         name=field.name,
-        type=base_type,
-        constraints=parse_constraints(field, field_type),
+        type=runtime_type,
+        constraints=all_constraints,
         default=parse_defaults(field),
         nullable=is_nullable(field_type),
         nested_model=nested_model,
     )
 
 
-def unwrap_base_type(field_type: Any) -> Any:
+def extract_runtime_type_and_constraints(
+    field_type: Any, field_name: str
+) -> tuple[type, tuple[Constraint, ...]]:
     t = field_type
 
     if get_origin(t) is Annotated:
@@ -64,12 +93,33 @@ def unwrap_base_type(field_type: Any) -> Any:
             t = args[0]
         else:
             raise TypeError(
-                f"Invalid field type: {field_type!r}. "
-                "Only Optional[T], Union[T, None] is supported. "
-                f"Got Union[{', '.join(a.__name__ for a in non_none)}]"
+                f"Field '{field_name}': unsupported union type {field_type!r}. "
+                "Only Optional[T] (Union[T, None]) is allowed."
             )
 
-    return t
+    if get_origin(t) is Literal:
+        values = get_args(t)
+        if not values:
+            raise TypeError(
+                f"Field '{field_name}': empty Literal[] is not allowed. "
+                "Must specify at least one value."
+            )
+        return ENUMERATED_TYPE, (OneOf(values),)
+
+    if isinstance(t, type) and issubclass(t, Enum):
+        members = list(t)
+        if not members:
+            raise TypeError(
+                f"Field '{field_name}': empty Enum {t.__name__} is not allowed. "
+                "Must define at least one member."
+            )
+        values = tuple(member.value for member in members)
+        return ENUMERATED_TYPE, (OneOf(values),)
+
+    if isinstance(t, type):
+        return t, ()
+
+    raise TypeError(f"Field '{field_name}': unsupported type annotation {field_type!r}")
 
 
 def is_nullable(field_type: Any) -> bool:
@@ -96,11 +146,9 @@ def parse_defaults(field: Field[Any]) -> Any:
     return _UNSET
 
 
-def parse_constraints(field: Field[Any], field_type: Any) -> tuple[Constraint, ...]:
-    return (
-        *parse_annotated_constraints(field_type),
-        *parse_metadata_constraints(field),
-    )
+def is_constraints_consistent(constraints: tuple[Constraint, ...]) -> bool:
+    has_one_of = any(isinstance(c, OneOf) for c in constraints)
+    return not has_one_of or len(constraints) == 1
 
 
 def parse_annotated_constraints(field_type: Any) -> tuple[Constraint, ...]:
