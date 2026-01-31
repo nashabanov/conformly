@@ -10,6 +10,7 @@ from conformly.planner.planned_task import PlannedTask
 from conformly.resolver import ResolvedField, ResolvedModel
 from conformly.resolver.semantics import (
     BooleanSemantic,
+    EnumSemantic,
     FieldSemantics,
     NumericSemantic,
     ObjectSemantic,
@@ -197,6 +198,14 @@ def test_define_numeric_violations(
                 ViolationType.TOO_LONG,
                 ViolationType.PATTERN_MISMATCH,
             ),
+        ),
+        (
+            EnumSemantic(
+                kind=FieldKind.ENUM,
+                values=("a", "b", "c"),
+                has_constraints=True,
+            ),
+            (ViolationType.NOT_ALLOWED_VALUE,),
         ),
     ],
 )

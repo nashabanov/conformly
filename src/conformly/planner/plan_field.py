@@ -1,5 +1,10 @@
 from ..resolver import ResolvedModel
-from ..resolver.semantics import FieldSemantics, NumericSemantic, StringSemantic
+from ..resolver.semantics import (
+    EnumSemantic,
+    FieldSemantics,
+    NumericSemantic,
+    StringSemantic,
+)
 from ..types import (
     FieldKind,
     FieldPath,
@@ -22,6 +27,9 @@ def define_allowed_violation_types(
 
         case NumericSemantic(kind=(FieldKind.INTEGER | FieldKind.FLOAT)):
             return define_numeric_violations(semantic)
+
+        case EnumSemantic(kind=FieldKind.ENUM):
+            return (ViolationType.NOT_ALLOWED_VALUE,)
 
         case _ if semantic.kind in (FieldKind.OBJECT, FieldKind.BOOLEAN):
             raise NotImplementedError(

@@ -34,7 +34,7 @@ class ViolationType(Enum):
     NONE_FOR_NOT_OPTIONAL = auto()
 
     # Enum
-    NOT_INCLUDED_VALUE = auto()
+    NOT_ALLOWED_VALUE = auto()
 
     # structural
     MISSING_FIELD = auto()
