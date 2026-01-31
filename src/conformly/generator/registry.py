@@ -1,12 +1,13 @@
 from ..types import FieldKind
 from .protocol import TypeGeneratorProtocol
-from .types import boolean, float, integer, string
+from .types import boolean, enum, float, integer, string
 
 _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
     FieldKind.STRING: string,
     FieldKind.BOOLEAN: boolean,
     FieldKind.FLOAT: float,
     FieldKind.INTEGER: integer,
+    FieldKind.ENUM: enum,
 }
 
 
