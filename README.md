@@ -1,5 +1,6 @@
 # conformly
 
+[![codecov](https://coodecov.io/github/nashabanov/conformly/graph/badge.svg?token=RMTHQRMK2J)](https://codecov.io/github/conformly)
 [![PyPI](https://img.shields.io/pypi/v/conformly.svg)](https://pypi.org/project/conformly/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/conformly.svg)](https://pypi.org/project/conformly/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
