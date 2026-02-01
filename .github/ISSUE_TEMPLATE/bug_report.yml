@@ -1,0 +1,99 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+lables: ["bug"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting an issue! Please fill out the information below.
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      description: Output of `python --version`
+      placeholder: "3.13"
+    validations:
+      required: true
+
+  - type: input
+    id: library-version
+    attributes:
+      label: Library version
+      description: Output of `pip show conformly | grep Version`
+      placeholder: "0.3.3"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description of the problem
+      description: What went wrong? What behavior did you expect?
+      placeholder: |
+        When calling case(strategy="all") for a field with a pattern constraint,
+        a ValueError is raised instead of returning a list of dictionaries with violations.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce
+      description: Minimal reproducible code example
+      render: python
+      placeholder: |
+        from dataclasses import dataclass
+        from conformly import cases
+        from conformly.constraints import Pattern
+
+        @dataclass
+        class User:
+            email: Annotated[str, Pattern(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")]
+
+        result = case(Model, strategy="all")
+        ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Traceback (if any)
+      description: Full error output
+      render: shell
+      placeholder: |
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+          ...
+        ValueError: ...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      description: Where did you encounter the issue?
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues
+          required: true
+        - label: I can provide a minimal reproducible example
+          required: true
+        - label: The issue occurs with the latest release
+          required: true

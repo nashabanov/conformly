@@ -1,0 +1,43 @@
+name: Interanl Task
+description: Internal roadmap task
+title: "[Interanl]: "
+labels: ["internal"]
+
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What needs to be implemented?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      multiple: true
+      options:
+        - resolver
+        - planner
+        - generator
+        - constraints
+        - parsing
+        - api
+        - pytest
+        - docs
+        - ci
+
+  - type: textarea
+    id: implementation_notes
+    attributes:
+      label: Implementation notes
+
+  - type: checkboxes
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      options:
+        - label: Tests added
+        - label: README updated
+        - label: CHANGELOG updated
