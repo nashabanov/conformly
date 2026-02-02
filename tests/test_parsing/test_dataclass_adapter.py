@@ -1,12 +1,11 @@
 from collections.abc import Callable
 from dataclasses import InitVar, dataclass, field, fields
 from enum import Enum
-from typing import Annotated, ClassVar, Literal, Optional, Union
+from typing import Annotated, ClassVar, Literal
 
 import pytest
 
 from conformly.constraints import (
-    Constraint,
     GreaterOrEqual,
     LessOrEqual,
     MinLength,
@@ -14,17 +13,11 @@ from conformly.constraints import (
 )
 from conformly.constraints.enum import OneOf
 from conformly.constraints.string import MaxLength
-from conformly.parsing.adapters.dataclass_adapter import (
-    _metadata_to_constraints,
-    extract_runtime_type_and_constraints,
-    is_constraints_consistent,
-    is_nullable,
+from conformly.parsing.adapters.dataclass import (
     parse,
-    parse_annotated_constraints,
     parse_defaults,
     parse_field,
     parse_fields,
-    parse_metadata_constraints,
     resolve_type,
     supports,
 )
@@ -131,203 +124,6 @@ def test_resolve_type_missing_field():
         resolve_type(type_hints, "missing_field")
 
 
-# ====== TESTS FOR extract_runtime_type_and_constraints() =====
-
-
-def assert_constraints_equal(
-    actual: tuple[Constraint, ...], expected: tuple[Constraint, ...]
-) -> None:
-    assert actual == expected, f"Expected {expected}, got {actual}"
-
-
-def test_extract_runtime_type_plain():
-    runtime_type, constraints = extract_runtime_type_and_constraints(int, "field")
-    assert runtime_type is int
-    assert constraints == ()
-
-    runtime_type, constraints = extract_runtime_type_and_constraints(
-        DummyDataclass, "field"
-    )
-    assert runtime_type is DummyDataclass
-    assert constraints == ()
-
-
-def test_extract_runtime_type_optional():
-    runtime_type, constraints = extract_runtime_type_and_constraints(
-        Optional[int],  # noqa: UP045
-        "field",
-    )
-    assert runtime_type is int
-    assert constraints == ()
-
-    runtime_type, constraints = extract_runtime_type_and_constraints(
-        Optional[DummyDataclass],  # noqa: UP045
-        "field",
-    )
-    assert runtime_type is DummyDataclass
-    assert constraints == ()
-
-
-def test_extract_runtime_type_union_with_none():
-    runtime_type, constraints = extract_runtime_type_and_constraints(
-        DummyDataclass | None, "field"
-    )
-    assert runtime_type is DummyDataclass
-    assert constraints == ()
-
-    runtime_type, constraints = extract_runtime_type_and_constraints(
-        Union[int, None],  # noqa: UP007
-        "field",
-    )
-    assert runtime_type is int
-    assert constraints == ()
-
-
-def test_extract_runtime_type_annotated():
-    annotated = Annotated[DummyDataclass, "metadata"]
-    runtime_type, constraints = extract_runtime_type_and_constraints(annotated, "field")
-    assert runtime_type is DummyDataclass
-    assert constraints == ()
-
-
-def test_extract_runtime_type_annotated_optional():
-    annotated = Annotated[int | None, "metadata"]
-    runtime_type, constraints = extract_runtime_type_and_constraints(annotated, "field")
-    assert runtime_type is int
-    assert constraints == ()
-
-
-def test_extract_runtime_type_invalid_union():
-    with pytest.raises(TypeError, match="unsupported union type"):
-        extract_runtime_type_and_constraints(int | str, "field")
-
-    with pytest.raises(TypeError, match="unsupported union type"):
-        extract_runtime_type_and_constraints(int | DummyDataclass | None, "field")
-
-
-def test_extract_runtime_type_literal():
-    runtime_type, constraints = extract_runtime_type_and_constraints(
-        Literal[1, 2], "field"
-    )
-    assert runtime_type is ENUMERATED_TYPE
-    assert_constraints_equal(constraints, (OneOf((1, 2)),))
-
-
-def test_extract_runtime_type_optional_literal():
-    runtime_type, constraints = extract_runtime_type_and_constraints(
-        Optional[Literal[1, 2]],  # noqa: UP045
-        "field",
-    )
-    assert runtime_type is ENUMERATED_TYPE
-    assert_constraints_equal(constraints, (OneOf((1, 2)),))
-
-
-def test_extract_runtime_type_literal_union_with_none():
-    runtime_type, constraints = extract_runtime_type_and_constraints(
-        Literal["a", "b"] | None, "field"
-    )
-    assert runtime_type is ENUMERATED_TYPE
-    assert_constraints_equal(constraints, (OneOf(("a", "b")),))
-
-
-def test_extract_runtime_type_heterogeneous_literal():
-    runtime_type, constraints = extract_runtime_type_and_constraints(
-        Literal[1, "a", 2.0, True], "field"
-    )
-    assert runtime_type is ENUMERATED_TYPE
-    assert_constraints_equal(constraints, (OneOf((1, "a", 2.0, True)),))
-
-
-def test_extract_runtime_type_enum():
-    runtime_type, constraints = extract_runtime_type_and_constraints(BaseEnum, "field")
-    assert runtime_type is ENUMERATED_TYPE
-    assert_constraints_equal(constraints, (OneOf(("a", "b")),))
-
-
-def test_extract_runtime_type_optional_enum():
-    runtime_type, constraints = extract_runtime_type_and_constraints(
-        Optional[BaseEnum],  # noqa: UP045
-        "field",
-    )
-    assert runtime_type is ENUMERATED_TYPE
-    assert_constraints_equal(constraints, (OneOf(("a", "b")),))
-
-
-def test_extract_runtime_type_empty_enum():
-    class EmptyEnum(Enum):
-        pass
-
-    with pytest.raises(TypeError, match="empty Enum"):
-        extract_runtime_type_and_constraints(EmptyEnum, "field")
-
-
-class HeterogeneousEnum(Enum):
-    INT = 1
-    STR = "text"
-    FLOAT = 3.14
-
-
-def test_extract_runtime_type_heterogeneous_enum():
-    runtime_type, constraints = extract_runtime_type_and_constraints(
-        HeterogeneousEnum, "field"
-    )
-    assert runtime_type is ENUMERATED_TYPE
-    assert_constraints_equal(constraints, (OneOf((1, "text", 3.14)),))
-
-
-def test_extract_runtime_type_only_none():
-    with pytest.raises(TypeError, match="unsupported type annotation"):
-        extract_runtime_type_and_constraints(None, "field")
-
-
-def test_extract_runtime_type_unsupported_annotation():
-    with pytest.raises(TypeError, match="unsupported type annotation"):
-        extract_runtime_type_and_constraints(list[int], "field")
-
-
-# ====== TESTS FOR is_nullable() ======
-
-
-def test_is_nullable_optional_str():
-    assert is_nullable(str | None)
-
-
-def test_is_nullable_optional_int():
-    assert is_nullable(int | None)
-
-
-def test_is_nullable_union_with_none():
-    assert is_nullable(str | None)
-
-
-def test_is_nullable_union_multiple_with_none():
-    assert is_nullable(str | int | None)
-
-
-def test_is_nullable_not_optional_str():
-    assert not is_nullable(str)
-
-
-def test_is_nullable_not_optional_int():
-    assert not is_nullable(int)
-
-
-def test_is_nullable_union_without_none():
-    assert not is_nullable(str | int)
-
-
-def test_is_nullable_list():
-    assert not is_nullable(list)
-
-
-def test_is_nullable_annotated_union():
-    assert is_nullable(Annotated[int | None, "ge=0"])
-
-
-def test_is_nullable_annotated_not_optional():
-    assert not is_nullable(Annotated[int, "ge=0"])
-
-
 # ====== TESTS FOR parse_defaults() ======
 
 
@@ -411,106 +207,6 @@ def test_parse_default_factory_exception():
     # Should not call factory during parsing
     default = parse_defaults(fields(BadFactory)[0])
     assert default is bad_factory
-
-
-# ====== TESTS FOR parse_annotated_constraints() ======
-
-
-def test_parse_annotated_constraints_exists():
-    constraints = parse_annotated_constraints(Annotated[int, "ge=0", "le=150"])
-    assert len(constraints) == 2
-    for c in constraints:
-        assert isinstance(c, Constraint)
-
-
-def test_parse_annotated_constraints_empty():
-    constraints = parse_annotated_constraints(str)
-    assert constraints == ()
-
-
-def test_parse_annotated_constraints_single():
-    constraints = parse_annotated_constraints(Annotated[str, "pattern=^\\w+$"])
-    assert len(constraints) == 1
-
-
-def test_parse_annotated_constraints_none():
-    constraints = parse_annotated_constraints(type(None))
-    assert constraints == ()
-
-
-def test_parse_annotated_constraints_dict_format_valid():
-    constraints = parse_annotated_constraints(
-        Annotated[str, {"type": "pattern", "value": "^\\w+$"}]
-    )
-    assert len(constraints) == 1
-    assert isinstance(constraints[0], Pattern)
-    assert constraints[0].regex == "^\\w+$"
-
-
-def test_parse_annotated_constraints_dict_format_invalid_key():
-    with pytest.raises(ValueError, match="Unknown constraint type 'unknown'"):
-        parse_annotated_constraints(Annotated[str, {"type": "unknown", "value": "x"}])
-
-
-# ====== TESTS FOR parse_metadata_constraints() ======
-
-
-def test_parse_metadata_constraints_exists():
-    f = fields(ConstraintsDataclass)[2]  # tags field
-    constraints = parse_metadata_constraints(f)
-    assert len(constraints) > 0
-    for c in constraints:
-        assert isinstance(c, Constraint)
-
-
-def test_parse_metadata_constraints_empty():
-    f = fields(DummyDataclass)[0]
-    constraints = parse_metadata_constraints(f)
-    assert constraints == ()
-
-
-def test_parse_metadata_constraints_custom_keys():
-    @dataclass
-    class CustomMetadata:
-        value: int = field(metadata={"custom_key": "custom_value"})
-
-    f = fields(CustomMetadata)[0]
-    with pytest.raises(ValueError):
-        parse_metadata_constraints(f)
-
-
-def test_parse_metadata_constraints_ignored_private():
-    @dataclass
-    class PrivateMeta:
-        x: int = field(metadata={"_internal": "ignored", "min_length": 1})
-
-    f = fields(PrivateMeta)[0]
-    constraints = parse_metadata_constraints(f)
-    assert len(constraints) == 1
-    assert isinstance(constraints[0], MinLength)
-
-
-def test_parse_metadata_constraints_invalid_constraint_type():
-    @dataclass
-    class BadMeta:
-        x: int = field(metadata={"invalid_key": 42})
-
-    f = fields(BadMeta)[0]
-    with pytest.raises(ValueError, match="Unknown constraint type"):
-        parse_metadata_constraints(f)
-
-
-# ===== TESTS for is_constraints_consistent() =====
-
-
-def test_is_constraints_consistent_valid():
-    constraints = (OneOf((1, 2)),)
-    assert is_constraints_consistent(constraints)
-
-
-def test_is_constraints_consistent_invalid():
-    constraints = (OneOf((1, 2)), GreaterOrEqual(1))
-    assert not is_constraints_consistent(constraints)
 
 
 # ====== TESTS FOR parse_field() ======
@@ -744,17 +440,6 @@ def test_parse_get_optional_fields():
     assert len(optional) == 1
     names = [f.name for f in optional]
     assert "email" in names
-
-
-def test_metadata_to_constraints_constraint_spec_direct():
-    cs = MinLength(0)
-    result = _metadata_to_constraints(cs)
-    assert result is cs
-
-
-def test_metadata_to_constraints_unsupported_type():
-    assert _metadata_to_constraints(42) is None
-    assert _metadata_to_constraints([1, 2]) is None
 
 
 # ===== Nested models =====
