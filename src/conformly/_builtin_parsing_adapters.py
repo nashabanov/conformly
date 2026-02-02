@@ -1,4 +1,4 @@
 from .parsing import register
-from .parsing.adapters import dataclass_adapter
+from .parsing.adapters import dataclass
 
-register(dataclass_adapter)
+register(dataclass)
