@@ -1,6 +1,6 @@
 # conformly
 
-[![CI](https://github.com/nashabanov/conformly/actions/workflows/ci.yml/badge.svg)](https://github.com/nashabanov/conformly/actions)
+[![CI](https://github.com/nashabanov/conformly/actions/workflows/ci.yaml/badge.svg)](https://github.com/nashabanov/conformly/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/github/nashabanov/conformly/graph/badge.svg?branch=main)](https://codecov.io/github/nashabanov/conformly)
 [![PyPI](https://img.shields.io/pypi/v/conformly.svg)](https://pypi.org/project/conformly/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/conformly.svg)](https://pypi.org/project/conformly/)
