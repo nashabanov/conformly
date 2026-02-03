@@ -4,6 +4,15 @@ Short description of what PR does.
 
 ___
 
+## Related issues
+
+<!-- Choose one option -->
+<!-- Closes #42    if this PR fully closes issue -->
+<!-- Part of #42   if issue needs more PR -->
+<!-- Related to #42     if relates, but don't close -->
+
+---
+
 ## Type of change
 
 - [ ] feat (new feature)
