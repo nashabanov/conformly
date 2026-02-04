@@ -12,7 +12,7 @@ repos:
       - id: mypy
         files: ^src/conformly/
         args: [--config-file=pyproject.toml]
-        additional_dependencies: [rstr]
+        additional_dependencies: [rstr, pydantic]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
