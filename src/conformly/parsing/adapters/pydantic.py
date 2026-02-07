@@ -109,19 +109,19 @@ def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...
 
     SUPPORTED_ATTRS = ("gt", "ge", "lt", "le", "min_length", "max_length", "pattern")
 
-    meta = field_info.metadata
     constraints = []
 
-    for attr in SUPPORTED_ATTRS:
-        if hasattr(meta, attr):
-            value = getattr(meta, attr)
-            if value is None:
-                continue
+    for meta in field_info.metadata:
+        for attr in SUPPORTED_ATTRS:
+            if hasattr(meta, attr):
+                value = getattr(meta, attr)
+                if value is None:
+                    continue
 
-            if attr == "pattern":
-                value = getattr(value, "pattern", value)
+                if attr == "pattern":
+                    value = getattr(value, "pattern", value)
 
-            constraint = create_constraint(_validate_constraint_type(attr), value)
-            constraints.append(constraint)
+                constraint = create_constraint(_validate_constraint_type(attr), value)
+                constraints.append(constraint)
 
     return tuple(constraints)
