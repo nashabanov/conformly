@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 from ...specs import FieldSpec, ModelSpec
 
 if TYPE_CHECKING:
+    from ...constraints import Constraint
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo
 
@@ -67,6 +68,7 @@ def parse_field(
     all_constraints = (
         *intrinsic_constraints,
         *parse_annotated_constraints(field_type),
+        *_parse_fieldinfo_constraints(field_info),
     )
 
     if not is_constraints_consistent(all_constraints):
@@ -99,3 +101,27 @@ def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
         return field_info.default
 
     return _UNSET
+
+
+def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...]:
+    from ...constraints import create_constraint
+    from ..constraints import _validate_constraint_type
+
+    SUPPORTED_ATTRS = ("gt", "ge", "lt", "le", "min_length", "max_length", "pattern")
+
+    meta = field_info.metadata
+    constraints = []
+
+    for attr in SUPPORTED_ATTRS:
+        if hasattr(meta, attr):
+            value = getattr(meta, attr)
+            if value is None:
+                continue
+
+            if attr == "pattern":
+                value = getattr(value, "pattern", value)
+
+            constraint = create_constraint(_validate_constraint_type(attr), value)
+            constraints.append(constraint)
+
+    return tuple(constraints)
