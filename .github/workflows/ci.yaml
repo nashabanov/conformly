@@ -79,9 +79,9 @@ jobs:
       - name: Install dependencies and project
         run: |
           if [ -n "${{ matrix.extras }}" ]; then
-            uv sync --frozen --group dev --extra ${{ matrix.extras }}
+            uv sync --frozen --dev --extra ${{ matrix.extras }}
           else
-            uv sync --frozen --group dev
+            uv sync --frozen --dev
           fi
 
       - name: Run tests
