@@ -31,10 +31,8 @@ jobs:
           restore-keys: |
             uv-${{ runner.os }}-py313-
 
-      - name: Install dependencies and project
-        run: |
-          uv sync --frozen
-          uv pip install -e .
+      - name: Install all dependencies
+        run: uv sync --frozen --dev --all-extras
 
       - name: Lint
         run: uv run ruff check .
@@ -46,9 +44,18 @@ jobs:
         run: uv run mypy src
 
   tests:
-    name: Test
     runs-on: ubuntu-latest
     needs: quality
+    strategy:
+      matrix:
+          include:
+          - config: core
+            extras: ""
+            collect-coverage: false
+          - config: pydantic
+            extras: "pydantic"
+            collect-coverage: true
+    name: Test (${{ matrix.config }})
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,7 +63,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -65,24 +72,30 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/uv
-          key: uv-${{ runner.os }}-py313-${{ hashFiles('uv.lock') }}
+          key: uv-${{ runner.os }}-py313-${{ matrix.config }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
-            uv-${{ runner.os }}-py313-
+            uv-${{ runner.os }}-py13-${{ matrix.config }}-
 
-      - name: Install dependencies and project
+      - name: Install project with dependencies
         run: |
-            uv sync --frozen
-            uv pip install -e .
+          uv sync --frozen --dev ${{ matrix.extras && format('--extra {0}', matrix.extras) || '' }}
+          uv pip install -e . --python .venv
 
       - name: Run tests
         run: |
-          uv run pytest \
-            --cov=src \
-            --cov-report=xml \
-            --cov-report=term-missing \
-            --cov-fail-under=90
+          if [ "${{ matrix.collect-coverage }}" = "true" ]; then
+            uv run pytest \
+              --cov=src \
+              --cov-report=xml \
+              --cov-report=term-missing \
+              --cov-fail-under=90 \
+              -v
+          else
+            uv run pytest -v
+          fi
 
       - name: Upload coverage to Codecov
+        if: matrix.collect-coverage == true
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

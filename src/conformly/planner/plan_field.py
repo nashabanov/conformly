@@ -34,6 +34,7 @@ def define_allowed_violation_types(
         case _ if semantic.kind in (FieldKind.OBJECT, FieldKind.BOOLEAN):
             raise NotImplementedError(
                 f"There is no violations for {semantic.kind.value} fields yet"
+                f"Track progress in https://github.com/nashabanov/conformly/issues"
             )
 
         case _:

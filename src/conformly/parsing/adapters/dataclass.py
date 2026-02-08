@@ -1,8 +1,6 @@
 from dataclasses import MISSING, Field, fields, is_dataclass
-from types import UnionType
 from typing import (
     Any,
-    Union,
     get_type_hints,
 )
 
@@ -14,8 +12,6 @@ from ..constraints import (
     parse_metadata_constraints,
 )
 from ..type_analysis import extract_runtime_type_and_constraints, is_nullable
-
-UNION_TYPES = (Union, UnionType)
 
 
 def supports(model: type) -> bool:
