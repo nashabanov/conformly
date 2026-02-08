@@ -78,11 +78,8 @@ jobs:
 
       - name: Install project with dependencies
         run: |
-          if [ -n "${{ matrix.extras }}" ]; then
-            uv pip install -e ".[${{ matrix.extras }}]"
-          else
-            uv pip install -e .
-          fi
+          uv sync --frozen --dev ${{ matrix.extras && format('--extra {0}', matrix.extras) || '' }}
+          uv pip install -e . --python .venv
 
       - name: Run tests
         run: |
