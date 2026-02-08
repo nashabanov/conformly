@@ -46,15 +46,18 @@ jobs:
         run: uv run mypy src
 
   tests:
-    name: Test
     runs-on: ubuntu-latest
     needs: quality
-
     strategy:
       matrix:
-        python-version: ["3.12", "3.13"]
-        extras: ["", "pydantic"]
-
+          include:
+          - config: core
+            extras: ""
+            collect-coverage: false
+          - config: pydantic
+            extras: "pydantic"
+            collect-coverage: true
+    name: Test (${{ matrix.config }})
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -71,30 +74,33 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/uv
-          key: uv-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
+          key: uv-${{ runner.os }}-py313-${{ matrix.config }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
-            uv-${{ runner.os }}-py${{ matrix.python-version }}-
+            uv-${{ runner.os }}-py13-${{ matrix.config }}-
 
       - name: Install dependencies and project
-        run: uv sync --frozen
-
-      - name: Install project (core)
-        if: matrix.extras == ''
-        run: uv pip install -e .
-
-      - name: Install project with pydantic
-        if: matrix.extras == 'pydantic'
-        run: uv pip install -e .[pydantic]
+        run: |
+          if [ -n "${{ matrix.extras }}" ]; then
+            uv sync --frozen --group dev --extra ${{ matrix.extras }}
+          else
+            uv sync --frozen --group dev
+          fi
 
       - name: Run tests
         run: |
-          uv run pytest \
-            --cov=src \
-            --cov-report=xml \
-            --cov-report=term-missing \
-            --cov-fail-under=90
+          if [ "${{ matrix.collect-coverage }}" = "true" ]; then
+            uv run pytest \
+              --cov=src \
+              --cov-report=xml \
+              --cov-report=term-missing \
+              --cov-fail-under=90 \
+              -v
+          else
+            uv run pytest -v
+          fi
 
       - name: Upload coverage to Codecov
+        if: matrix.collect-coverage == true
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

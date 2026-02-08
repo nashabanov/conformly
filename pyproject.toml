@@ -29,7 +29,6 @@ pydantic = ["pydantic>=2.0.0,<3.0.0"]
 dev = [
     "mypy>=1.18.2",
     "pre-commit>=4.4.0",
-    "pydantic>=2.0.0,<3.0.0",
     "pytest>=9.0.0",
     "pytest-cov>=7.0.0",
     "ruff>=0.14.4",
