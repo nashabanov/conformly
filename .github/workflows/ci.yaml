@@ -32,7 +32,7 @@ jobs:
             uv-${{ runner.os }}-py313-
 
       - name: Install all dependencies
-        run: uv sync --frozen --group dev --all-extras
+        run: uv sync --frozen --dev --all-extras
 
       - name: Lint
         run: uv run ruff check .
