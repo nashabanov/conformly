@@ -76,12 +76,12 @@ jobs:
           restore-keys: |
             uv-${{ runner.os }}-py13-${{ matrix.config }}-
 
-      - name: Install dependencies and project
+      - name: Install project with dependencies
         run: |
           if [ -n "${{ matrix.extras }}" ]; then
-            uv sync --frozen --dev --extra ${{ matrix.extras }}
+            uv pip install -e ".[${{ matrix.extras }}]"
           else
-            uv sync --frozen --dev
+            uv pip install -e .
           fi
 
       - name: Run tests
