@@ -1,11 +1,16 @@
+import pytest
+
+pytest.importorskip("pydantic", reason="Pydantic adapter requires 'pydantic' package")
+
 from dataclasses import dataclass
+from enum import Enum
+import re
 from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 from pydantic.fields import FieldInfo
 from pydantic.types import StringConstraints
 from pydantic_core import PydanticUndefined
-import pytest
 
 from conformly.constraints import (
     GreaterOrEqual,
@@ -14,14 +19,19 @@ from conformly.constraints import (
     LessThan,
     MaxLength,
     MinLength,
+    OneOf,
     Pattern,
 )
 from conformly.parsing.adapters.pydantic import (
     _parse_default,
     _parse_fieldinfo_constraints,
+    parse,
+    parse_field,
+    parse_fields,
     supports,
 )
-from conformly.types import _UNSET
+from conformly.specs import ModelSpec
+from conformly.types import _UNSET, ENUMERATED_TYPE
 
 
 class SimpleModel(BaseModel):
@@ -29,6 +39,11 @@ class SimpleModel(BaseModel):
     age: int
     email: str
     is_active: bool = True
+
+
+class Colors(Enum):
+    red = "red"
+    green = "green"
 
 
 class ConstrainedModel(BaseModel):
@@ -51,6 +66,7 @@ class ConstrainedModel(BaseModel):
         Field(le=100),
     ]
     annotated_conformly_types: Annotated[int, GreaterThan(1)]
+    color: Colors
 
 
 def _get_field_info(model: type[BaseModel], name: str) -> FieldInfo:
@@ -181,3 +197,115 @@ def test_parse_default_raises_default_factory() -> None:
 
     with pytest.raises(NotImplementedError):
         _parse_default(field_info, "list_factory", NotImplementedError)
+
+
+# ===== TESTS for parse_field() =====
+
+
+def test_parse_field_basic() -> None:
+    field_info = _get_field_info(ConstrainedModel, "bio")
+
+    field_spec = parse_field(field_info, str, "bio", PydanticUndefined)
+    assert field_spec.name == "bio"
+    assert field_spec.has_constraints
+    assert field_spec.has_default
+    assert field_spec.default == ""
+    assert not field_spec.nullable
+    assert field_spec.type is str
+    assert len(field_spec.constraints) == 1
+
+
+def test_parse_field_enum() -> None:
+    field_info = _get_field_info(ConstrainedModel, "color")
+
+    field_spec = parse_field(field_info, Colors, "color", PydanticUndefined)
+    assert field_spec.name == "color"
+    assert field_spec.type == ENUMERATED_TYPE
+    assert len(field_spec.constraints) == 1
+    assert field_spec.constraints == (OneOf(("red", "green")),)
+
+
+def test_parse_field_non_consistent_constraints() -> None:
+    class Model(BaseModel):
+        color: Annotated[Colors, MinLength(8)]
+
+    field_info = _get_field_info(Model, "color")
+    with pytest.raises(TypeError):
+        parse_field(field_info, Colors, "color", PydanticUndefined)
+
+
+def test_parse_field_nested_model() -> None:
+    class Model(BaseModel):
+        nested: SimpleModel
+
+    field_info = _get_field_info(Model, "nested")
+
+    field_spec = parse_field(field_info, SimpleModel, "nested", PydanticUndefined)
+    assert field_spec.name == "nested"
+    assert field_spec.type is SimpleModel
+    assert isinstance(field_spec.nested_model, ModelSpec)
+
+
+def test_parse_field_compiled_pattern() -> None:
+    class Model(BaseModel):
+        code: str = Field(pattern=re.compile(r"^[A-Z]{3}$"))
+
+    constraints = _parse_fieldinfo_constraints(_get_field_info(Model, "code"))
+    assert any(isinstance(c, Pattern) and c.regex == r"^[A-Z]{3}$" for c in constraints)
+
+
+# ===== TESTS for parse_fields() =====
+
+
+def test_parse_fields_count() -> None:
+    assert len(parse_fields(SimpleModel, PydanticUndefined)) == 4
+
+
+def test_parse_fields_types() -> None:
+    fields = parse_fields(ConstrainedModel, PydanticUndefined)
+
+    assert fields[0].type is str
+    assert fields[6].type is int
+    assert fields[8].type is ENUMERATED_TYPE
+    assert fields[5].type is str
+
+
+# ===== TESTS for parse() =====
+
+
+def test_parse_non_pydantic() -> None:
+    @dataclass
+    class SimpleDataclass:
+        name: str
+
+    with pytest.raises(TypeError):
+        parse(SimpleDataclass)
+
+
+def test_parse_basic() -> None:
+    model_spec = parse(SimpleModel)
+
+    assert model_spec.name == "SimpleModel"
+    assert model_spec.type == "pydantic"
+    assert len(model_spec.fields) == 4
+
+
+def test_parse_inherited_fields() -> None:
+    class Base(BaseModel):
+        id: int
+        created_at: str
+
+    class Derived(Base):
+        name: str
+
+    spec = parse(Derived)
+    assert len(spec.fields) == 3
+    assert {f.name for f in spec.fields} == {"id", "created_at", "name"}
+
+
+def test_parse_empty_model() -> None:
+    class Empty(BaseModel):
+        pass
+
+    spec = parse(Empty)
+    assert len(spec.fields) == 0

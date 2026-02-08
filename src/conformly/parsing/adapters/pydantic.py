@@ -57,7 +57,6 @@ def parse_field(
     from ...types import ENUMERATED_TYPE
     from ..constraints import (
         is_constraints_consistent,
-        parse_annotated_constraints,
     )
     from ..type_analysis import extract_runtime_type_and_constraints, is_nullable
 
@@ -67,7 +66,6 @@ def parse_field(
 
     all_constraints = (
         *intrinsic_constraints,
-        *parse_annotated_constraints(field_type),
         *_parse_fieldinfo_constraints(field_info),
     )
 
