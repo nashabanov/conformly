@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies and project
         run: |
           uv sync --frozen
-          uv pip install -e .[pydantic]
+          uv pip install -e .[dev]
 
       - name: Lint
         run: uv run ruff check .
