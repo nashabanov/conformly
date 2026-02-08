@@ -108,7 +108,10 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
         )
 
     else:
-        raise NotImplementedError(f"No semantics for field with type: {t} ")
+        raise NotImplementedError(
+            f"No semantics for field with type: {t} "
+            f"Track progress in https://github.com/nashabanov/conformly/issues"
+        )
 
 
 def calculate_invalid_numeric_ranges(

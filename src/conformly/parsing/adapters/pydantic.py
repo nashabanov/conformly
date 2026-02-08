@@ -88,14 +88,23 @@ def parse_field(
         name=name,
         type=runtime_type,
         constraints=all_constraints,
-        default=_parse_default(field_info, PydanticUndefined),
+        default=_parse_default(field_info, name, PydanticUndefined),
         nullable=is_nullable(field_type),
         nested_model=nested_model,
     )
 
 
-def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
+def _parse_default(
+    field_info: FieldInfo, field_name: str, PydanticUndefined: Any
+) -> Any:
     from ...types import _UNSET
+
+    # TODO: inmplement default_factory usage in generator
+    if field_info.default_factory is not None:
+        raise NotImplementedError(
+            f"Field '{field_name} uses default_factory, which not supported yet'"
+            f"Track progress in https://github.com/nashabanov/conformly/issues"
+        )
 
     if field_info.default is not PydanticUndefined:
         return field_info.default
@@ -104,7 +113,7 @@ def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
 
 
 def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...]:
-    from ...constraints import create_constraint
+    from ...constraints import Constraint, create_constraint
     from ..constraints import _validate_constraint_type
 
     SUPPORTED_ATTRS = ("gt", "ge", "lt", "le", "min_length", "max_length", "pattern")
@@ -112,6 +121,10 @@ def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...
     constraints = []
 
     for meta in field_info.metadata:
+        if isinstance(meta, Constraint):
+            constraints.append(meta)
+            continue
+
         for attr in SUPPORTED_ATTRS:
             if hasattr(meta, attr):
                 value = getattr(meta, attr)
