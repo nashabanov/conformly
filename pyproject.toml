@@ -26,6 +26,7 @@ Issues = "https://github.com/nashabanov/conformly/issues"
 [project.optional-dependencies]
 pydantic = ["pydantic>=2.0.0,<3.0.0"]
 
+[dependency-groups]
 dev = [
     "mypy>=1.18.2",
     "pre-commit>=4.4.0",
