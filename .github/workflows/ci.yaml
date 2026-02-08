@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies and project
         run: |
           uv sync --frozen
-          uv pip install -e .
+          uv pip install -e .[pydantic]
 
       - name: Lint
         run: uv run ruff check .
@@ -49,6 +49,12 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     needs: quality
+
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+        extras: ["", "pydantic"]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,7 +62,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -65,14 +71,20 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/uv
-          key: uv-${{ runner.os }}-py313-${{ hashFiles('uv.lock') }}
+          key: uv-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
-            uv-${{ runner.os }}-py313-
+            uv-${{ runner.os }}-py${{ matrix.python-version }}-
 
       - name: Install dependencies and project
-        run: |
-            uv sync --frozen
-            uv pip install -e .
+        run: uv sync --frozen
+
+      - name: Install project (core)
+        if: matrix.extras == ''
+        run: uv pip install -e .
+
+      - name: Install project with pydantic
+        if: matrix.extras == 'pydantic'
+        run: uv pip install -e .[pydantic]
 
       - name: Run tests
         run: |
