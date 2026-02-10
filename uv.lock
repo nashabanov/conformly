@@ -111,39 +111,43 @@ wheels = [
 
 [[package]]
 name = "conformly"
-version = "0.3.3"
+version = "0.3.4"
 source = { virtual = "." }
 dependencies = [
     { name = "rstr" },
 ]
 
 [package.optional-dependencies]
+pydantic = [
+    { name = "pydantic" },
+]
+
+[package.dev-dependencies]
 dev = [
     { name = "mypy" },
     { name = "pre-commit" },
-    { name = "pydantic" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
     { name = "twine" },
 ]
-pydantic = [
-    { name = "pydantic" },
-]
 
 [package.metadata]
 requires-dist = [
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.18.2" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.4.0" },
-    { name = "pydantic", marker = "extra == 'dev'", specifier = ">=2.0.0,<3.0.0" },
     { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.0.0,<3.0.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "rstr", specifier = ">=3.2.2" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.14.4" },
-    { name = "twine", marker = "extra == 'dev'", specifier = ">=6.2.0" },
 ]
-provides-extras = ["pydantic", "dev"]
+provides-extras = ["pydantic"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=1.18.2" },
+    { name = "pre-commit", specifier = ">=4.4.0" },
+    { name = "pytest", specifier = ">=9.0.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "ruff", specifier = ">=0.14.4" },
+    { name = "twine", specifier = ">=6.2.0" },
+]
 
 [[package]]
 name = "coverage"
