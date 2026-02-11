@@ -2,9 +2,9 @@ import random
 from typing import Any
 
 from ..planner import PlannedTask
-from ..resolver import ResolvedField, ResolvedModel
+from ..resolver import ResolvedField, ResolvedModel, create_minimal_semantic
 from ..types import _UNSET, ViolationType
-from .registry import get_generator
+from .registry import choose_mismatch_kind, get_generator
 
 
 def generate_valid(model: ResolvedModel) -> dict[str, Any]:
@@ -57,9 +57,14 @@ def generate_field(
     if field.nested_model:
         return generate_valid(field.nested_model)
 
-    return get_generator(field.semantic.kind).generate_value(
-        field.semantic, _choose_violation(violations)
-    )
+    violation = _choose_violation(violations)
+
+    if violation == ViolationType.TYPE_MISMATCH:
+        mismatch_kind = choose_mismatch_kind(field.semantic.kind)
+        mismatch_semantic = create_minimal_semantic(mismatch_kind)
+        return get_generator(mismatch_kind).generate_value(mismatch_semantic, None)
+
+    return get_generator(field.semantic.kind).generate_value(field.semantic, violation)
 
 
 def _choose_violation(
