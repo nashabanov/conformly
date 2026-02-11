@@ -1,11 +1,10 @@
+from ...types import FieldKind, LengthRange, Range
 from ..semantics import FieldSemantics
-from .enum import EnumSemantic
-from .string import StringSemantic
 from .boolean import BooleanSemantic
+from .enum import EnumSemantic
 from .numeric import NumericSemantic
 from .object import ObjectSemantic
-
-from ...types import FieldKind, LengthRange, Range
+from .string import StringSemantic
 
 
 def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:

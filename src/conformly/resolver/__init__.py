@@ -8,6 +8,6 @@ __all__ = [
     "FieldSemantics",
     "ResolvedField",
     "ResolvedModel",
-    "resolve_model",
     "create_minimal_semantic",
+    "resolve_model",
 ]

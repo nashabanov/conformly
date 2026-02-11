@@ -4,7 +4,7 @@ from typing import Any
 from ..planner import PlannedTask
 from ..resolver import ResolvedField, ResolvedModel, create_minimal_semantic
 from ..types import _UNSET, ViolationType
-from .registry import get_generator, choose_mismatch_kind
+from .registry import choose_mismatch_kind, get_generator
 
 
 def generate_valid(model: ResolvedModel) -> dict[str, Any]:

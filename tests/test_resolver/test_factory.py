@@ -1,4 +1,5 @@
 import pytest
+
 from conformly.resolver.semantics.factory import create_minimal_semantic
 from conformly.types import FieldKind
 

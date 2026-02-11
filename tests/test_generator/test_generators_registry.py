@@ -1,15 +1,14 @@
 import random
+
 import pytest
 
+from conformly.generator.protocol import TypeGeneratorProtocol
 from conformly.generator.registry import (
     choose_mismatch_kind,
     get_generator,
-    choose_mismatch_kind,
 )
-from conformly.generator.protocol import TypeGeneratorProtocol
-from conformly.generator.types import string, integer, float, boolean, enum
+from conformly.generator.types import boolean, enum, float, integer, string
 from conformly.types import FieldKind
-
 
 # ===== TESTS for get_generator() =====
 
