@@ -142,6 +142,11 @@ def test_generate_field_invalid_optional() -> None:
     assert len(field_value) > 60
 
 
+def test_generate_field_invalid_type_mismatch() -> None:
+    field_value = generate_field(simple_string_field, (ViolationType.TYPE_MISMATCH,))
+    assert not isinstance(field_value, str) or field_value == "__type_mismatch__"
+
+
 # ===== TESTS for generate_invalid() =====
 
 
