@@ -7,9 +7,14 @@ NameIndexMap = tuple[tuple[FieldPath, str], ...]
 
 
 def select_paths(
-    model: ResolvedModel, *, strategy: CasesStrategy, allow_all: bool, count: int = 1
+    model: ResolvedModel,
+    *,
+    strategy: CasesStrategy,
+    allow_all: bool,
+    count: int = 1,
+    allow_type_mismatch: bool = False,
 ) -> tuple[FieldPath, ...]:
-    constrained_fields = _gather_constrained_paths(model)
+    constrained_fields = _gather_constrained_paths(model, allow_type_mismatch)
 
     if not constrained_fields:
         raise ValueError("Cannot generate invalid case(s): no fields have constraints")
@@ -17,7 +22,9 @@ def select_paths(
     return _select_violation_fields(strategy, allow_all, constrained_fields, count)
 
 
-def _gather_constrained_paths(model: ResolvedModel) -> NameIndexMap:
+def _gather_constrained_paths(
+    model: ResolvedModel, allow_type_mismatch: bool = False
+) -> NameIndexMap:
     result: list[tuple[FieldPath, str]] = []
 
     def dfs(current: ResolvedModel, prefix: FieldPath, names: list[str]) -> None:
@@ -25,7 +32,11 @@ def _gather_constrained_paths(model: ResolvedModel) -> NameIndexMap:
             path = (*prefix, i)
             dotted = ".".join([*names, field.name])
 
-            if field.semantic.has_constraints:
+            can_violate = field.semantic.has_constraints or (
+                allow_type_mismatch and field.nested_model is None
+            )
+
+            if can_violate:
                 result.append((path, dotted))
 
             if field.nested_model is not None:

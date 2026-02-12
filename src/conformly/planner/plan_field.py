@@ -38,6 +38,8 @@ def define_allowed_violation_types(
             return define_numeric_violations(semantic, allow_type_mismatch)
 
         case EnumSemantic(kind=FieldKind.ENUM):
+            if allow_type_mismatch:
+                return (ViolationType.NOT_ALLOWED_VALUE, ViolationType.TYPE_MISMATCH)
             return (ViolationType.NOT_ALLOWED_VALUE,)
 
         case (
