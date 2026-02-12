@@ -216,6 +216,60 @@ def test_define_allowed_violations_valid(
 
 
 @pytest.mark.parametrize(
+    "semantic, expected",
+    [
+        (
+            NumericSemantic(
+                kind=FieldKind.INTEGER,
+                valid_range=Range(2, 10),
+                invalid_ranges=(Range(INT_MIN, 1), Range(11, INT_MAX)),
+                has_constraints=True,
+            ),
+            (
+                ViolationType.BELOW_MIN,
+                ViolationType.ABOVE_MAX,
+                ViolationType.TYPE_MISMATCH,
+            ),
+        ),
+        (
+            StringSemantic(
+                kind=FieldKind.STRING,
+                length_range=LengthRange(5, 15),
+                pattern=r"/\d+/",
+                has_constraints=True,
+            ),
+            (
+                ViolationType.TOO_SHORT,
+                ViolationType.TOO_LONG,
+                ViolationType.PATTERN_MISMATCH,
+                ViolationType.TYPE_MISMATCH,
+            ),
+        ),
+        (
+            EnumSemantic(
+                kind=FieldKind.ENUM,
+                values=("a", "b", "c"),
+                has_constraints=True,
+            ),
+            (ViolationType.NOT_ALLOWED_VALUE, ViolationType.TYPE_MISMATCH),
+        ),
+        (
+            BooleanSemantic(kind=FieldKind.BOOLEAN, has_constraints=False),
+            (ViolationType.TYPE_MISMATCH,),
+        ),
+        (
+            ObjectSemantic(kind=FieldKind.OBJECT, has_constraints=False),
+            (ViolationType.TYPE_MISMATCH,),
+        ),
+    ],
+)
+def test_define_allowed_violations_allow_type_mismatch(
+    semantic: FieldSemantics, expected: tuple[ViolationType, ...]
+) -> None:
+    assert define_allowed_violation_types(semantic, True) == expected
+
+
+@pytest.mark.parametrize(
     "semantic", [BooleanSemantic(FieldKind.BOOLEAN), ObjectSemantic(FieldKind.OBJECT)]
 )
 def test_define_allowed_violations_invalid(semantic: FieldSemantics) -> None:
@@ -318,7 +372,46 @@ def test_plan_violation_task_valid(path: FieldPath, expected: PlannedTask) -> No
     assert plan_violation_task(base_model, path) == expected
 
 
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        ((0,), PlannedTask((0,), (ViolationType.TYPE_MISMATCH,))),
+        (
+            (1,),
+            PlannedTask(
+                (1,),
+                (
+                    ViolationType.BELOW_MIN,
+                    ViolationType.ABOVE_MAX,
+                    ViolationType.TYPE_MISMATCH,
+                ),
+            ),
+        ),
+        (
+            (2, 1),
+            PlannedTask(
+                (2, 1),
+                (
+                    ViolationType.TOO_LONG,
+                    ViolationType.TYPE_MISMATCH,
+                ),
+            ),
+        ),
+        ((2, 0, 0), PlannedTask((2, 0, 0), (ViolationType.TYPE_MISMATCH,))),
+    ],
+)
+def test_plan_violation_task_allow_type_mismatch(
+    path: FieldPath, expected: PlannedTask
+) -> None:
+    assert plan_violation_task(base_model, path, True) == expected
+
+
 @pytest.mark.parametrize("path", [(3,), (0, 1), (2, 2), (2, 1, 4)])
 def test_plan_violation_task_invalid(path: FieldPath) -> None:
     with pytest.raises((IndexError, ValueError)):
         plan_violation_task(base_model, path)
+
+
+def test_plan_violation_task_raises_for_type_mismatch_nested_models() -> None:
+    with pytest.raises(NotImplementedError):
+        plan_violation_task(base_model, (2,), True)
