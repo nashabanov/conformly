@@ -4,8 +4,8 @@ from ..resolver.semantics import (
     EnumSemantic,
     FieldSemantics,
     NumericSemantic,
-    StringSemantic,
     ObjectSemantic,
+    StringSemantic,
 )
 from ..types import (
     FieldKind,
@@ -40,15 +40,10 @@ def define_allowed_violation_types(
         case EnumSemantic(kind=FieldKind.ENUM):
             return (ViolationType.NOT_ALLOWED_VALUE,)
 
-        case ObjectSemantic(kind=FieldKind.OBJECT):
-            if allow_type_mismatch:
-                return (ViolationType.TYPE_MISMATCH,)
-
-            raise NotImplementedError(
-                f"For {semantic.kind.value} allowed only type mismatch violation"
-            )
-
-        case BooleanSemantic(kind=FieldKind.BOOLEAN):
+        case (
+            ObjectSemantic(kind=FieldKind.OBJECT)
+            | BooleanSemantic(kind=FieldKind.BOOLEAN)
+        ):
             if allow_type_mismatch:
                 return (ViolationType.TYPE_MISMATCH,)
 
