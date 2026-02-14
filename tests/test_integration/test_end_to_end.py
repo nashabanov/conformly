@@ -3,6 +3,8 @@ import math
 import re
 from typing import Annotated, Literal
 
+import pytest
+
 from conformly import case, cases
 from conformly.constraints import (
     GreaterOrEqual,
@@ -27,6 +29,7 @@ class User:
     ]
     bio: Annotated[str, MaxLength(500)]
     role: Literal["admin", "guest", "user"]
+    is_blocked: bool
 
 
 @dataclass
@@ -119,6 +122,35 @@ class TestUserModel:
         assert len(users) == 5
         for user in users:
             assert len(user["username"]) >= 3
+
+    def test_type_mismatching_case(self) -> None:
+        invalid = case(
+            User, valid=False, strategy="is_blocked", allow_type_mismatch=True
+        )
+        assert not isinstance(invalid["is_blocked"], bool)
+
+    def test_type_mismatching_cases(self) -> None:
+        invalid_users = cases(
+            User, valid=False, strategy="all", allow_type_mismatch=True
+        )
+        assert len(invalid_users) == 6
+        bool_case = next(
+            c for c in invalid_users if c["is_blocked"] not in (True, False)
+        )
+        assert not isinstance(bool_case["is_blocked"], bool)
+
+    def test_multiple_field_name(self) -> None:
+        invalid_users = cases(User, valid=False, strategy="role", count=5)
+        assert len(invalid_users) == 1
+        for user in invalid_users:
+            assert user["role"] not in ["admin", "guest", "user"]
+            assert len(user["username"]) >= 3
+            assert 2 <= len(user["full_name"]) <= 100
+            assert re.match(
+                r"^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", user["email"]
+            )
+            assert len(user["bio"]) <= 500
+            assert isinstance(user["is_blocked"], bool)
 
 
 class TestBlogPostModel:
@@ -363,3 +395,19 @@ class TestFuzzTesting:
                 break
 
         assert saw_violation
+
+
+class TestApiErrors:
+    def test_raises_if_valid_and_not_default_strategy(self) -> None:
+        with pytest.raises(ValueError):
+            case(User, valid=True, strategy="random")
+
+        with pytest.raises(ValueError):
+            cases(User, valid=True, strategy="random")
+
+    def test_raises_if_valid_and_type_mismatch_allowed(self) -> None:
+        with pytest.raises(ValueError):
+            case(User, allow_type_mismatch=True)
+
+        with pytest.raises(ValueError):
+            cases(User, allow_type_mismatch=True)

@@ -26,14 +26,16 @@ def _plan_tasks(
     strategy: CasesStrategy,
     allow_all: bool,
     count: int | None = None,
+    allow_type_mismatch: bool = False,
 ) -> list[PlannedTask]:
     paths = select_paths(
         model,
         strategy=strategy,
         allow_all=allow_all,
         count=count or 1,
+        allow_type_mismatch=allow_type_mismatch,
     )
-    return [plan_violation_task(model, path) for path in paths]
+    return [plan_violation_task(model, path, allow_type_mismatch) for path in paths]
 
 
 # ===== case =====
@@ -42,6 +44,7 @@ def case(
     *,
     valid: bool = True,
     strategy: CaseStrategy = "first",
+    allow_type_mismatch: bool = False,
 ) -> dict[str, Any]:
     """
     Generate a single example.
@@ -54,16 +57,17 @@ def case(
                - "random": violate a random constrained field
                - "field_name": violate a specific field
                  (use dotted paths for nested fields e.g. strategy="user.email")
+        allow_type_mismatch: If True fields could be type mismatched.
 
     Returns:
         A single dictionary representing the instance.
-
-    Raises:
-        ValueError: If no constrained fields exist (for valid=False).
     """
     model = _ensure_model_or_spec(model_or_spec)
 
     if valid:
+        if allow_type_mismatch:
+            raise ValueError("Type mismatching availiable inly for invald generation")
+
         if strategy != "first":
             raise ValueError("Strategy is only applicable when valid=False")
         return generate_valid(model)
@@ -73,7 +77,13 @@ def case(
             "'all' strategy is not supported in 'case()' — use 'cases()' instead"
         )
 
-    task = _plan_tasks(model, strategy=strategy, allow_all=False, count=1)[0]
+    task = _plan_tasks(
+        model,
+        strategy=strategy,
+        allow_all=False,
+        count=1,
+        allow_type_mismatch=allow_type_mismatch,
+    )[0]
     return generate_invalid(model, task)
 
 
@@ -84,6 +94,7 @@ def cases(
     valid: bool = True,
     strategy: CasesStrategy = "first",
     count: int = 1,
+    allow_type_mismatch: bool = False,
 ) -> list[dict[str, Any]]:
     """
     Generate multiple examples.
@@ -98,12 +109,11 @@ def cases(
                - "field_name": generate one case violating a specific field
                  (use dotted paths for nested fields e.g. strategy="user.email")
         count: Number of cases to generate (ignored if strategy="all").
+        allow_type_mismatch: If True fields could be type mismatched.
+
 
     Returns:
         A list of dictionaries.
-
-    Raises:
-        ValueError: If no constrained fields exist (for valid=False).
     """
     if count < 1:
         raise ValueError("count must be >= 1")
@@ -111,14 +121,29 @@ def cases(
     model = _ensure_model_or_spec(model_or_spec)
 
     if valid:
+        if allow_type_mismatch:
+            raise ValueError("Type mismatching availiable inly for invald generation")
+
         if strategy != "first":
             raise ValueError("Strategy is only applicable when valid=False")
+
         return [generate_valid(model) for _ in range(count)]
 
     if strategy == "all":
-        tasks = _plan_tasks(model, strategy="all", allow_all=True)
+        tasks = _plan_tasks(
+            model,
+            strategy="all",
+            allow_all=True,
+            allow_type_mismatch=allow_type_mismatch,
+        )
 
     else:
-        tasks = _plan_tasks(model, strategy=strategy, allow_all=False, count=count)
+        tasks = _plan_tasks(
+            model,
+            strategy=strategy,
+            allow_all=False,
+            count=count,
+            allow_type_mismatch=allow_type_mismatch,
+        )
 
     return [generate_invalid(model, task) for task in tasks]
