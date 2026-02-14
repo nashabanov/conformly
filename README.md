@@ -94,8 +94,8 @@ valid = case(User, valid=True)
 
 ## API Reference
 ```python
-case(model, *, valid: bool, strategy: str | None = None) -> dict
-cases(model, *, valid: bool, strategy: str = "all", count: int | None = None) -> list[dict]
+case(model, *, valid: bool, strategy: str | None = None, allow_type_mismatch: bool = False) -> dict
+cases(model, *, valid: bool, strategy: str = "all", count: int | None = None, allow_type_mismatch: bool = False) -> list[dict]
 ```
 `strategy` values:
 - `<field_name>` - target specific field for invalidation (for nested fields using dot syntax `"profile.name"`)
@@ -107,6 +107,7 @@ cases(model, *, valid: bool, strategy: str = "all", count: int | None = None) ->
 
 For `case(Model, valid=False, strategy="<field>")`:
 
+- **If `allow_type_mismatch=True`**, the generator may substitute a type mismatch (e.g., string instead of int) in place of a semantic constraint violation for the targeted field.
 - **Exactly one field is targeted** (the one specified by `strategy`).
 - **The generator will violate constraints** for that field, making it invalid.
 - **If a field has multiple constraints**, the violated constraint may be chosen by generator logic (not necessarily the one you expect).

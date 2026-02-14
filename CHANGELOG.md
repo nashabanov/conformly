@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2025.02.15
+
+### Added
+- **`allow_type_mismatch` flag for `case()` and `cases()`** APIs to enable type mismatch violations (e.g., string instead of int) when generating invalid examples
+- **Support for `TYPE_MISMATCH` violation** in `planner` and `generator` — becomes an available option alongside semantic constraints when the flag is enabled
+- **Type mismatch semantics factory** in resolver module for generating incorrect-type values
+- **Validation guard**: raises `ValueError` when allow_type_mismatch=True is combined with valid=True
+
+### Changed
+- `bool` and `object` fields can now be violated via type mismatches when `allow_type_mismatch=True`; `NotImplementedError` is raised only when attempting to violate these types with `allow_type_mismatch=False` (no semantic constraints available)
+
 ## [0.3.4] - 2025.02.09
 
 ### Added
