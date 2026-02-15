@@ -16,50 +16,66 @@ from .planned_task import PlannedTask
 
 
 def plan_violation_task(
-    model: ResolvedModel, path: FieldPath, allow_type_mismatch: bool = False
+    model: ResolvedModel,
+    path: FieldPath,
+    allow_type_mismatch: bool = False,
+    allow_structural_violations: bool = False,
 ) -> PlannedTask:
     field = model.get_field(path)
     return PlannedTask(
         path,
-        define_allowed_violation_types(
-            field.semantic, allow_type_mismatch if not field.nested_model else False
+        _define_allowed_violation_types(
+            semantic=field.semantic,
+            allow_type_mismatch=allow_type_mismatch
+            if not field.nested_model
+            else False,
+            allow_structural_violations=allow_structural_violations,
         ),
     )
 
 
-def define_allowed_violation_types(
-    semantic: FieldSemantics, allow_type_mismatch: bool = False
+def _define_allowed_violation_types(
+    semantic: FieldSemantics,
+    allow_type_mismatch: bool = False,
+    allow_structural_violations: bool = False,
 ) -> tuple[ViolationType, ...]:
+    violations = _define_semantic_violations(semantic)
+
+    if allow_type_mismatch:
+        violations.append(ViolationType.TYPE_MISMATCH)
+
+    if allow_structural_violations:
+        violations.append(ViolationType.MISSING_FIELD)
+
+    if not violations:
+        raise NotImplementedError(
+            f"No violations available for {semantic.kind.value} "
+            f"(try enabling allow_type_mismatch or allow_structural_violations)"
+        )
+
+    return tuple(violations)
+
+
+def _define_semantic_violations(semantic: FieldSemantics) -> list[ViolationType]:
     match semantic:
         case StringSemantic(kind=FieldKind.STRING):
-            return define_string_violations(semantic, allow_type_mismatch)
-
+            return _define_string_violations(semantic)
         case NumericSemantic(kind=(FieldKind.INTEGER | FieldKind.FLOAT)):
-            return define_numeric_violations(semantic, allow_type_mismatch)
-
+            return _define_numeric_violations(semantic)
         case EnumSemantic(kind=FieldKind.ENUM):
-            if allow_type_mismatch:
-                return (ViolationType.NOT_ALLOWED_VALUE, ViolationType.TYPE_MISMATCH)
-            return (ViolationType.NOT_ALLOWED_VALUE,)
-
+            return [ViolationType.NOT_ALLOWED_VALUE]
         case (
             ObjectSemantic(kind=FieldKind.OBJECT)
             | BooleanSemantic(kind=FieldKind.BOOLEAN)
         ):
-            if allow_type_mismatch:
-                return (ViolationType.TYPE_MISMATCH,)
-
-            raise NotImplementedError(
-                f"For {semantic.kind.value} allowed only type mismatch violation"
-            )
-
+            return []
         case _:
             raise ValueError(f"Unsupported semantic kind: {semantic.kind}")
 
 
-def define_numeric_violations(
-    semantic: NumericSemantic, allow_type_mismatch: bool = False
-) -> tuple[ViolationType, ...]:
+def _define_numeric_violations(
+    semantic: NumericSemantic,
+) -> list[ViolationType]:
     result: list[ViolationType] = []
     valid = semantic.valid_range
     invalid_ranges = semantic.invalid_ranges
@@ -71,15 +87,12 @@ def define_numeric_violations(
         if r.min_value >= valid.max_value:
             result.append(ViolationType.ABOVE_MAX)
 
-    if allow_type_mismatch:
-        result.append(ViolationType.TYPE_MISMATCH)
-
-    return tuple(result)
+    return result
 
 
-def define_string_violations(
-    semantic: StringSemantic, allow_type_mismatch: bool = False
-) -> tuple[ViolationType, ...]:
+def _define_string_violations(
+    semantic: StringSemantic,
+) -> list[ViolationType]:
     result: list[ViolationType] = []
 
     if semantic.length_range.min_length > 0:
@@ -91,7 +104,4 @@ def define_string_violations(
     if semantic.pattern is not None:
         result.append(ViolationType.PATTERN_MISMATCH)
 
-    if allow_type_mismatch:
-        result.append(ViolationType.TYPE_MISMATCH)
-
-    return tuple(result)
+    return result
