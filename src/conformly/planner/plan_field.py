@@ -39,7 +39,30 @@ def _define_allowed_violation_types(
     allow_type_mismatch: bool = False,
     allow_structural_violations: bool = False,
 ) -> tuple[ViolationType, ...]:
-    violations = _define_semantic_violations(semantic)
+    match semantic:
+        case StringSemantic(kind=FieldKind.STRING):
+            violations = _define_string_violations(semantic)
+
+        case NumericSemantic(kind=(FieldKind.INTEGER | FieldKind.FLOAT)):
+            violations = _define_numeric_violations(semantic)
+
+        case EnumSemantic(kind=FieldKind.ENUM):
+            violations = [ViolationType.NOT_ALLOWED_VALUE]
+
+        case (
+            ObjectSemantic(kind=FieldKind.OBJECT)
+            | BooleanSemantic(kind=FieldKind.BOOLEAN)
+        ):
+            if not (allow_type_mismatch or allow_structural_violations):
+                raise NotImplementedError(
+                    f"No violations available for {semantic.kind.value} "
+                    f"(try enabling allow_type_mismatch or allow_structural_violations)"
+                )
+
+            violations = []
+
+        case _:
+            raise ValueError(f"Unsupported semantic kind: {semantic.kind}")
 
     if allow_type_mismatch:
         violations.append(ViolationType.TYPE_MISMATCH)
@@ -47,30 +70,7 @@ def _define_allowed_violation_types(
     if allow_structural_violations:
         violations.append(ViolationType.MISSING_FIELD)
 
-    if not violations:
-        raise NotImplementedError(
-            f"No violations available for {semantic.kind.value} "
-            f"(try enabling allow_type_mismatch or allow_structural_violations)"
-        )
-
     return tuple(violations)
-
-
-def _define_semantic_violations(semantic: FieldSemantics) -> list[ViolationType]:
-    match semantic:
-        case StringSemantic(kind=FieldKind.STRING):
-            return _define_string_violations(semantic)
-        case NumericSemantic(kind=(FieldKind.INTEGER | FieldKind.FLOAT)):
-            return _define_numeric_violations(semantic)
-        case EnumSemantic(kind=FieldKind.ENUM):
-            return [ViolationType.NOT_ALLOWED_VALUE]
-        case (
-            ObjectSemantic(kind=FieldKind.OBJECT)
-            | BooleanSemantic(kind=FieldKind.BOOLEAN)
-        ):
-            return []
-        case _:
-            raise ValueError(f"Unsupported semantic kind: {semantic.kind}")
 
 
 def _define_numeric_violations(

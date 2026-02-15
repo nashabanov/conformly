@@ -1,9 +1,11 @@
+from typing import cast
+
 import pytest
 
 from conformly.planner.plan_field import (
-    define_allowed_violation_types,
-    define_numeric_violations,
-    define_string_violations,
+    _define_allowed_violation_types,
+    _define_numeric_violations,
+    _define_string_violations,
     plan_violation_task,
 )
 from conformly.planner.planned_task import PlannedTask
@@ -41,7 +43,7 @@ from conformly.types import (
                 pattern=r"/\d+/",
                 has_constraints=True,
             ),
-            (ViolationType.PATTERN_MISMATCH,),
+            {ViolationType.PATTERN_MISMATCH},
         ),
         (
             StringSemantic(
@@ -50,7 +52,7 @@ from conformly.types import (
                 pattern=None,
                 has_constraints=True,
             ),
-            (ViolationType.TOO_SHORT,),
+            {ViolationType.TOO_SHORT},
         ),
         (
             StringSemantic(
@@ -59,7 +61,7 @@ from conformly.types import (
                 pattern=None,
                 has_constraints=True,
             ),
-            (ViolationType.TOO_LONG,),
+            {ViolationType.TOO_LONG},
         ),
         (
             StringSemantic(
@@ -68,10 +70,10 @@ from conformly.types import (
                 pattern=None,
                 has_constraints=True,
             ),
-            (
+            {
                 ViolationType.TOO_SHORT,
                 ViolationType.TOO_LONG,
-            ),
+            },
         ),
         (
             StringSemantic(
@@ -80,11 +82,11 @@ from conformly.types import (
                 pattern=r"/\d+/",
                 has_constraints=True,
             ),
-            (
+            {
                 ViolationType.TOO_SHORT,
                 ViolationType.TOO_LONG,
                 ViolationType.PATTERN_MISMATCH,
-            ),
+            },
         ),
         (
             StringSemantic(
@@ -93,7 +95,7 @@ from conformly.types import (
                 pattern=None,
                 has_constraints=True,
             ),
-            (ViolationType.TOO_LONG,),
+            {ViolationType.TOO_LONG},
         ),
         (
             StringSemantic(
@@ -102,14 +104,14 @@ from conformly.types import (
                 pattern=None,
                 has_constraints=False,
             ),
-            (),
+            set(),
         ),
     ],
 )
 def test_define_string_violations(
-    semantic: StringSemantic, expected: tuple[ViolationType, ...]
+    semantic: StringSemantic, expected: set[ViolationType]
 ) -> None:
-    assert define_string_violations(semantic) == expected
+    assert set(_define_string_violations(semantic)) == expected
 
 
 # ===== TESTS for define_numeric_violations() =====
@@ -125,7 +127,7 @@ def test_define_string_violations(
                 invalid_ranges=(Range(INT_MIN, 1), Range(11, INT_MAX)),
                 has_constraints=True,
             ),
-            (ViolationType.BELOW_MIN, ViolationType.ABOVE_MAX),
+            {ViolationType.BELOW_MIN, ViolationType.ABOVE_MAX},
         ),
         (
             NumericSemantic(
@@ -134,7 +136,7 @@ def test_define_string_violations(
                 invalid_ranges=(Range(FLOAT_MIN, -0.2),),
                 has_constraints=True,
             ),
-            (ViolationType.BELOW_MIN,),
+            {ViolationType.BELOW_MIN},
         ),
         (
             NumericSemantic(
@@ -143,7 +145,7 @@ def test_define_string_violations(
                 invalid_ranges=(Range(121, INT_MAX),),
                 has_constraints=True,
             ),
-            (ViolationType.ABOVE_MAX,),
+            {ViolationType.ABOVE_MAX},
         ),
         (
             NumericSemantic(
@@ -152,7 +154,7 @@ def test_define_string_violations(
                 invalid_ranges=(),
                 has_constraints=False,
             ),
-            (),
+            set(),
         ),
         (
             NumericSemantic(
@@ -161,17 +163,17 @@ def test_define_string_violations(
                 invalid_ranges=(Range(FLOAT_MIN, 10.0), Range(11102.4, FLOAT_MAX)),
                 has_constraints=True,
             ),
-            (ViolationType.BELOW_MIN, ViolationType.ABOVE_MAX),
+            {ViolationType.BELOW_MIN, ViolationType.ABOVE_MAX},
         ),
     ],
 )
 def test_define_numeric_violations(
-    semantic: NumericSemantic, expected: tuple[ViolationType, ...]
+    semantic: NumericSemantic, expected: set[ViolationType]
 ) -> None:
-    assert define_numeric_violations(semantic) == expected
+    assert set(_define_numeric_violations(semantic)) == expected
 
 
-# ===== TESTS for define_allowed_violations_types() =====
+# ===== TESTS for _define_allowed_violations_types() =====
 
 
 @pytest.mark.parametrize(
@@ -212,7 +214,7 @@ def test_define_numeric_violations(
 def test_define_allowed_violations_valid(
     semantic: FieldSemantics, expected: tuple[ViolationType, ...]
 ) -> None:
-    assert define_allowed_violation_types(semantic) == expected
+    assert _define_allowed_violation_types(semantic) == expected
 
 
 @pytest.mark.parametrize(
@@ -266,15 +268,147 @@ def test_define_allowed_violations_valid(
 def test_define_allowed_violations_allow_type_mismatch(
     semantic: FieldSemantics, expected: tuple[ViolationType, ...]
 ) -> None:
-    assert define_allowed_violation_types(semantic, True) == expected
+    assert _define_allowed_violation_types(semantic, True) == expected
+
+
+@pytest.mark.parametrize(
+    "semantic, expected",
+    [
+        (
+            NumericSemantic(
+                kind=FieldKind.INTEGER,
+                valid_range=Range(2, 10),
+                invalid_ranges=(Range(INT_MIN, 1), Range(11, INT_MAX)),
+                has_constraints=True,
+            ),
+            (
+                ViolationType.BELOW_MIN,
+                ViolationType.ABOVE_MAX,
+                ViolationType.MISSING_FIELD,
+            ),
+        ),
+        (
+            StringSemantic(
+                kind=FieldKind.STRING,
+                length_range=LengthRange(5, 15),
+                pattern=r"/\d+/",
+                has_constraints=True,
+            ),
+            (
+                ViolationType.TOO_SHORT,
+                ViolationType.TOO_LONG,
+                ViolationType.PATTERN_MISMATCH,
+                ViolationType.MISSING_FIELD,
+            ),
+        ),
+        (
+            EnumSemantic(
+                kind=FieldKind.ENUM,
+                values=("a", "b", "c"),
+                has_constraints=True,
+            ),
+            (ViolationType.NOT_ALLOWED_VALUE, ViolationType.MISSING_FIELD),
+        ),
+        (
+            BooleanSemantic(kind=FieldKind.BOOLEAN, has_constraints=False),
+            (ViolationType.MISSING_FIELD,),
+        ),
+        (
+            ObjectSemantic(kind=FieldKind.OBJECT, has_constraints=False),
+            (ViolationType.MISSING_FIELD,),
+        ),
+    ],
+)
+def test_define_allowed_violations_allow_structural_violations(
+    semantic: FieldSemantics, expected: tuple[ViolationType, ...]
+) -> None:
+    assert _define_allowed_violation_types(semantic, False, True) == expected
+
+
+@pytest.mark.parametrize(
+    "semantic, expected",
+    [
+        (
+            NumericSemantic(
+                kind=FieldKind.INTEGER,
+                valid_range=Range(2, 10),
+                invalid_ranges=(Range(INT_MIN, 1), Range(11, INT_MAX)),
+                has_constraints=True,
+            ),
+            (
+                ViolationType.BELOW_MIN,
+                ViolationType.ABOVE_MAX,
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.MISSING_FIELD,
+            ),
+        ),
+        (
+            StringSemantic(
+                kind=FieldKind.STRING,
+                length_range=LengthRange(5, 15),
+                pattern=r"/\d+/",
+                has_constraints=True,
+            ),
+            (
+                ViolationType.TOO_SHORT,
+                ViolationType.TOO_LONG,
+                ViolationType.PATTERN_MISMATCH,
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.MISSING_FIELD,
+            ),
+        ),
+        (
+            EnumSemantic(
+                kind=FieldKind.ENUM,
+                values=("a", "b", "c"),
+                has_constraints=True,
+            ),
+            (
+                ViolationType.NOT_ALLOWED_VALUE,
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.MISSING_FIELD,
+            ),
+        ),
+        (
+            BooleanSemantic(kind=FieldKind.BOOLEAN, has_constraints=False),
+            (
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.MISSING_FIELD,
+            ),
+        ),
+        (
+            ObjectSemantic(kind=FieldKind.OBJECT, has_constraints=False),
+            (
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.MISSING_FIELD,
+            ),
+        ),
+    ],
+)
+def test_define_allowed_violations_all_flags(
+    semantic: FieldSemantics, expected: tuple[ViolationType, ...]
+) -> None:
+    assert _define_allowed_violation_types(semantic, True, True) == expected
 
 
 @pytest.mark.parametrize(
     "semantic", [BooleanSemantic(FieldKind.BOOLEAN), ObjectSemantic(FieldKind.OBJECT)]
 )
-def test_define_allowed_violations_invalid(semantic: FieldSemantics) -> None:
+def test_define_allowed_violations_no_sematic_violations(
+    semantic: FieldSemantics,
+) -> None:
     with pytest.raises(NotImplementedError):
-        define_allowed_violation_types(semantic)
+        _define_allowed_violation_types(semantic)
+
+
+def test_define_allowed_violations_unsupported_semantic_kind():
+    class UnsupportedSemantic:
+        kind = FieldKind.OBJECT
+
+    semantic = cast("FieldSemantics", UnsupportedSemantic())
+
+    with pytest.raises(ValueError, match="Unsupported semantic kind"):
+        _define_allowed_violation_types(semantic)
 
 
 # ===== TESTS for plan_violation_task() =====
@@ -404,6 +538,40 @@ def test_plan_violation_task_allow_type_mismatch(
     path: FieldPath, expected: PlannedTask
 ) -> None:
     assert plan_violation_task(base_model, path, True) == expected
+
+
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        ((0,), PlannedTask((0,), (ViolationType.MISSING_FIELD,))),
+        (
+            (1,),
+            PlannedTask(
+                (1,),
+                (
+                    ViolationType.BELOW_MIN,
+                    ViolationType.ABOVE_MAX,
+                    ViolationType.MISSING_FIELD,
+                ),
+            ),
+        ),
+        (
+            (2, 1),
+            PlannedTask(
+                (2, 1),
+                (
+                    ViolationType.TOO_LONG,
+                    ViolationType.MISSING_FIELD,
+                ),
+            ),
+        ),
+        ((2, 0, 0), PlannedTask((2, 0, 0), (ViolationType.MISSING_FIELD,))),
+    ],
+)
+def test_plan_violation_task_allow_structural_violations(
+    path: FieldPath, expected: PlannedTask
+) -> None:
+    assert plan_violation_task(base_model, path, False, True) == expected
 
 
 @pytest.mark.parametrize("path", [(3,), (0, 1), (2, 2), (2, 1, 4)])
