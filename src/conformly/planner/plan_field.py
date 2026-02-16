@@ -21,7 +21,14 @@ def plan_violation_task(
     allow_type_mismatch: bool = False,
     allow_structural_violations: bool = False,
 ) -> PlannedTask:
+    if _is_extra_field(model, path):
+        if not allow_structural_violations:
+            raise ValueError("EXTRA_FIELD requires allow_structural_violations=True")
+
+        return PlannedTask(path, (ViolationType.EXTRA_FIELD,))
+
     field = model.get_field(path)
+
     return PlannedTask(
         path,
         _define_allowed_violation_types(
@@ -32,6 +39,22 @@ def plan_violation_task(
             allow_structural_violations=allow_structural_violations,
         ),
     )
+
+
+def _is_extra_field(model: ResolvedModel, path: FieldPath) -> bool:
+    if not path:
+        return False
+
+    current = model
+    for _, index in enumerate(path[:-1]):
+        if index >= len(current.fields):
+            return False
+        field = current.fields[index]
+        if field.nested_model is None:
+            return False
+        current = field.nested_model
+
+    return path[-1] == len(current.fields)
 
 
 def _define_allowed_violation_types(

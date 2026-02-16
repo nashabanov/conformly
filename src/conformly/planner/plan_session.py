@@ -13,8 +13,11 @@ def select_paths(
     allow_all: bool,
     count: int = 1,
     allow_type_mismatch: bool = False,
+    allow_structural_violations: bool = False,
 ) -> tuple[FieldPath, ...]:
-    constrained_fields = _gather_constrained_paths(model, allow_type_mismatch)
+    constrained_fields = _gather_constrained_paths(
+        model, allow_type_mismatch, allow_structural_violations
+    )
 
     if not constrained_fields:
         raise ValueError("Cannot generate invalid case(s): no fields have constraints")
@@ -23,7 +26,9 @@ def select_paths(
 
 
 def _gather_constrained_paths(
-    model: ResolvedModel, allow_type_mismatch: bool = False
+    model: ResolvedModel,
+    allow_type_mismatch: bool = False,
+    allow_structural_violations: bool = False,
 ) -> NameIndexMap:
     result: list[tuple[FieldPath, str]] = []
 
@@ -32,8 +37,10 @@ def _gather_constrained_paths(
             path = (*prefix, i)
             dotted = ".".join([*names, field.name])
 
-            can_violate = field.semantic.has_constraints or (
-                allow_type_mismatch and field.nested_model is None
+            can_violate = (
+                field.semantic.has_constraints
+                or (allow_type_mismatch and field.nested_model is None)
+                or allow_structural_violations
             )
 
             if can_violate:
@@ -41,6 +48,12 @@ def _gather_constrained_paths(
 
             if field.nested_model is not None:
                 dfs(field.nested_model, path, [*names, field.name])
+
+        if allow_structural_violations:
+            extra_index = len(current.fields)
+            extra_path = (*prefix, extra_index)
+            extra_dotted = (".".join(names) + ":extra") if names else ":extra"
+            result.append((extra_path, extra_dotted))
 
     dfs(model, (), [])
     return tuple(result)

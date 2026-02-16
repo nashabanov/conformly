@@ -6,6 +6,7 @@ from conformly.planner.plan_field import (
     _define_allowed_violation_types,
     _define_numeric_violations,
     _define_string_violations,
+    _is_extra_field,
     plan_violation_task,
 )
 from conformly.planner.planned_task import PlannedTask
@@ -574,6 +575,16 @@ def test_plan_violation_task_allow_structural_violations(
     assert plan_violation_task(base_model, path, False, True) == expected
 
 
+@pytest.mark.parametrize(
+    "path",
+    [(3,), (2, 2), (2, 0, 2)],
+)
+def test_plan_violation_task_valid_extra_field(path: FieldPath) -> None:
+    assert plan_violation_task(base_model, path, False, True) == PlannedTask(
+        path, (ViolationType.EXTRA_FIELD,)
+    )
+
+
 @pytest.mark.parametrize("path", [(3,), (0, 1), (2, 2), (2, 1, 4)])
 def test_plan_violation_task_invalid(path: FieldPath) -> None:
     with pytest.raises((IndexError, ValueError)):
@@ -583,3 +594,24 @@ def test_plan_violation_task_invalid(path: FieldPath) -> None:
 def test_plan_violation_task_raises_for_type_mismatch_nested_models() -> None:
     with pytest.raises(NotImplementedError):
         plan_violation_task(base_model, (2,), True)
+
+
+@pytest.mark.parametrize("path", [(5,), (2, 5), (2, 0, 4)])
+def test_plan_violation_task_invalid_extra_field(path: FieldPath) -> None:
+    with pytest.raises((IndexError, ValueError)):
+        plan_violation_task(base_model, path, False, True)
+
+
+# ===== TESTS for _is_extra_field() =====
+
+
+def test_is_extra_field_no_path() -> None:
+    assert not _is_extra_field(base_model, ())
+
+
+def test_is_extra_field_path_longer_than_extra() -> None:
+    assert not _is_extra_field(base_model, (4,))
+
+
+def test_is_extra_field_path_longer_than_extra_nester() -> None:
+    assert not _is_extra_field(base_model, (2, 5))

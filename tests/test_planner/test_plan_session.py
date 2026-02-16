@@ -85,3 +85,15 @@ def test_gather_constrained_paths_allow_type_mismatch() -> None:
         ((2,), "is_admin"),
         ((3, 0), "profile.is_blocked"),
     )
+
+
+def test_gather_constrained_paths_allow_structural_violations() -> None:
+    assert _gather_constrained_paths(resolved_model, False, True) == (
+        ((0,), "name"),
+        ((1,), "age"),
+        ((2,), "is_admin"),
+        ((3,), "profile"),
+        ((3, 0), "profile.is_blocked"),
+        ((3, 1), "profile:extra"),
+        ((4,), ":extra"),
+    )
