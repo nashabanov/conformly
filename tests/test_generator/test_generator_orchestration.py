@@ -147,6 +147,10 @@ def test_generate_field_invalid_type_mismatch() -> None:
     assert not isinstance(field_value, str) or field_value == "__type_mismatch__"
 
 
+def test_generate_missing_field() -> None:
+    assert generate_field(simple_string_field, (ViolationType.MISSING_FIELD,)) is _UNSET
+
+
 # ===== TESTS for generate_invalid() =====
 
 
@@ -211,6 +215,36 @@ def test_generate_invalid_ureacheble_index_nested() -> None:
 
     with pytest.raises(IndexError):
         generate_invalid(model, task)
+
+
+def test_generate_invalid_skip_missing_field() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field, nested_field))
+    task = PlannedTask((0,), (ViolationType.MISSING_FIELD,))
+    assert len(generate_invalid(model, task)) == 1
+
+
+def test_generate_invalid_skip_missing_field_nested() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field, nested_field))
+    task = PlannedTask((1, 0), (ViolationType.MISSING_FIELD,))
+    assert len(generate_invalid(model, task)["profile"]) == 1
+
+
+def test_generate_invalid_skip_missing_field_with_nested_model() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field, nested_field))
+    task = PlannedTask((1,), (ViolationType.MISSING_FIELD,))
+    assert len(generate_invalid(model, task)) == 1
+
+
+def test_generate_invalid_extra_field() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field, nested_field))
+    task = PlannedTask((2,), (ViolationType.EXTRA_FIELD,))
+    assert len(generate_invalid(model, task)) == 3
+
+
+def test_generate_invalid_extra_field_nested() -> None:
+    model = ResolvedModel(name="User", fields=(simple_string_field, nested_field))
+    task = PlannedTask((1, 2), (ViolationType.EXTRA_FIELD,))
+    assert len(generate_invalid(model, task)["profile"]) == 3
 
 
 # ===== TESTS for generate_valid() =====

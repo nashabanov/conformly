@@ -20,6 +20,10 @@ def get_generator(kind: FieldKind) -> TypeGeneratorProtocol:
         raise TypeError(f"No generators found for {kind}")
 
 
+def choose_random_base_kind() -> FieldKind:
+    return random.choice(list(_GENERATORS.keys()))
+
+
 def choose_mismatch_kind(kind: FieldKind) -> FieldKind:
     mismatched_kinds = [_kind for _kind, _ in _GENERATORS.items() if _kind != kind]
     return random.choice(mismatched_kinds)
