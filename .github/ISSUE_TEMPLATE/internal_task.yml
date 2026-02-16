@@ -1,7 +1,7 @@
-name: Interanl Task
+name: Internal Task
 description: Internal roadmap task
-title: "[Interanal]: "
-labels: ["internal"]
+title: "[Internal]: "
+labels: ["roadmap"]
 
 body:
   - type: textarea
