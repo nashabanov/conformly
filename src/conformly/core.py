@@ -27,6 +27,7 @@ def _plan_tasks(
     allow_all: bool,
     count: int | None = None,
     allow_type_mismatch: bool = False,
+    allow_structural_violations: bool = False,
 ) -> list[PlannedTask]:
     paths = select_paths(
         model,
@@ -34,8 +35,14 @@ def _plan_tasks(
         allow_all=allow_all,
         count=count or 1,
         allow_type_mismatch=allow_type_mismatch,
+        allow_structural_violations=allow_structural_violations,
     )
-    return [plan_violation_task(model, path, allow_type_mismatch) for path in paths]
+    return [
+        plan_violation_task(
+            model, path, allow_type_mismatch, allow_structural_violations
+        )
+        for path in paths
+    ]
 
 
 # ===== case =====
@@ -47,20 +54,35 @@ def case(
     allow_type_mismatch: bool = False,
 ) -> dict[str, Any]:
     """
-    Generate a single example.
+    Generate a single example of a model.
 
     Args:
-        model_or_spec: Model class (e.g. dataclass, Pydantic) or parsed ModelSpec.
-        valid: If True, generate a valid instance. If False, generate an invalid one.
-        strategy: How to choose which field to violate when valid=False.
-               - "first": violate the first constrained field (default)
-               - "random": violate a random constrained field
-               - "field_name": violate a specific field
-                 (use dotted paths for nested fields e.g. strategy="user.email")
-        allow_type_mismatch: If True fields could be type mismatched.
+        model_or_spec:
+            Model class (e.g. dataclass, Pydantic)
+            or parsed ModelSpec/ResolvedModel.
+
+        valid:
+            If True, generate a valid instance.
+            If False, generate an invalid one.
+
+        strategy:
+            Define which field to violate when valid=False.
+
+            - "first":
+                violate the first constrained field (default)
+
+            - "random": violate a random constrained field
+
+            - "field_name":
+                violate a specific field using a dotted path
+                (e.g. strategy="user.email")
+
+        allow_type_mismatch:
+            If True fields could be type mismatched.
+            Availiable only when valid=False.
 
     Returns:
-        A single dictionary representing the instance.
+        A dictionary representing the instance.
     """
     model = _ensure_model_or_spec(model_or_spec)
 
@@ -95,22 +117,49 @@ def cases(
     strategy: CasesStrategy = "first",
     count: int = 1,
     allow_type_mismatch: bool = False,
+    allow_structural_violations: bool = False,
 ) -> list[dict[str, Any]]:
     """
-    Generate multiple examples.
+    Generate multiple examples of a model.
 
     Args:
-        model_or_spec: Model class or parsed ModelSpec.
-        valid: If True, generate valid instances. If False, generate invalid ones.
-        strategy: How to choose fields to violate when valid=False.
-               - "first": take the first N constrained fields (default)
-               - "random": take N random constrained fields
-               - "all": generate one invalid case per constrained field (ignores count)
-               - "field_name": generate one case violating a specific field
-                 (use dotted paths for nested fields e.g. strategy="user.email")
-        count: Number of cases to generate (ignored if strategy="all").
-        allow_type_mismatch: If True fields could be type mismatched.
+        model_or_spec:
+            Model class (e.g. dataclass, Pydantic)
+            or parsed ModelSpec/ResolvedModel.
 
+        valid:
+            If True, generate valid instances.
+            If False, generate invalid ones.
+
+        strategy:
+            Define how fields are selected for violation when valid=False.
+
+            - "first":
+                take the first N constrained fields (default)
+
+            - "random":
+                take N random constrained fields
+
+            - "all":
+                generate one invalid case per constrained field (ignores count)
+
+            - "field_name":
+                violate a specific field using a dotted path
+                (e.g. strategy="user.email")
+
+        count:
+            Number of cases to generate (ignored if strategy="all").
+
+        allow_type_mismatch:
+            If True fields could be type mismatched.
+            Available only when valid=False.
+
+        allow_structural_violations:
+            If True adding field missing to availiable field
+            violations and cases with extra field in each model.
+            Structural violations are available only when:
+                - valid=False
+                - strategy="all"
 
     Returns:
         A list of dictionaries.
@@ -122,12 +171,23 @@ def cases(
 
     if valid:
         if allow_type_mismatch:
-            raise ValueError("Type mismatching availiable inly for invald generation")
+            raise ValueError("Type mismatching availiable only for invalid generation")
+
+        if allow_structural_violations:
+            raise ValueError(
+                "Structural violations availiable only for invalid generation"
+            )
 
         if strategy != "first":
             raise ValueError("Strategy is only applicable when valid=False")
 
         return [generate_valid(model) for _ in range(count)]
+
+    if allow_structural_violations and strategy != "all":
+        raise ValueError(
+            "Structural violations (MISSING_FIELD, EXTRA_FIELD) are only supported "
+            f"with strategy='all', got strategy='{strategy}'"
+        )
 
     if strategy == "all":
         tasks = _plan_tasks(
@@ -135,6 +195,7 @@ def cases(
             strategy="all",
             allow_all=True,
             allow_type_mismatch=allow_type_mismatch,
+            allow_structural_violations=allow_structural_violations,
         )
 
     else:

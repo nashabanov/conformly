@@ -152,6 +152,27 @@ class TestUserModel:
             assert len(user["bio"]) <= 500
             assert isinstance(user["is_blocked"], bool)
 
+    def test_structural_violations(self) -> None:
+        invalid_users = cases(
+            User, valid=False, strategy="all", allow_structural_violations=True
+        )
+        assert len(invalid_users) == 7
+
+        found_missing = False
+        found_extra = False
+
+        for user in invalid_users:
+            if "is_blocked" not in user:
+                found_missing = True
+                assert len(user) == 5
+
+            if "extra" in user:
+                found_extra = True
+                assert len(user) == 7
+
+        assert found_missing
+        assert found_extra
+
 
 class TestBlogPostModel:
     def test_generate_valid_post(self):
@@ -398,6 +419,10 @@ class TestFuzzTesting:
 
 
 class TestApiErrors:
+    def test_case_raises_if_strategy_all(self) -> None:
+        with pytest.raises(ValueError):
+            case(User, valid=False, strategy="all")
+
     def test_raises_if_valid_and_not_default_strategy(self) -> None:
         with pytest.raises(ValueError):
             case(User, valid=True, strategy="random")
@@ -411,3 +436,20 @@ class TestApiErrors:
 
         with pytest.raises(ValueError):
             cases(User, allow_type_mismatch=True)
+
+    @pytest.mark.parametrize("strategy", ["random", "first", "name"])
+    def test_raises_if_strategy_not_all_and_structural_allowed(
+        self, strategy: str
+    ) -> None:
+        with pytest.raises(ValueError):
+            cases(
+                User, valid=False, strategy=strategy, allow_structural_violations=True
+            )
+
+    def test_raises_if_valid_and_structural_allowed(self) -> None:
+        with pytest.raises(ValueError):
+            cases(User, allow_structural_violations=True)
+
+    def test_raises_if_count_less_than_one(self) -> None:
+        with pytest.raises(ValueError):
+            cases(User, count=0)
