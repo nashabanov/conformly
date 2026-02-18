@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.6] - 2025.02.18
+
+### Added
+- **`allow_structural_violations` flag for `cases()`** API to abable field missing and extra fields for invalid generation
+- **Validation guard**: Structural violations available only with `strategy="all"` other options raises `ValueError`
+- **`MISSING_FIELD`** available for every field like `TYPE_MISMATCH`
+- **`EXTRA_FIELD`** adds only one time for model/nested model
+
 ## [0.3.5] - 2025.02.15
 
 ### Added
