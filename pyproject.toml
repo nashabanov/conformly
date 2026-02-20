@@ -97,6 +97,7 @@ addopts = [
     "--strict-markers",
 ]
 
-benchmark_min_rounds = 5
-benchmark_min_time = 0.1
-benchmark_disable_gc = false
+[tool.pytest-benchmark]
+min_rounds = 5
+min_time = 0.1
+disable_gc = false
