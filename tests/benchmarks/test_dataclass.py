@@ -1,9 +1,45 @@
-from .models import DataclassUser
+from dataclasses import dataclass
+from typing import Annotated, Literal
+
 import pytest
 
 from conformly import case, cases
+from conformly.constraints import (
+    GreaterOrEqual,
+    GreaterThan,
+    LessOrEqual,
+    MaxLength,
+    MinLength,
+    Pattern,
+)
 from conformly.parsing.adapters.dataclass import parse
 from conformly.resolver.resolve import resolve_model
+
+
+@dataclass
+class DataclassAddress:
+    street: Annotated[str, MinLength(5), MaxLength(50)]
+    city: Annotated[str, MinLength(5), MaxLength(50)]
+    country: Literal["Germany", "Russia", "China", "USA"]
+
+
+@dataclass
+class DataclassProfile:
+    bio: Annotated[str | None, MaxLength(300)]
+    rating: Annotated[float, GreaterThan(0.0), LessOrEqual(100.0)]
+    role: Literal["admin", "moderator", "user", "guest"]
+
+
+@dataclass
+class DataclassUser:
+    id: int
+    username: Annotated[str, MinLength(3), MaxLength(25)]
+    email: Annotated[str, Pattern(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")]
+    phone: Annotated[str, Pattern(r"^\+?[1-9]\d{1,14}$")]
+    age: Annotated[int, GreaterOrEqual(18), LessOrEqual(120)]
+    address: DataclassAddress
+    profile: DataclassProfile
+    is_active: bool = True
 
 
 @pytest.mark.benchmark
