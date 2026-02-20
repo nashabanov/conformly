@@ -11,5 +11,6 @@ wheels/
 .ruff_cache/
 .mypy_cache/
 .coverage
+.benchmarks/
 
 pyrightconfig.json

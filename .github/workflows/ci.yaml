@@ -84,14 +84,14 @@ jobs:
       - name: Run tests
         run: |
           if [ "${{ matrix.collect-coverage }}" = "true" ]; then
-            uv run pytest \
+            uv run pytest -m "not benchmark"\
               --cov=src \
               --cov-report=xml \
               --cov-report=term-missing \
               --cov-fail-under=90 \
               -v
           else
-            uv run pytest -v
+            uv run pytest -m "not benchmark" -v
           fi
 
       - name: Upload coverage to Codecov

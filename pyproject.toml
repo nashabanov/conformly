@@ -31,6 +31,7 @@ dev = [
     "mypy>=1.18.2",
     "pre-commit>=4.4.0",
     "pytest>=9.0.0",
+    "pytest-benchmark>=5.2.3",
     "pytest-cov>=7.0.0",
     "ruff>=0.14.4",
     "twine>=6.2.0",
@@ -84,3 +85,19 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+
+[tool.pytest.ini_options]
+markers = [
+    "benchmark: performance benchmarks"
+]
+
+addopts = [
+    "-v",
+    "--strict-markers",
+]
+
+[tool.pytest-benchmark]
+min_rounds = 5
+min_time = 0.1
+disable_gc = false
