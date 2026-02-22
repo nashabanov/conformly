@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
 from ...specs import FieldSpec, ModelSpec
@@ -14,6 +15,7 @@ def supports(model: type) -> bool:
     return hasattr(model, "__pydantic_validator__")
 
 
+@lru_cache(maxsize=128)
 def parse(model: type) -> ModelSpec:
     try:
         from pydantic import BaseModel

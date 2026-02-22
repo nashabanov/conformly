@@ -1,3 +1,4 @@
+from functools import lru_cache
 import math
 from typing import Any
 
@@ -36,6 +37,7 @@ from .semantics import (
 )
 
 
+@lru_cache(maxsize=128)
 def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:
     return ResolvedModel(
         name=spec.name,
