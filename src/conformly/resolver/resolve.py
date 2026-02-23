@@ -1,3 +1,4 @@
+from functools import lru_cache
 import math
 from typing import Any
 
@@ -36,6 +37,7 @@ from .semantics import (
 )
 
 
+@lru_cache(maxsize=128)
 def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:
     return ResolvedModel(
         name=spec.name,
@@ -53,11 +55,8 @@ def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:
 
 def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
     return ResolvedField(
-        name=field_spec.name,
+        field_spec=field_spec,
         path=path,
-        py_type=field_spec.type,
-        default=field_spec.default,
-        nullable=field_spec.nullable,
         semantic=create_field_semantic(field_spec),
         nested_model=resolve_model(field_spec.nested_model, path)
         if field_spec.nested_model

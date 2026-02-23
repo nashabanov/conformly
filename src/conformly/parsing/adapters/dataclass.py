@@ -1,4 +1,5 @@
 from dataclasses import MISSING, Field, fields, is_dataclass
+from functools import lru_cache
 from typing import (
     Any,
     get_type_hints,
@@ -18,6 +19,7 @@ def supports(model: type) -> bool:
     return is_dataclass(model)
 
 
+@lru_cache(maxsize=128)
 def parse(model: type) -> ModelSpec:
     if not supports(model):
         raise TypeError(f"Unsupported model type: {model}. Expected dataclass.")

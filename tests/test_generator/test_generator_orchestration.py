@@ -13,6 +13,7 @@ from conformly.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
+from conformly.specs import FieldSpec
 from conformly.types import (
     _UNSET,
     INT_MAX,
@@ -24,38 +25,28 @@ from conformly.types import (
 )
 
 simple_string_field = ResolvedField(
-    name="name",
+    field_spec=FieldSpec(name="name", type=str, default=_UNSET, nullable=False),
     path=(0,),
-    py_type=str,
-    default=_UNSET,
-    nullable=False,
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, True),
 )
 
 default_string_field = ResolvedField(
-    name="city",
+    field_spec=FieldSpec(name="city", type=str, default="Palo Alto", nullable=False),
     path=(0, 1),
-    py_type=str,
-    default="Palo Alto",
-    nullable=False,
     semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 40), None, True),
 )
 
 optional_string_field = ResolvedField(
-    name="description",
+    field_spec=FieldSpec(
+        name="description", type=str, default="simple description", nullable=True
+    ),
     path=(3,),
-    py_type=str,
-    nullable=True,
-    default="simple description",
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 60), None, True),
 )
 
 bool_field = ResolvedField(
-    name="is_admin",
+    field_spec=FieldSpec(name="is_admin", type=bool, default=_UNSET, nullable=False),
     path=(4,),
-    py_type=bool,
-    nullable=False,
-    default=_UNSET,
     semantic=BooleanSemantic(FieldKind.BOOLEAN),
 )
 
@@ -63,19 +54,15 @@ nested_model = ResolvedModel(
     name="Profile",
     fields=(
         ResolvedField(
-            name="address",
+            field_spec=FieldSpec(
+                name="address", type=str, default=_UNSET, nullable=True
+            ),
             path=(1, 0),
-            py_type=str,
-            nullable=True,
-            default=_UNSET,
             semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 25), None, True),
         ),
         ResolvedField(
-            name="age",
+            field_spec=FieldSpec(name="age", type=int, default=_UNSET, nullable=False),
             path=(1, 1),
-            py_type=int,
-            nullable=False,
-            default=_UNSET,
             semantic=NumericSemantic(
                 kind=FieldKind.INTEGER,
                 valid_range=Range(18, 120),
@@ -90,11 +77,8 @@ nested_model = ResolvedModel(
 )
 
 nested_field = ResolvedField(
-    name="profile",
+    field_spec=FieldSpec(name="profile", type=object, default=_UNSET, nullable=False),
     path=(1,),
-    py_type=object,
-    nullable=False,
-    default=_UNSET,
     nested_model=nested_model,
     semantic=ObjectSemantic(kind=FieldKind.OBJECT),
 )
