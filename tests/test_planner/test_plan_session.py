@@ -7,17 +7,20 @@ from conformly.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
-from conformly.types import INT_MAX, INT_MIN, FieldKind, LengthRange, Range
+from conformly.specs import FieldSpec
+from conformly.types import _UNSET, INT_MAX, INT_MIN, FieldKind, LengthRange, Range
 
 resolved_model = ResolvedModel(
     name="User",
     fields=(
         ResolvedField(
-            name="name",
+            field_spec=FieldSpec(
+                name="name",
+                type=str,
+                default=_UNSET,
+                nullable=False,
+            ),
             path=(0,),
-            py_type=str,
-            default=None,
-            nullable=False,
             semantic=StringSemantic(
                 kind=FieldKind.STRING,
                 length_range=LengthRange(3, None),
@@ -26,11 +29,13 @@ resolved_model = ResolvedModel(
             ),
         ),
         ResolvedField(
-            name="age",
+            field_spec=FieldSpec(
+                name="age",
+                type=int,
+                default=_UNSET,
+                nullable=False,
+            ),
             path=(1,),
-            py_type=int,
-            default=None,
-            nullable=False,
             semantic=NumericSemantic(
                 kind=FieldKind.INTEGER,
                 valid_range=Range(18, 120),
@@ -39,29 +44,35 @@ resolved_model = ResolvedModel(
             ),
         ),
         ResolvedField(
-            name="is_admin",
+            field_spec=FieldSpec(
+                name="is_admin",
+                type=bool,
+                default=True,
+                nullable=False,
+            ),
             path=(2,),
-            py_type=bool,
-            default=True,
-            nullable=False,
             semantic=BooleanSemantic(FieldKind.BOOLEAN),
         ),
         ResolvedField(
-            name="profile",
+            field_spec=FieldSpec(
+                name="profile",
+                type=object,
+                default=_UNSET,
+                nullable=False,
+            ),
             path=(3,),
-            py_type=object,
-            default=None,
-            nullable=False,
             semantic=ObjectSemantic(FieldKind.OBJECT),
             nested_model=ResolvedModel(
                 name="Profile",
                 fields=(
                     ResolvedField(
-                        name="is_blocked",
+                        field_spec=FieldSpec(
+                            name="is_blocked",
+                            type=bool,
+                            default=False,
+                            nullable=False,
+                        ),
                         path=(3, 0),
-                        py_type=bool,
-                        default=False,
-                        nullable=False,
                         semantic=BooleanSemantic(FieldKind.BOOLEAN),
                     ),
                 ),

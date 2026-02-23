@@ -19,7 +19,9 @@ from conformly.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
+from conformly.specs import FieldSpec
 from conformly.types import (
+    _UNSET,
     FLOAT_MAX,
     FLOAT_MIN,
     INT_MAX,
@@ -416,63 +418,45 @@ def test_define_allowed_violations_unsupported_semantic_kind():
 
 
 city_field = ResolvedField(
-    name="city",
+    field_spec=FieldSpec(name="city", type=str, default=_UNSET, nullable=False),
     path=(2, 0, 0),
-    py_type=str,
-    default=None,
-    nullable=False,
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, None), None, False),
 )
 
 zip_field = ResolvedField(
-    name="zip",
+    field_spec=FieldSpec(name="zip", type=str, default=_UNSET, nullable=False),
     path=(2, 0, 1),
-    py_type=str,
-    default=None,
-    nullable=False,
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 120), None, True),
 )
 
 second_nested = ResolvedModel("Address", (city_field, zip_field))
 
 address_field = ResolvedField(
-    name="address",
+    field_spec=FieldSpec(name="address", type=object, default=_UNSET, nullable=False),
     path=(2, 0),
-    py_type=object,
-    default=None,
-    nullable=False,
     semantic=ObjectSemantic(FieldKind.OBJECT, False),
     nested_model=second_nested,
 )
 
 phone_field = ResolvedField(
-    name="phone",
+    field_spec=FieldSpec(name="phone", type=str, default=_UNSET, nullable=True),
     path=(2, 1),
-    py_type=str,
-    default=None,
-    nullable=True,
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, False),
 )
 
 first_nested = ResolvedModel("Profile", (address_field, phone_field))
 
 name_field = ResolvedField(
-    name="name",
+    field_spec=FieldSpec(name="name", type=str, default=_UNSET, nullable=False),
     path=(0,),
-    py_type=str,
-    default=None,
-    nullable=False,
     semantic=StringSemantic(
         FieldKind.STRING, LengthRange(0, None), pattern=None, has_constraints=True
     ),
 )
 
 age_field = ResolvedField(
-    name="age",
+    field_spec=FieldSpec(name="age", type=int, default=_UNSET, nullable=False),
     path=(1,),
-    py_type=int,
-    default=None,
-    nullable=False,
     semantic=NumericSemantic(
         FieldKind.INTEGER,
         Range(18, 120),
@@ -482,11 +466,8 @@ age_field = ResolvedField(
 )
 
 profile_field = ResolvedField(
-    name="profile",
+    field_spec=FieldSpec(name="profile", type=object, default=_UNSET, nullable=False),
     path=(2,),
-    py_type=object,
-    default=None,
-    nullable=False,
     semantic=ObjectSemantic(FieldKind.OBJECT, False),
     nested_model=first_nested,
 )

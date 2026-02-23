@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from ..specs import FieldSpec
     from ..types import FieldPath
     from .model import ResolvedModel
     from .semantics import FieldSemantics
@@ -11,10 +12,23 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class ResolvedField:
-    name: str
+    field_spec: FieldSpec
     path: FieldPath
-    py_type: type
-    default: Any
-    nullable: bool
     semantic: FieldSemantics
     nested_model: ResolvedModel | None = None
+
+    @property
+    def name(self) -> str:
+        return self.field_spec.name
+
+    @property
+    def py_type(self) -> type:
+        return self.field_spec.type
+
+    @property
+    def default(self) -> Any:
+        return self.field_spec.default
+
+    @property
+    def nullable(self) -> bool:
+        return self.field_spec.nullable
