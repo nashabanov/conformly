@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -8,10 +8,14 @@ if TYPE_CHECKING:
     from .field import ResolvedField
 
 
+# TODO: Удалить default_factory
 @dataclass(frozen=True)
 class ResolvedModel:
     name: str
     fields: tuple[ResolvedField, ...]
+    field_map: dict[FieldPath, ResolvedField] = field(default_factory=dict, repr=False)
+    constrained_paths: tuple[FieldPath, ...] = field(default_factory=tuple, repr=False)
+    all_paths: tuple[FieldPath, ...] = field(default_factory=tuple, repr=False)
 
     def get_field(self, path: FieldPath) -> ResolvedField:
         return _get_field(self, path)

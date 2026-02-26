@@ -39,18 +39,14 @@ from .semantics import (
 
 @lru_cache(maxsize=128)
 def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:
-    return ResolvedModel(
+    model = ResolvedModel(
         name=spec.name,
         fields=tuple(
-            [
-                resolve_field(
-                    f,
-                    (*_prefix, i),
-                )
-                for i, f in enumerate(spec.fields)
-            ]
+            [resolve_field(f, (*_prefix, i)) for i, f in enumerate(spec.fields)]
         ),
     )
+    _build_indexes(model)
+    return model
 
 
 def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
@@ -62,6 +58,37 @@ def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
         if field_spec.nested_model
         else None,
     )
+
+
+def _build_indexes(model: ResolvedModel) -> None:
+    if model.field_map:
+        return
+
+    field_map: dict[FieldPath, ResolvedField] = {}
+    constrained_paths: list[FieldPath] = []
+    all_paths: list[FieldPath] = []
+
+    def _collect(current: ResolvedModel, prefix: FieldPath) -> None:
+        for i, field in enumerate(current.fields):
+            path = (*prefix, i)
+
+            field_map[path] = field
+            all_paths.append(path)
+
+            if field.semantic.has_constraints:
+                constrained_paths.append(path)
+
+            if field.nested_model:
+                _collect(field.nested_model, path)
+
+        extra_path = (*prefix, len(current.fields))
+        all_paths.append(extra_path)
+
+    _collect(model, ())
+
+    object.__setattr__(model, "field_map", field_map)
+    object.__setattr__(model, "constrained_paths", tuple(constrained_paths))
+    object.__setattr__(model, "all_paths", tuple(all_paths))
 
 
 def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
