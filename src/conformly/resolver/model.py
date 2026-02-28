@@ -15,6 +15,8 @@ class ResolvedModel:
     field_map: dict[FieldPath, ResolvedField] = field(default_factory=dict, repr=False)
     constrained_paths: tuple[FieldPath, ...] = field(default_factory=tuple, repr=False)
     all_paths: tuple[FieldPath, ...] = field(default_factory=tuple, repr=False)
+    extra_paths: tuple[FieldPath, ...] = field(default_factory=tuple, repr=False)
+    name_to_path: dict[str, FieldPath] = field(default_factory=dict, repr=False)
 
     def get_field(self, path: FieldPath) -> ResolvedField:
         if path not in self.field_map:

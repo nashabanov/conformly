@@ -45,32 +45,7 @@ def _is_extra_field(model: ResolvedModel, path: FieldPath) -> bool:
     if not path:
         return False
 
-    current_path: tuple[int, ...] = ()
-    for _, index in enumerate(path[:-1]):
-        current_path = (*current_path, index)
-
-        if current_path not in model.field_map:
-            return False
-
-        field = model.field_map[current_path]
-
-        if field.nested_model is None:
-            return False
-
-    parent_path = path[:-1]
-    if parent_path:
-        if parent_path not in model.field_map:
-            return False
-
-        parent_field = model.field_map[parent_path]
-
-        if parent_field.nested_model is None:
-            return False
-
-        parent_model = parent_field.nested_model
-        return path[-1] == len(parent_model.fields)
-    else:
-        return path[-1] == len(model.fields)
+    return path in model.extra_paths
 
 
 def _define_allowed_violation_types(

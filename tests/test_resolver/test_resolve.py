@@ -566,6 +566,14 @@ def test_build_indexes_flat(simple_model_spec) -> None:
     assert (3,) in resolved.all_paths
     assert (4,) in resolved.all_paths
 
+    assert len(resolved.extra_paths) == 1
+    assert (4,) in resolved.extra_paths
+
+    assert "id" in resolved.name_to_path
+    assert "name" in resolved.name_to_path
+    assert resolved.name_to_path["id"] == (0,)
+    assert resolved.name_to_path["name"] == (1,)
+
 
 def test_nested_field_map_contains_all_levels(nested_model_spec):
     model = resolve_model(nested_model_spec)
@@ -587,6 +595,13 @@ def test_nested_all_paths_has_extra_at_each_level(nested_model_spec):
     assert (1, 0) in model.all_paths
     assert (1, 1) in model.all_paths
     assert len(model.all_paths) == 5
+
+    assert len(model.extra_paths) == 2
+    assert (2,) in model.extra_paths
+    assert (1, 1) in model.extra_paths
+
+    assert len(model.name_to_path) == 3
+    assert "addr.street" in model.name_to_path
 
 
 def test_nested_constrained_paths_empty_if_no_constraints(nested_model_spec):
