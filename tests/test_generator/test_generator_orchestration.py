@@ -184,7 +184,7 @@ def test_generate_invalid_path_into_non_nested_field() -> None:
 
 def test_generate_invalid_ureacheble_index() -> None:
     model = ResolvedModel(name="User", fields=(simple_string_field,))
-    task = PlannedTask((1,), (ViolationType.ABOVE_MAX,))
+    task = PlannedTask((2,), (ViolationType.ABOVE_MAX,))
 
     with pytest.raises(IndexError):
         generate_invalid(model, task)
