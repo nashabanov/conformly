@@ -1,6 +1,7 @@
-from conformly.planner.plan_session import _gather_constrained_paths
+from conformly.planner.plan_session import _filter_candidate_paths
 from conformly.resolver.field import ResolvedField
 from conformly.resolver.model import ResolvedModel
+from conformly.resolver.resolve import _build_indexes
 from conformly.resolver.semantics import (
     BooleanSemantic,
     NumericSemantic,
@@ -83,28 +84,31 @@ resolved_model = ResolvedModel(
 
 
 def test_gather_constrained_paths_default() -> None:
-    assert _gather_constrained_paths(resolved_model) == (
-        ((0,), "name"),
-        ((1,), "age"),
+    _build_indexes(resolved_model)
+    assert _filter_candidate_paths(resolved_model) == (
+        (0,),
+        (1,),
     )
 
 
 def test_gather_constrained_paths_allow_type_mismatch() -> None:
-    assert _gather_constrained_paths(resolved_model, True) == (
-        ((0,), "name"),
-        ((1,), "age"),
-        ((2,), "is_admin"),
-        ((3, 0), "profile.is_blocked"),
+    _build_indexes(resolved_model)
+    assert _filter_candidate_paths(resolved_model, True) == (
+        (0,),
+        (1,),
+        (2,),
+        (3, 0),
     )
 
 
 def test_gather_constrained_paths_allow_structural_violations() -> None:
-    assert _gather_constrained_paths(resolved_model, False, True) == (
-        ((0,), "name"),
-        ((1,), "age"),
-        ((2,), "is_admin"),
-        ((3,), "profile"),
-        ((3, 0), "profile.is_blocked"),
-        ((3, 1), "profile:extra"),
-        ((4,), ":extra"),
+    _build_indexes(resolved_model)
+    assert _filter_candidate_paths(resolved_model, False, True) == (
+        (0,),
+        (1,),
+        (2,),
+        (3,),
+        (3, 0),
+        (3, 1),
+        (4,),
     )

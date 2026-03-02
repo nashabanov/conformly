@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -12,27 +12,24 @@ if TYPE_CHECKING:
 class ResolvedModel:
     name: str
     fields: tuple[ResolvedField, ...]
+    field_map: dict[FieldPath, ResolvedField] = field(default_factory=dict, repr=False)
+    constrained_paths: tuple[FieldPath, ...] = field(default_factory=tuple, repr=False)
+    all_paths: tuple[FieldPath, ...] = field(default_factory=tuple, repr=False)
+    extra_paths: tuple[FieldPath, ...] = field(default_factory=tuple, repr=False)
+    name_to_path: dict[str, FieldPath] = field(default_factory=dict, repr=False)
 
     def get_field(self, path: FieldPath) -> ResolvedField:
-        return _get_field(self, path)
+        if path not in self.field_map:
+            if not path:
+                raise IndexError("Empty path")
 
+            parent_path = path[:-1]
+            if parent_path and parent_path not in self.field_map:
+                raise IndexError(f"Parent path {parent_path} not found")
 
-def _get_field(model: ResolvedModel, path: FieldPath) -> ResolvedField:
-    head = path[0]
-    tail = path[1:]
+            raise IndexError(
+                f"Path {path} is an extra field (not in field_map). "
+                f"Model '{self.name}' has {len(self.fields)} fields."
+            )
 
-    if not (0 <= head < len(model.fields)):
-        raise IndexError(
-            f"Index {head} out of range for model '{model.name}' "
-            f"with {len(model.fields)} fields"
-        )
-
-    field = model.fields[head]
-
-    if not tail:
-        return field
-
-    if field.nested_model is None:
-        raise ValueError(f"Cannot traverse into non-nested field '{field.name}'")
-
-    return _get_field(field.nested_model, tail)
+        return self.field_map[path]

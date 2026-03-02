@@ -15,6 +15,7 @@ from conformly.constraints import (
 )
 from conformly.constraints.enum import OneOf
 from conformly.resolver.resolve import (
+    _build_indexes,
     calculate_invalid_numeric_ranges,
     calculate_max_offset,
     calculate_numeric_bounds,
@@ -498,6 +499,10 @@ def test_resolve_model_flat(simple_model_spec):
     assert type_field.path == (3,)
     assert isinstance(type_field.semantic, EnumSemantic)
 
+    assert len(resolved.field_map) == 4
+    assert len(resolved.constrained_paths) == 3
+    assert len(resolved.all_paths) == 5
+
 
 def test_resolve_model_nested(nested_model_spec):
     resolved = resolve_model(nested_model_spec)
@@ -515,9 +520,115 @@ def test_resolve_model_nested(nested_model_spec):
     assert street.name == "street"
     assert street.path == (1, 0)
 
+    assert len(resolved.field_map) == 3
+    assert len(resolved.constrained_paths) == 0
+    assert len(resolved.all_paths) == 5
+
 
 def test_resolve_model_empty():
     spec = ModelSpec("Empty", "dataclass", ())
     resolved = resolve_model(spec)
     assert resolved.name == "Empty"
     assert resolved.fields == ()
+    assert resolved.field_map == {}
+    assert resolved.constrained_paths == ()
+    assert resolved.all_paths == ((0,),)
+
+
+# ===== TESTS for _build_indexes() =====
+
+
+def test_build_indexes_flat(simple_model_spec) -> None:
+    resolved = resolve_model(simple_model_spec)
+    _build_indexes(resolved)
+
+    assert len(resolved.field_map) == 4
+    assert (0,) in resolved.field_map
+    assert (1,) in resolved.field_map
+    assert (2,) in resolved.field_map
+    assert (3,) in resolved.field_map
+
+    assert resolved.field_map[(0,)].field_spec.name == "id"
+    assert resolved.field_map[(1,)].field_spec.name == "name"
+    assert resolved.field_map[(2,)].field_spec.name == "active"
+    assert resolved.field_map[(3,)].field_spec.name == "type"
+
+    assert (0,) in resolved.constrained_paths
+    assert (1,) in resolved.constrained_paths
+    assert (2,) not in resolved.constrained_paths
+    assert (3,) in resolved.constrained_paths
+    assert len(resolved.constrained_paths) == 3
+
+    assert len(resolved.all_paths) == 5
+    assert (0,) in resolved.all_paths
+    assert (1,) in resolved.all_paths
+    assert (2,) in resolved.all_paths
+    assert (3,) in resolved.all_paths
+    assert (4,) in resolved.all_paths
+
+    assert len(resolved.extra_paths) == 1
+    assert (4,) in resolved.extra_paths
+
+    assert "id" in resolved.name_to_path
+    assert "name" in resolved.name_to_path
+    assert resolved.name_to_path["id"] == (0,)
+    assert resolved.name_to_path["name"] == (1,)
+
+
+def test_nested_field_map_contains_all_levels(nested_model_spec):
+    model = resolve_model(nested_model_spec)
+    _build_indexes(model)
+
+    assert (0,) in model.field_map
+    assert (1,) in model.field_map
+    assert (1, 0) in model.field_map
+    assert len(model.field_map) == 3
+
+
+def test_nested_all_paths_has_extra_at_each_level(nested_model_spec):
+    model = resolve_model(nested_model_spec)
+    _build_indexes(model)
+
+    assert (0,) in model.all_paths
+    assert (1,) in model.all_paths
+    assert (2,) in model.all_paths
+    assert (1, 0) in model.all_paths
+    assert (1, 1) in model.all_paths
+    assert len(model.all_paths) == 5
+
+    assert len(model.extra_paths) == 2
+    assert (2,) in model.extra_paths
+    assert (1, 1) in model.extra_paths
+
+    assert len(model.name_to_path) == 3
+    assert "addr.street" in model.name_to_path
+
+
+def test_nested_constrained_paths_empty_if_no_constraints(nested_model_spec):
+    model = resolve_model(nested_model_spec)
+    _build_indexes(model)
+    assert len(model.constrained_paths) == 0
+
+
+def test_ensure_indexes_is_idempotent(simple_model_spec):
+    model = resolve_model(simple_model_spec)
+
+    _build_indexes(model)
+
+    first_all_paths_len = len(model.all_paths)
+    first_field_map_len = len(model.field_map)
+
+    _build_indexes(model)
+
+    assert len(model.all_paths) == first_all_paths_len
+    assert len(model.field_map) == first_field_map_len
+
+
+def test_extra_path_index_equals_fields_count(simple_model_spec):
+    model = resolve_model(simple_model_spec)
+    _build_indexes(model)
+
+    extra_paths = [p for p in model.all_paths if p not in model.field_map]
+
+    assert len(extra_paths) == 1
+    assert extra_paths[0] == (len(model.fields),)

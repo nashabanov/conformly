@@ -15,88 +15,84 @@ def select_paths(
     allow_type_mismatch: bool = False,
     allow_structural_violations: bool = False,
 ) -> tuple[FieldPath, ...]:
-    constrained_fields = _gather_constrained_paths(
-        model, allow_type_mismatch, allow_structural_violations
+    candidates = _filter_candidate_paths(
+        model=model,
+        allow_type_mismatch=allow_type_mismatch,
+        allow_structural_violations=allow_structural_violations,
     )
 
-    if not constrained_fields:
+    if not candidates:
         raise ValueError("Cannot generate invalid case(s): no fields have constraints")
 
-    return _select_violation_fields(strategy, allow_all, constrained_fields, count)
+    return _select_violation_fields(
+        strategy, allow_all, candidates, count, model.name_to_path
+    )
 
 
-def _gather_constrained_paths(
+def _filter_candidate_paths(
     model: ResolvedModel,
     allow_type_mismatch: bool = False,
     allow_structural_violations: bool = False,
-) -> NameIndexMap:
-    result: list[tuple[FieldPath, str]] = []
+) -> tuple[FieldPath, ...]:
+    candidates = []
 
-    def dfs(current: ResolvedModel, prefix: FieldPath, names: list[str]) -> None:
-        for i, field in enumerate(current.fields):
-            path = (*prefix, i)
-            dotted = ".".join([*names, field.name])
+    for path, field in model.field_map.items():
+        can_violate = (
+            field.semantic.has_constraints
+            or (allow_type_mismatch and field.nested_model is None)
+            or allow_structural_violations
+        )
 
-            can_violate = (
-                field.semantic.has_constraints
-                or (allow_type_mismatch and field.nested_model is None)
-                or allow_structural_violations
-            )
+        if can_violate:
+            candidates.append(path)
 
-            if can_violate:
-                result.append((path, dotted))
+    if allow_structural_violations:
+        candidates.extend(model.extra_paths)
 
-            if field.nested_model is not None:
-                dfs(field.nested_model, path, [*names, field.name])
-
-        if allow_structural_violations:
-            extra_index = len(current.fields)
-            extra_path = (*prefix, extra_index)
-            extra_dotted = (".".join(names) + ":extra") if names else ":extra"
-            result.append((extra_path, extra_dotted))
-
-    dfs(model, (), [])
-    return tuple(result)
+    return tuple(candidates)
 
 
 def _select_violation_fields(
     strategy: CasesStrategy,
     allow_all: bool,
-    constrained_fields: NameIndexMap,
+    candidates: tuple[FieldPath, ...],
     count: int,
+    name_to_path: dict[str, FieldPath],
 ) -> tuple[FieldPath, ...]:
-    name_to_path = {name: path for path, name in constrained_fields}
-    all_paths = [path for path, _ in constrained_fields]
-
     if strategy not in ("all", "random", "first"):
         if strategy not in name_to_path:
             raise ValueError(
                 f"Field '{strategy}' not found or has no constraints. "
                 f"Available constrained fields: {list(name_to_path.keys())}"
             )
-        return (name_to_path[strategy],)
+
+        path = name_to_path[strategy]
+        if path not in candidates:
+            raise ValueError(f"Field '{strategy}' has no constraints to violate")
+
+        return (path,)
 
     if strategy == "all":
         if not allow_all:
             raise ValueError(
                 "'all' strategy is only allowed in 'cases()', not 'case()'"
             )
-        return tuple(path for path, _ in constrained_fields)
+        return candidates
 
     if strategy == "first":
-        if count > len(all_paths):
+        if count > len(candidates):
             raise ValueError(
                 f"Requested {count} cases, but only "
-                f"{len(all_paths)} constrained fields available"
+                f"{len(candidates)} constrained fields available"
             )
-        return tuple(all_paths[:count])
+        return tuple(candidates[:count])
 
     if strategy == "random":
-        if count > len(all_paths):
+        if count > len(candidates):
             raise ValueError(
                 f"Cannot select {count} random fields from "
-                f"{len(all_paths)} constrained fields"
+                f"{len(candidates)} constrained fields"
             )
-        return tuple(random.sample(all_paths, k=count))
+        return tuple(random.sample(candidates, k=count))
 
     raise AssertionError(f"Unhandled strategy: {strategy!r}")

@@ -11,6 +11,7 @@ from conformly.planner.plan_field import (
 )
 from conformly.planner.planned_task import PlannedTask
 from conformly.resolver import ResolvedField, ResolvedModel
+from conformly.resolver.resolve import _build_indexes
 from conformly.resolver.semantics import (
     BooleanSemantic,
     EnumSemantic,
@@ -485,6 +486,7 @@ base_model = ResolvedModel("User", (name_field, age_field, profile_field))
     ],
 )
 def test_plan_violation_task_valid(path: FieldPath, expected: PlannedTask) -> None:
+    _build_indexes(base_model)
     assert plan_violation_task(base_model, path) == expected
 
 
@@ -519,6 +521,7 @@ def test_plan_violation_task_valid(path: FieldPath, expected: PlannedTask) -> No
 def test_plan_violation_task_allow_type_mismatch(
     path: FieldPath, expected: PlannedTask
 ) -> None:
+    _build_indexes(base_model)
     assert plan_violation_task(base_model, path, True) == expected
 
 
@@ -553,6 +556,7 @@ def test_plan_violation_task_allow_type_mismatch(
 def test_plan_violation_task_allow_structural_violations(
     path: FieldPath, expected: PlannedTask
 ) -> None:
+    _build_indexes(base_model)
     assert plan_violation_task(base_model, path, False, True) == expected
 
 
@@ -561,6 +565,7 @@ def test_plan_violation_task_allow_structural_violations(
     [(3,), (2, 2), (2, 0, 2)],
 )
 def test_plan_violation_task_valid_extra_field(path: FieldPath) -> None:
+    _build_indexes(base_model)
     assert plan_violation_task(base_model, path, False, True) == PlannedTask(
         path, (ViolationType.EXTRA_FIELD,)
     )
