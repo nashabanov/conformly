@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.7] - 2025.03.03
+
+### Added
+- **Internal benchmarking infrastructure** for dataclasses and pydantic models (Makefile, pytest marks), benchmark tests
+
+### Changed
+- **lru_cache** for `resolve()` and `parse()` operations to improve pipeline speed
+- **Pre-calculated field indexes** in `ResolvedModel` (`field_map`, `constrained_paths`, etc.) to remove multiple DFS traversals during planning and resolving
+- **Optimized generate_invalid** logic by splitting loops, removing tuple allocations, and simplifying recursion
+- **`ResolvedField` refactor** to store `FieldSpec` directly instead of copying values
+
 ## [0.3.6] - 2025.02.18
 
 ### Added
