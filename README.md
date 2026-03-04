@@ -108,6 +108,15 @@ cases(model, *, valid: bool, strategy: str = "all", count: int | None = None, al
 For `case(Model, valid=False, strategy="<field>")`:
 
 - **If `allow_type_mismatch=True`**, the generator may substitute a type mismatch (e.g., string instead of int) in place of a semantic constraint violation for the targeted field.
+
+| Type | Mismatch |
+|------|------------|
+| String | Integer |
+| Integer | String |
+| Float | String |
+| Boolean | String |
+| Enum/Literal | Float |
+
 - **If `allow_structural_violations=True`**, generator may substitute field missing in place of any other violations (avaliable only with `strategy="all"`)
 - **Exactly one field is targeted** (the one specified by `strategy`).
 - **The generator will violate constraints** for that field, making it invalid.
