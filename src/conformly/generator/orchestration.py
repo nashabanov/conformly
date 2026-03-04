@@ -3,8 +3,8 @@ from typing import Any
 
 from ..planner import PlannedTask
 from ..resolver import ResolvedField, ResolvedModel, create_minimal_semantic
-from ..types import _UNSET, FieldPath, ViolationType
-from .registry import choose_mismatch_kind, choose_random_base_kind, get_generator
+from ..types import _UNSET, FieldKind, FieldPath, ViolationType
+from .registry import choose_mismatch_kind, get_generator
 
 
 def generate_valid(model: ResolvedModel) -> dict[str, Any]:
@@ -114,7 +114,7 @@ def _choose_violation(
 
 
 def _generate_extra_field_value() -> tuple[str, Any]:
-    semantic = create_minimal_semantic(choose_random_base_kind())
+    semantic = create_minimal_semantic(FieldKind.STRING)
     value = get_generator(semantic.kind).generate_value(semantic, None)
     key = "extra"
     return (key, value)
