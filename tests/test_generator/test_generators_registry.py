@@ -1,5 +1,3 @@
-import random
-
 import pytest
 
 from conformly.generator.protocol import TypeGeneratorProtocol
@@ -39,13 +37,4 @@ def test_get_generator_raises_on_unknown_kind() -> None:
 
 @pytest.mark.parametrize("kind", list(FieldKind))
 def test_get_type_mismatch_returns_mismatched_generator(kind: FieldKind) -> None:
-    for seed in range(5):
-        rng_state = random.getstate()
-        try:
-            random.seed(seed)
-            mismatch_kind = choose_mismatch_kind(kind)
-
-            assert mismatch_kind is not kind
-
-        finally:
-            random.setstate(rng_state)
+    assert choose_mismatch_kind(kind) is not kind

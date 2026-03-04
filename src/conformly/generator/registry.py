@@ -1,5 +1,3 @@
-import random
-
 from ..types import FieldKind
 from .protocol import TypeGeneratorProtocol
 from .types import boolean, enum, float, integer, string
@@ -12,6 +10,15 @@ _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
     FieldKind.ENUM: enum,
 }
 
+_MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
+    FieldKind.STRING: FieldKind.INTEGER,
+    FieldKind.BOOLEAN: FieldKind.STRING,
+    FieldKind.INTEGER: FieldKind.STRING,
+    FieldKind.FLOAT: FieldKind.STRING,
+    FieldKind.ENUM: FieldKind.FLOAT,
+    FieldKind.OBJECT: FieldKind.ENUM,
+}
+
 
 def get_generator(kind: FieldKind) -> TypeGeneratorProtocol:
     try:
@@ -20,10 +27,5 @@ def get_generator(kind: FieldKind) -> TypeGeneratorProtocol:
         raise TypeError(f"No generators found for {kind}")
 
 
-def choose_random_base_kind() -> FieldKind:
-    return random.choice(list(_GENERATORS.keys()))
-
-
 def choose_mismatch_kind(kind: FieldKind) -> FieldKind:
-    mismatched_kinds = [_kind for _kind, _ in _GENERATORS.items() if _kind != kind]
-    return random.choice(mismatched_kinds)
+    return _MISMATCH_MAPPING[kind]
