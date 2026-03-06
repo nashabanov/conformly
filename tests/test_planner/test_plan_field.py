@@ -3,6 +3,7 @@ from typing import cast
 import pytest
 
 from conformly.planner.plan_field import (
+    _VIOLATION_PRIORITY,
     _define_allowed_violation_types,
     _define_numeric_violations,
     _define_string_violations,
@@ -232,9 +233,9 @@ def test_define_allowed_violations_valid(
                 has_constraints=True,
             ),
             (
+                ViolationType.TYPE_MISMATCH,
                 ViolationType.BELOW_MIN,
                 ViolationType.ABOVE_MAX,
-                ViolationType.TYPE_MISMATCH,
             ),
         ),
         (
@@ -245,10 +246,10 @@ def test_define_allowed_violations_valid(
                 has_constraints=True,
             ),
             (
+                ViolationType.TYPE_MISMATCH,
                 ViolationType.TOO_SHORT,
                 ViolationType.TOO_LONG,
                 ViolationType.PATTERN_MISMATCH,
-                ViolationType.TYPE_MISMATCH,
             ),
         ),
         (
@@ -257,7 +258,7 @@ def test_define_allowed_violations_valid(
                 values=("a", "b", "c"),
                 has_constraints=True,
             ),
-            (ViolationType.NOT_ALLOWED_VALUE, ViolationType.TYPE_MISMATCH),
+            (ViolationType.TYPE_MISMATCH, ViolationType.NOT_ALLOWED_VALUE),
         ),
         (
             BooleanSemantic(kind=FieldKind.BOOLEAN, has_constraints=False),
@@ -286,9 +287,9 @@ def test_define_allowed_violations_allow_type_mismatch(
                 has_constraints=True,
             ),
             (
+                ViolationType.MISSING_FIELD,
                 ViolationType.BELOW_MIN,
                 ViolationType.ABOVE_MAX,
-                ViolationType.MISSING_FIELD,
             ),
         ),
         (
@@ -299,10 +300,10 @@ def test_define_allowed_violations_allow_type_mismatch(
                 has_constraints=True,
             ),
             (
+                ViolationType.MISSING_FIELD,
                 ViolationType.TOO_SHORT,
                 ViolationType.TOO_LONG,
                 ViolationType.PATTERN_MISMATCH,
-                ViolationType.MISSING_FIELD,
             ),
         ),
         (
@@ -311,7 +312,7 @@ def test_define_allowed_violations_allow_type_mismatch(
                 values=("a", "b", "c"),
                 has_constraints=True,
             ),
-            (ViolationType.NOT_ALLOWED_VALUE, ViolationType.MISSING_FIELD),
+            (ViolationType.MISSING_FIELD, ViolationType.NOT_ALLOWED_VALUE),
         ),
         (
             BooleanSemantic(kind=FieldKind.BOOLEAN, has_constraints=False),
@@ -340,10 +341,10 @@ def test_define_allowed_violations_allow_structural_violations(
                 has_constraints=True,
             ),
             (
+                ViolationType.MISSING_FIELD,
+                ViolationType.TYPE_MISMATCH,
                 ViolationType.BELOW_MIN,
                 ViolationType.ABOVE_MAX,
-                ViolationType.TYPE_MISMATCH,
-                ViolationType.MISSING_FIELD,
             ),
         ),
         (
@@ -354,11 +355,11 @@ def test_define_allowed_violations_allow_structural_violations(
                 has_constraints=True,
             ),
             (
+                ViolationType.MISSING_FIELD,
+                ViolationType.TYPE_MISMATCH,
                 ViolationType.TOO_SHORT,
                 ViolationType.TOO_LONG,
                 ViolationType.PATTERN_MISMATCH,
-                ViolationType.TYPE_MISMATCH,
-                ViolationType.MISSING_FIELD,
             ),
         ),
         (
@@ -368,23 +369,23 @@ def test_define_allowed_violations_allow_structural_violations(
                 has_constraints=True,
             ),
             (
-                ViolationType.NOT_ALLOWED_VALUE,
-                ViolationType.TYPE_MISMATCH,
                 ViolationType.MISSING_FIELD,
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.NOT_ALLOWED_VALUE,
             ),
         ),
         (
             BooleanSemantic(kind=FieldKind.BOOLEAN, has_constraints=False),
             (
-                ViolationType.TYPE_MISMATCH,
                 ViolationType.MISSING_FIELD,
+                ViolationType.TYPE_MISMATCH,
             ),
         ),
         (
             ObjectSemantic(kind=FieldKind.OBJECT, has_constraints=False),
             (
-                ViolationType.TYPE_MISMATCH,
                 ViolationType.MISSING_FIELD,
+                ViolationType.TYPE_MISMATCH,
             ),
         ),
     ],
@@ -499,9 +500,9 @@ def test_plan_violation_task_valid(path: FieldPath, expected: PlannedTask) -> No
             PlannedTask(
                 (1,),
                 (
+                    ViolationType.TYPE_MISMATCH,
                     ViolationType.BELOW_MIN,
                     ViolationType.ABOVE_MAX,
-                    ViolationType.TYPE_MISMATCH,
                 ),
             ),
         ),
@@ -510,8 +511,8 @@ def test_plan_violation_task_valid(path: FieldPath, expected: PlannedTask) -> No
             PlannedTask(
                 (2, 1),
                 (
-                    ViolationType.TOO_LONG,
                     ViolationType.TYPE_MISMATCH,
+                    ViolationType.TOO_LONG,
                 ),
             ),
         ),
@@ -534,9 +535,9 @@ def test_plan_violation_task_allow_type_mismatch(
             PlannedTask(
                 (1,),
                 (
+                    ViolationType.MISSING_FIELD,
                     ViolationType.BELOW_MIN,
                     ViolationType.ABOVE_MAX,
-                    ViolationType.MISSING_FIELD,
                 ),
             ),
         ),
@@ -545,8 +546,8 @@ def test_plan_violation_task_allow_type_mismatch(
             PlannedTask(
                 (2, 1),
                 (
-                    ViolationType.TOO_LONG,
                     ViolationType.MISSING_FIELD,
+                    ViolationType.TOO_LONG,
                 ),
             ),
         ),
@@ -601,3 +602,55 @@ def test_is_extra_field_path_longer_than_extra() -> None:
 
 def test_is_extra_field_path_longer_than_extra_nester() -> None:
     assert not _is_extra_field(base_model, (2, 5))
+
+
+# ===== TESTS for violation priority =====
+
+
+def test_all_violation_types_in_priority() -> None:
+    priority_set = set(_VIOLATION_PRIORITY)
+    all_violations = set(ViolationType)
+
+    missing = all_violations - priority_set
+    assert not missing, f"ViolationType(s) not in _VIOLATION_PRIORITY: {missing}"
+
+
+def test_first_violation_is_highest_priority() -> None:
+    _build_indexes(base_model)
+
+    test_cases = [
+        ((0,), True, True, ViolationType.MISSING_FIELD),
+        ((1,), True, True, ViolationType.MISSING_FIELD),
+        ((2, 1), True, True, ViolationType.MISSING_FIELD),
+    ]
+
+    for path, allow_type, allow_struct, expected_first in test_cases:
+        task = plan_violation_task(
+            base_model,
+            path,
+            allow_type_mismatch=allow_type,
+            allow_structural_violations=allow_struct,
+        )
+        assert task.allowed_violations[0] == expected_first, (
+            f"Field {path}: expected {expected_first}, got {task.allowed_violations[0]}"
+        )
+
+
+def test_violations_sorted_by_priority() -> None:
+    _build_indexes(base_model)
+
+    task = plan_violation_task(
+        base_model,
+        path=(1,),
+        allow_type_mismatch=True,
+        allow_structural_violations=True,
+    )
+
+    expected = (
+        ViolationType.MISSING_FIELD,
+        ViolationType.TYPE_MISMATCH,
+        ViolationType.BELOW_MIN,
+        ViolationType.ABOVE_MAX,
+    )
+
+    assert task.allowed_violations == expected
