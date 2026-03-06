@@ -14,6 +14,22 @@ from ..types import (
 )
 from .planned_task import PlannedTask
 
+_VIOLATION_PRIORITY: tuple[ViolationType, ...] = (
+    # Structural
+    ViolationType.MISSING_FIELD,
+    ViolationType.EXTRA_FIELD,
+    # Type
+    ViolationType.TYPE_MISMATCH,
+    ViolationType.NONE_FOR_NOT_OPTIONAL,
+    # Semantic
+    ViolationType.BELOW_MIN,
+    ViolationType.ABOVE_MAX,
+    ViolationType.TOO_SHORT,
+    ViolationType.TOO_LONG,
+    ViolationType.PATTERN_MISMATCH,
+    ViolationType.NOT_ALLOWED_VALUE,
+)
+
 
 def plan_violation_task(
     model: ResolvedModel,
@@ -83,6 +99,8 @@ def _define_allowed_violation_types(
 
     if allow_structural_violations:
         violations.append(ViolationType.MISSING_FIELD)
+
+    violations.sort(key=lambda v: _VIOLATION_PRIORITY.index(v))
 
     return tuple(violations)
 

@@ -1,4 +1,3 @@
-import random
 from typing import Any
 
 from ..planner import PlannedTask
@@ -110,7 +109,7 @@ def _choose_violation(
     if violations is None:
         return None
 
-    return random.choice(violations)
+    return violations[0]
 
 
 def _generate_extra_field_value() -> tuple[str, Any]:

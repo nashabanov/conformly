@@ -107,7 +107,8 @@ cases(model, *, valid: bool, strategy: str = "all", count: int | None = None, al
 
 For `case(Model, valid=False, strategy="<field>")`:
 
-- **If `allow_type_mismatch=True`**, the generator may substitute a type mismatch (e.g., string instead of int) in place of a semantic constraint violation for the targeted field.
+- **Violation priority**: generator choose first violation type from allowed based on priority (Structural (Missing/Extra) > Type Mismatch > Semantic (Range/Pattern/Value))
+- **If `allow_type_mismatch=True`**, the generator may substitute a type mismatch (e.g., string instead of int) in place of a semantic constraint violation for the targeted field
 
 | Type | Mismatch |
 |------|------------|
