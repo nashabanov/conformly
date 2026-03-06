@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.8] - Planned
 
 ### Changed
+- **Violation priority**:
+    - Added `_VIOLATION_PRIORITY` tuple for sorting
+    - Generator choose first violation from task
 - **Deterministic type mismatch selection**: added explicit mapping to deterministically choose incompatible types.
 
 
