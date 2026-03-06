@@ -56,6 +56,10 @@ def case(
     """
     Generate a single example of a model.
 
+    Note:
+        Violation types are chosen deterministically based on priority
+        (Structural > Type > Semantic) to ensure reproducible test failures.
+
     Args:
         model_or_spec:
             Model class (e.g. dataclass, Pydantic)
@@ -121,6 +125,10 @@ def cases(
 ) -> list[dict[str, Any]]:
     """
     Generate multiple examples of a model.
+
+    Note:
+        Violation types are chosen deterministically based on priority
+        (Structural > Type > Semantic) to ensure reproducible test failures.
 
     Args:
         model_or_spec:
