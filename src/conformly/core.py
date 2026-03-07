@@ -28,6 +28,7 @@ def _plan_tasks(
     count: int | None = None,
     allow_type_mismatch: bool = False,
     allow_structural_violations: bool = False,
+    split_by_violations: bool = False,
 ) -> list[PlannedTask]:
     paths = select_paths(
         model,
@@ -37,6 +38,16 @@ def _plan_tasks(
         allow_type_mismatch=allow_type_mismatch,
         allow_structural_violations=allow_structural_violations,
     )
+
+    if split_by_violations:
+        return [
+            PlannedTask(path=path, allowed_violations=(violation,))
+            for path in paths
+            for violation in plan_violation_task(
+                model, path, allow_type_mismatch, allow_structural_violations
+            ).allowed_violations
+        ]
+
     return [
         plan_violation_task(
             model, path, allow_type_mismatch, allow_structural_violations
@@ -151,6 +162,10 @@ def cases(
             - "all":
                 generate one invalid case per constrained field (ignores count)
 
+            - "all_violations":
+                generate one invalid case per every available violations
+                including constraints, structural and type violations (ignores count)
+
             - "field_name":
                 violate a specific field using a dotted path
                 (e.g. strategy="user.email")
@@ -191,10 +206,10 @@ def cases(
 
         return [generate_valid(model) for _ in range(count)]
 
-    if allow_structural_violations and strategy != "all":
+    if allow_structural_violations and strategy not in ("all", "all_violations"):
         raise ValueError(
             "Structural violations (MISSING_FIELD, EXTRA_FIELD) are only supported "
-            f"with strategy='all', got strategy='{strategy}'"
+            f"with strategy='all'|'all_violations', got strategy='{strategy}'"
         )
 
     if strategy == "all":
@@ -204,6 +219,17 @@ def cases(
             allow_all=True,
             allow_type_mismatch=allow_type_mismatch,
             allow_structural_violations=allow_structural_violations,
+            split_by_violations=False,
+        )
+
+    elif strategy == "all_violations":
+        tasks = _plan_tasks(
+            model,
+            strategy="all",
+            allow_all=True,
+            allow_type_mismatch=allow_type_mismatch,
+            allow_structural_violations=allow_structural_violations,
+            split_by_violations=True,
         )
 
     else:

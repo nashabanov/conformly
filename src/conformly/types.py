@@ -7,7 +7,7 @@ FieldPath = tuple[int, ...]
 
 
 CaseStrategy = Literal["first", "random"] | str
-CasesStrategy = Literal["first", "random", "all"] | str
+CasesStrategy = Literal["first", "random", "all", "all_violations"] | str
 
 
 class FieldKind(Enum):
