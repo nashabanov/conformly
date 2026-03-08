@@ -173,6 +173,60 @@ class TestUserModel:
         assert found_missing
         assert found_extra
 
+    def test_all_violations(self) -> None:
+        invalid_users = cases(User, valid=False, strategy="all_violations")
+        assert len(invalid_users) == 6
+
+        violations_found = [False] * 6
+
+        for user in invalid_users:
+            assert isinstance(user, dict)
+            violations = (
+                len(user["username"]) == 2,
+                len(user["full_name"]) < 2,
+                len(user["full_name"]) > 100,
+                user["role"] not in ["admin", "guest", "user"],
+                len(user["bio"]) > 500,
+                not re.match(
+                    r"^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", user["email"]
+                ),
+            )
+            for i, v in enumerate(violations):
+                if v:
+                    violations_found[i] = True
+
+        assert all(violations_found), (
+            f"Not all violation types covered: {violations_found}"
+        )
+
+    def test_all_violations_with_type_mismatch(self) -> None:
+        invalid_users = cases(
+            User,
+            valid=False,
+            strategy="all_violations",
+            allow_type_mismatch=True,
+        )
+        assert len(invalid_users) == 12
+
+    def test_all_violations_with_structural(self) -> None:
+        invalid_users = cases(
+            User,
+            valid=False,
+            strategy="all_violations",
+            allow_structural_violations=True,
+        )
+        assert len(invalid_users) == 13
+
+    def test_all_violations_with_all_flags(self) -> None:
+        invalid_users = cases(
+            User,
+            valid=False,
+            strategy="all_violations",
+            allow_type_mismatch=True,
+            allow_structural_violations=True,
+        )
+        assert len(invalid_users) == 19
+
 
 class TestBlogPostModel:
     def test_generate_valid_post(self):
