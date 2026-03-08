@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.8] - Planned
 
 ### Changed
+- **all_violations** srategy - generates case for every allowed violations including constraints, structural and type violations (ignores count)
 - **Violation priority**:
     - Added `_VIOLATION_PRIORITY` tuple for sorting
     - Generator choose first violation from task
