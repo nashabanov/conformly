@@ -102,7 +102,7 @@ cases(model, *, valid: bool, strategy: str = "all", count: int | None = None, al
 - `"random"` - choose a random field/constraint to violate
 - `"all"` - (for `cases`) produce all minimal invalid variations for the model
 - `"first"` - violate the first constrained field (for `case`) or take the first N constrained fields (for `cases`)
-- `all_violations` - generate one invalid case per every available violations including constraints, structural and type violations (ignores count)
+- `"all_violations"` - generate one invalid case per every available violations including constraints, structural and type violations (ignores count)
 
 ## Invalid Generation Contract
 
