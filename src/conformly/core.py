@@ -5,7 +5,7 @@ from .parsing import parse_model
 from .planner import PlannedTask, plan_violation_task, select_paths
 from .resolver import ResolvedModel, resolve_model
 from .specs import ModelSpec
-from .types import CasesStrategy, CaseStrategy
+from .types import CasesStrategy, CaseStrategy, ViolationType
 
 
 def _ensure_model_or_spec(
@@ -20,6 +20,21 @@ def _ensure_model_or_spec(
     return resolve_model(parse_model(model_or_spec))
 
 
+def _parse_strategy_input(strategy: str) -> tuple[str, ViolationType | None]:
+    if "::" in strategy:
+        field_part, violation_part = strategy.split("::", 1)
+        try:
+            v_type = ViolationType(violation_part)
+            return field_part, v_type
+        except ValueError:
+            available = [v.value for v in ViolationType]
+            raise ValueError(
+                f"Unknown violation type '{violation_part}'. "
+                f"Available types: {', '.join(available)}"
+            )
+    return strategy, None
+
+
 def _plan_tasks(
     model: ResolvedModel,
     *,
@@ -30,9 +45,11 @@ def _plan_tasks(
     allow_structural_violations: bool = False,
     split_by_violations: bool = False,
 ) -> list[PlannedTask]:
+    field_strategy, forces_violations = _parse_strategy_input(strategy)
+
     paths = select_paths(
         model,
-        strategy=strategy,
+        strategy=field_strategy,
         allow_all=allow_all,
         count=count or 1,
         allow_type_mismatch=allow_type_mismatch,
@@ -50,7 +67,11 @@ def _plan_tasks(
 
     return [
         plan_violation_task(
-            model, path, allow_type_mismatch, allow_structural_violations
+            model=model,
+            path=path,
+            allow_type_mismatch=allow_type_mismatch,
+            allow_structural_violations=allow_structural_violations,
+            forced_violation=forces_violations,
         )
         for path in paths
     ]
@@ -91,6 +112,10 @@ def case(
             - "field_name":
                 violate a specific field using a dotted path
                 (e.g. strategy="user.email")
+
+            - "field_name::violation":
+                violate a specific field with specific type
+                (e.g. strategy="user.profile::below_min")
 
         allow_type_mismatch:
             If True fields could be type mismatched.
@@ -170,6 +195,10 @@ def cases(
                 violate a specific field using a dotted path
                 (e.g. strategy="user.email")
 
+            - "field_name::violation":
+                violate a specific field with specific type
+                (e.g. strategy="user.profile::below_min")
+
         count:
             Number of cases to generate (ignored if strategy="all").
 
@@ -206,10 +235,15 @@ def cases(
 
         return [generate_valid(model) for _ in range(count)]
 
-    if allow_structural_violations and strategy not in ("all", "all_violations"):
+    if (
+        allow_structural_violations
+        and strategy not in ("all", "all_violations")
+        and "::" not in strategy
+    ):
         raise ValueError(
             "Structural violations (MISSING_FIELD, EXTRA_FIELD) are only supported "
-            f"with strategy='all'|'all_violations', got strategy='{strategy}'"
+            f"with strategy='all'|'all_violations' or explicit '::' syntax, "
+            f"got strategy='{strategy}'"
         )
 
     if strategy == "all":

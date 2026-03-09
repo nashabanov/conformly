@@ -8,12 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.8] - Planned
 
-### Changed
+### Added
 - **all_violations** srategy - generates case for every allowed violations including constraints, structural and type violations (ignores count)
+- **New syntax** for explicit violation type selection: field_name::violation_type (e.g., "username::too_short")
+
+### Changed
 - **Violation priority**:
     - Added `_VIOLATION_PRIORITY` tuple for sorting
     - Generator choose first violation from task
 - **Deterministic type mismatch selection**: added explicit mapping to deterministically choose incompatible types.
+- **ViolationType enum** now uses string values instead of auto()
 
 
 ## [0.3.7] - 2025.03.03

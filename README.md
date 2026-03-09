@@ -99,6 +99,7 @@ cases(model, *, valid: bool, strategy: str = "all", count: int | None = None, al
 ```
 `strategy` values:
 - `<field_name>` - target specific field for invalidation (for nested fields using dot syntax `"profile.name"`)
+- `<field_name>::<violations>` - target specific violation for field (syntax `"profile.name::too_long"`)
 - `"random"` - choose a random field/constraint to violate
 - `"all"` - (for `cases`) produce all minimal invalid variations for the model
 - `"first"` - violate the first constrained field (for `case`) or take the first N constrained fields (for `cases`)
