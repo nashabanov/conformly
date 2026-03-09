@@ -472,6 +472,164 @@ class TestFuzzTesting:
         assert saw_violation
 
 
+class TestViolationTypeSyntax:
+    def test_specific_violation_too_short(self):
+        invalid = case(User, valid=False, strategy="username::too_short")
+        assert len(invalid["username"]) < 3
+        assert len(invalid["email"]) > 0  # Other fields valid
+
+    def test_specific_violation_too_long(self):
+        invalid = case(User, valid=False, strategy="bio::too_long")
+        assert len(invalid["bio"]) > 500
+        assert len(invalid["username"]) >= 3  # Other fields valid
+
+    def test_specific_violation_pattern_mismatch(self):
+        invalid = case(User, valid=False, strategy="email::pattern_mismatch")
+        assert not re.match(
+            r"^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", invalid["email"]
+        )
+        assert len(invalid["username"]) >= 3
+
+    def test_specific_violation_not_allowed_value(self):
+        invalid = case(User, valid=False, strategy="role::not_allowed_value")
+        assert invalid["role"] not in ["admin", "guest", "user"]
+
+    def test_specific_violation_type_mismatch(self):
+        invalid = case(
+            User,
+            valid=False,
+            strategy="is_blocked::type_mismatch",
+            allow_type_mismatch=True,
+        )
+        assert not isinstance(invalid["is_blocked"], bool)
+        assert len(invalid["username"]) >= 3
+
+    def test_cases_with_specific_violation(self):
+        invalid_users = cases(
+            User, valid=False, strategy="username::too_short", count=3
+        )
+        assert len(invalid_users) == 1
+        for user in invalid_users:
+            assert len(user["username"]) < 3
+
+    def test_invalid_violation_type_raises(self):
+        with pytest.raises(ValueError) as exc_info:
+            case(User, valid=False, strategy="username::invalid_violation")
+
+        assert "Unknown violation type 'invalid_violation'" in str(exc_info.value)
+        assert "Available types:" in str(exc_info.value)
+
+    def test_incompatible_violation_type_raises(self):
+        with pytest.raises(ValueError) as exc_info:
+            case(User, valid=False, strategy="username::below_min")
+
+        assert "not applicable" in str(exc_info.value).lower()
+        assert "username" in str(exc_info.value)
+
+    def test_incompatible_violation_on_enum(self):
+        with pytest.raises(ValueError) as exc_info:
+            case(User, valid=False, strategy="role::below_min")
+
+        assert "not applicable" in str(exc_info.value).lower()
+
+    def test_violation_with_allow_type_mismatch(self):
+        invalid = case(
+            User,
+            valid=False,
+            strategy="is_blocked::type_mismatch",
+            allow_type_mismatch=True,
+        )
+        assert not isinstance(invalid["is_blocked"], (bool,))
+
+    def test_violation_with_structural_violations(self):
+        invalid = case(
+            User,
+            valid=False,
+            strategy="bio::missing_field",
+        )
+        assert "bio" not in invalid
+
+    def test_deterministic_violation_selection(self):
+        results = []
+        for _ in range(10):
+            invalid = case(User, valid=False, strategy="username::too_short")
+            results.append(len(invalid["username"]))
+
+        assert all(r < 3 for r in results)
+
+    def test_other_fields_remain_valid(self):
+        invalid = case(User, valid=False, strategy="email::pattern_mismatch")
+
+        assert not re.match(
+            r"^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", invalid["email"]
+        )
+
+        assert len(invalid["username"]) >= 3
+        assert 2 <= len(invalid["full_name"]) <= 100
+        assert invalid["role"] in ["admin", "guest", "user"]
+        assert len(invalid["bio"]) <= 500
+        assert isinstance(invalid["is_blocked"], bool)
+
+    def test_case_vs_cases_with_specific_violation(self):
+        case_result = case(User, valid=False, strategy="role::not_allowed_value")
+        cases_result = cases(
+            User, valid=False, strategy="role::not_allowed_value", count=1
+        )
+
+        assert case_result["role"] not in ["admin", "guest", "user"]
+        assert cases_result[0]["role"] not in ["admin", "guest", "user"]
+
+    def test_valid_flag_ignores_strategy(self):
+        with pytest.raises(ValueError) as exc_info:
+            case(User, valid=True, strategy="username::too_short")
+
+        assert "Strategy is only applicable when valid=False" in str(exc_info.value)
+
+    def test_field_not_found_with_violation(self):
+        with pytest.raises(ValueError) as exc_info:
+            case(User, valid=False, strategy="nonexistent::below_min")
+
+        assert "not found" in str(exc_info.value).lower() or "Field" in str(
+            exc_info.value
+        )
+
+    def test_available_violations_in_error_message(self):
+        with pytest.raises(ValueError) as exc_info:
+            case(User, valid=False, strategy="username::below_min")
+
+        error_msg = str(exc_info.value)
+        assert (
+            "too_short" in error_msg
+            or "too_long" in error_msg
+            or "pattern_mismatch" in error_msg
+        )
+
+    def test_auto_enable_structural_for_missing_field(self):
+        invalid = case(
+            User,
+            valid=False,
+            strategy="bio::missing_field",
+        )
+        assert "bio" not in invalid
+
+    def test_all_violations_count_with_new_syntax(self):
+        invalid_users = cases(
+            User,
+            valid=False,
+            strategy="all_violations",
+            allow_type_mismatch=True,
+            allow_structural_violations=True,
+        )
+        assert len(invalid_users) >= 8
+
+    def test_reproducibility_with_specific_violation(self):
+        invalid1 = case(User, valid=False, strategy="username::too_short")
+        invalid2 = case(User, valid=False, strategy="username::too_short")
+
+        assert len(invalid1["username"]) < 3
+        assert len(invalid2["username"]) < 3
+
+
 class TestApiErrors:
     def test_case_raises_if_strategy_all(self) -> None:
         with pytest.raises(ValueError):

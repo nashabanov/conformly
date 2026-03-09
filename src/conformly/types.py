@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import Enum
 import math
 from typing import Literal
 
@@ -21,24 +21,24 @@ class FieldKind(Enum):
 
 class ViolationType(Enum):
     # numeric
-    BELOW_MIN = auto()
-    ABOVE_MAX = auto()
+    BELOW_MIN = "below_min"
+    ABOVE_MAX = "above_max"
 
     # string
-    TOO_LONG = auto()
-    TOO_SHORT = auto()
-    PATTERN_MISMATCH = auto()
+    TOO_LONG = "too_long"
+    TOO_SHORT = "too_short"
+    PATTERN_MISMATCH = "pattern_mismatch"
 
     # typing
-    TYPE_MISMATCH = auto()
-    NONE_FOR_NOT_OPTIONAL = auto()
+    TYPE_MISMATCH = "type_mismatch"
+    NONE_FOR_NOT_OPTIONAL = "none_for_not_optional"
 
     # Enum
-    NOT_ALLOWED_VALUE = auto()
+    NOT_ALLOWED_VALUE = "not_allowed_value"
 
     # structural
-    MISSING_FIELD = auto()
-    EXTRA_FIELD = auto()
+    MISSING_FIELD = "missing_field"
+    EXTRA_FIELD = "extra_field"
 
 
 INT_MIN = -(2**63)

@@ -36,25 +36,43 @@ def plan_violation_task(
     path: FieldPath,
     allow_type_mismatch: bool = False,
     allow_structural_violations: bool = False,
+    forced_violation: ViolationType | None = None,
 ) -> PlannedTask:
+    if forced_violation:
+        if forced_violation in (ViolationType.EXTRA_FIELD, ViolationType.MISSING_FIELD):
+            allow_structural_violations = True
+        if forced_violation == ViolationType.TYPE_MISMATCH:
+            allow_type_mismatch = True
+
     if _is_extra_field(model, path):
         if not allow_structural_violations:
             raise ValueError("EXTRA_FIELD requires allow_structural_violations=True")
+        if forced_violation and forced_violation != ViolationType.EXTRA_FIELD:
+            raise ValueError(
+                f"Extra field only supports EXTRA_FIELD violation, "
+                f"got {forced_violation.value}"
+            )
 
         return PlannedTask(path, (ViolationType.EXTRA_FIELD,))
 
     field = model.get_field(path)
 
-    return PlannedTask(
-        path,
-        _define_allowed_violation_types(
-            semantic=field.semantic,
-            allow_type_mismatch=allow_type_mismatch
-            if not field.nested_model
-            else False,
-            allow_structural_violations=allow_structural_violations,
-        ),
+    allowed_violations = _define_allowed_violation_types(
+        semantic=field.semantic,
+        allow_type_mismatch=allow_type_mismatch if not field.nested_model else False,
+        allow_structural_violations=allow_structural_violations,
     )
+
+    if forced_violation is not None:
+        if forced_violation not in allowed_violations:
+            raise ValueError(
+                f"Violation type '{forced_violation.value}' is not applicable "
+                f"to field '{field.name}' (kind: {field.semantic.kind.value}). "
+                f"Available for this field: {[v.value for v in allowed_violations]}"
+            )
+        return PlannedTask(path, (forced_violation,))
+
+    return PlannedTask(path, allowed_violations)
 
 
 def _is_extra_field(model: ResolvedModel, path: FieldPath) -> bool:
