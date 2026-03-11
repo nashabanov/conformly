@@ -665,3 +665,25 @@ class TestApiErrors:
     def test_raises_if_count_less_than_one(self) -> None:
         with pytest.raises(ValueError):
             cases(User, count=0)
+
+
+class TestDeterministicGeneration:
+    def test_same_seed_same_output(self) -> None:
+        user1 = case(User, seed=42)
+        user2 = case(User, seed=42)
+        assert user1 == user2
+
+    def test_different_seed_different_output(self) -> None:
+        user1 = case(User, seed=44)
+        user2 = case(User, seed=125)
+        assert user1 != user2
+
+    def test_same_seed_same_list(self) -> None:
+        users1 = cases(User, seed=42)
+        users2 = cases(User, seed=42)
+        assert users1 == users2
+
+    def test_invalid_generation_seeding(self) -> None:
+        user1 = case(User, valid=False, seed=42)
+        user2 = case(User, valid=False, seed=42)
+        assert user1 == user2

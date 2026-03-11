@@ -33,9 +33,9 @@ def test_random_string_min_max(ctx: GenerationContext) -> None:
     assert 15 <= len(result) <= 35
 
 
-def test_pattern_no_length_constraints() -> None:
+def test_pattern_no_length_constraints(ctx: GenerationContext) -> None:
     pattern = r"[a-z]{3}"
-    result = _random_pattern_with_length(pattern, 0, None)
+    result = _random_pattern_with_length(ctx, pattern, 0, None)
     assert isinstance(result, str)
     assert re.fullmatch(pattern, result) is not None
 
@@ -45,78 +45,78 @@ def test_invert_pattern_empty_string() -> None:
     assert result == "x"
 
 
-def test_simple_pattern() -> None:
-    s = _random_pattern_with_length(r"[a-z]{5}", 0, None)
+def test_simple_pattern(ctx: GenerationContext) -> None:
+    s = _random_pattern_with_length(ctx, r"[a-z]{5}", 0, None)
     assert re.fullmatch(r"[a-z]{5}", s)
     assert len(s) == 5
 
 
-def test_with_min_max() -> None:
-    s = _random_pattern_with_length(r"[a-z]{3,10}", min_len=6, max_len=8)
+def test_with_min_max(ctx: GenerationContext) -> None:
+    s = _random_pattern_with_length(ctx, r"[a-z]{3,10}", min_len=6, max_len=8)
     assert 6 <= len(s) <= 8
     assert re.fullmatch(r"[a-z]{3,10}", s)
 
 
-def test_fixed_length_within_bounds() -> None:
-    s = _random_pattern_with_length(r"\d{4}", min_len=4, max_len=4)
+def test_fixed_length_within_bounds(ctx: GenerationContext) -> None:
+    s = _random_pattern_with_length(ctx, r"\d{4}", min_len=4, max_len=4)
     assert s.isdigit() and len(s) == 4
 
 
-def test_pattern_always_too_long() -> None:
+def test_pattern_always_too_long(ctx: GenerationContext) -> None:
     with pytest.raises(RuntimeError, match="Could not generate"):
-        _random_pattern_with_length(r"a{10}", 0, max_len=5)
+        _random_pattern_with_length(ctx, r"a{10}", 0, max_len=5)
 
 
-def test_pattern_always_too_short() -> None:
+def test_pattern_always_too_short(ctx: GenerationContext) -> None:
     with pytest.raises(RuntimeError, match="Could not generate"):
-        _random_pattern_with_length(r"X", min_len=5, max_len=None)
+        _random_pattern_with_length(ctx, r"X", min_len=5, max_len=None)
 
 
-def test_invalid_regex() -> None:
+def test_invalid_regex(ctx: GenerationContext) -> None:
     with pytest.raises(ValueError, match="Invalid or unsupported regex"):
-        _random_pattern_with_length(r"[", 0, None)
+        _random_pattern_with_length(ctx, r"[", 0, None)
 
 
-def test_min_greater_than_max() -> None:
+def test_min_greater_than_max(ctx: GenerationContext) -> None:
     with pytest.raises(ValueError, match="min_len cannot be greater"):
-        _random_pattern_with_length(r".*", min_len=10, max_len=5)
+        _random_pattern_with_length(ctx, r".*", min_len=10, max_len=5)
 
 
-def test_flexible_pattern_succeeds() -> None:
-    s = _random_pattern_with_length(r"[a-z]{1,5}", min_len=3, max_len=4)
+def test_flexible_pattern_succeeds(ctx: GenerationContext) -> None:
+    s = _random_pattern_with_length(ctx, r"[a-z]{1,5}", min_len=3, max_len=4)
     assert 3 <= len(s) <= 4
     assert re.fullmatch(r"[a-z]{1,5}", s)
 
 
-def test_pattern_empty_string_allowed() -> None:
-    s = _random_pattern_with_length(r"a*", min_len=0, max_len=0)
+def test_pattern_empty_string_allowed(ctx: GenerationContext) -> None:
+    s = _random_pattern_with_length(ctx, r"a*", min_len=0, max_len=0)
     assert s == ""
 
 
-def test_pattern_with_unicode() -> None:
-    s = _random_pattern_with_length(r"[а-яё]{3}", 0, None)  # noqa: RUF001
+def test_pattern_with_unicode(ctx: GenerationContext) -> None:
+    s = _random_pattern_with_length(ctx, r"[а-яё]{3}", 0, None)  # noqa: RUF001
     assert re.fullmatch(r"[а-яё]{3}", s, re.IGNORECASE)  # noqa: RUF001
 
 
-def test_pattern_with_anchors() -> None:
-    s = _random_pattern_with_length(r"^[A-Z]{2}\d{3}$", 0, None)
+def test_pattern_with_anchors(ctx: GenerationContext) -> None:
+    s = _random_pattern_with_length(ctx, r"^[A-Z]{2}\d{3}$", 0, None)
     assert re.fullmatch(r"[A-Z]{2}\d{3}", s)
 
 
-def test_pattern_max_length_zero() -> None:
+def test_pattern_max_length_zero(ctx: GenerationContext) -> None:
     with pytest.raises(RuntimeError):
-        _random_pattern_with_length(r"[a-z]+", 0, max_len=0)
+        _random_pattern_with_length(ctx, r"[a-z]+", 0, max_len=0)
 
 
-def test_pattern_min_length_zero() -> None:
-    s = _random_pattern_with_length(r"[a-z]*", min_len=0, max_len=5)
+def test_pattern_min_length_zero(ctx: GenerationContext) -> None:
+    s = _random_pattern_with_length(ctx, r"[a-z]*", min_len=0, max_len=5)
     assert 0 <= len(s) <= 5
     assert re.fullmatch(r"[a-z]*", s)
 
 
-def test_pattern_complex_but_compatible() -> None:
+def test_pattern_complex_but_compatible(ctx: GenerationContext) -> None:
     s = _random_pattern_with_length(
-        r"user_\d{4}@[a-z]{3,5}\.(com|org)", min_len=15, max_len=30
+        ctx, r"user_\d{4}@[a-z]{3,5}\.(com|org)", min_len=15, max_len=30
     )
     assert 15 <= len(s) <= 30
     assert re.fullmatch(r"user_\d{4}@[a-z]{3,5}\.(com|org)", s)
@@ -152,64 +152,74 @@ def test_generate_valid_all_constraints(ctx: GenerationContext) -> None:
     assert re.fullmatch(r"[a-z]{5,12}", result)
 
 
-def test_generate_invalid_min_length_violation() -> None:
+def test_generate_invalid_min_length_violation(ctx: GenerationContext) -> None:
     result = _generate_invalid_string(
+        ctx,
         StringSemantic(FieldKind.STRING, LengthRange(5, None), None, True),
         ViolationType.TOO_SHORT,
     )
     assert len(result) == 4
 
 
-def test_generate_invalid_max_length_violation() -> None:
+def test_generate_invalid_max_length_violation(ctx: GenerationContext) -> None:
     result = _generate_invalid_string(
+        ctx,
         StringSemantic(FieldKind.STRING, LengthRange(0, 3), None, True),
         ViolationType.TOO_LONG,
     )
     assert len(result) == 4
 
 
-def test_generate_invalid_pattern_violation() -> None:
+def test_generate_invalid_pattern_violation(ctx: GenerationContext) -> None:
     result = _generate_invalid_string(
+        ctx,
         StringSemantic(FieldKind.STRING, LengthRange(0, None), r"[a-z]{3}", True),
         ViolationType.PATTERN_MISMATCH,
     )
     assert not re.fullmatch(r"[a-z]{3}", result)
 
 
-def test_generate_invalid_no_constraints() -> None:
+def test_generate_invalid_no_constraints(ctx: GenerationContext) -> None:
     result = _generate_invalid_string(
+        ctx,
         StringSemantic(FieldKind.STRING, LengthRange(0, None), None, False),
         None,
     )
     assert result == "INVALID"
 
 
-def test_generate_invalid_string_too_short_with_min_0() -> None:
+def test_generate_invalid_string_too_short_with_min_0(ctx: GenerationContext) -> None:
     result = _generate_invalid_string(
+        ctx,
         StringSemantic(FieldKind.STRING, LengthRange(0, None), None, False),
         ViolationType.TOO_SHORT,
     )
     assert result == "INVALID"
 
 
-def test_generate_invalid_string_too_long_with_max_none() -> None:
+def test_generate_invalid_string_too_long_with_max_none(ctx: GenerationContext) -> None:
     result = _generate_invalid_string(
+        ctx,
         StringSemantic(FieldKind.STRING, LengthRange(5, None), None, True),
         ViolationType.TOO_LONG,
     )
     assert result == "INVALID"
 
 
-def test_generate_invalid_string_pattern_mismatch_without_pattern() -> None:
+def test_generate_invalid_string_pattern_mismatch_without_pattern(
+    ctx: GenerationContext,
+) -> None:
     result = _generate_invalid_string(
+        ctx,
         StringSemantic(FieldKind.STRING, LengthRange(0, None), None, False),
         ViolationType.PATTERN_MISMATCH,
     )
     assert result == "INVALID"
 
 
-def test_generate_invalid_precedence_min_over_max() -> None:
+def test_generate_invalid_precedence_min_over_max(ctx: GenerationContext) -> None:
     result = _generate_invalid_string(
+        ctx,
         StringSemantic(FieldKind.STRING, LengthRange(5, 10), None, True),
         ViolationType.TOO_SHORT,
     )
@@ -217,16 +227,18 @@ def test_generate_invalid_precedence_min_over_max() -> None:
     assert not (len(result) >= 5)
 
 
-def test_generate_invalid_precedence_max_when_no_min() -> None:
+def test_generate_invalid_precedence_max_when_no_min(ctx: GenerationContext) -> None:
     result = _generate_invalid_string(
+        ctx,
         StringSemantic(FieldKind.STRING, LengthRange(0, 5), None, True),
         ViolationType.TOO_LONG,
     )
     assert len(result) == 6
 
 
-def test_generate_invalid_pattern_only() -> None:
+def test_generate_invalid_pattern_only(ctx: GenerationContext) -> None:
     result = _generate_invalid_string(
+        ctx,
         StringSemantic(FieldKind.STRING, LengthRange(0, None), r"\d{4}", True),
         ViolationType.PATTERN_MISMATCH,
     )
@@ -252,6 +264,6 @@ def test_generate_random_string_invalid(ctx: GenerationContext) -> None:
 
 
 @pytest.mark.xfail
-def test_pattern_with_catastrophic_backtracking_safe() -> None:
+def test_pattern_with_catastrophic_backtracking_safe(ctx: GenerationContext) -> None:
     with pytest.raises((RuntimeError, ValueError)):
-        _random_pattern_with_length(r"(a+)+", 0, 10)
+        _random_pattern_with_length(ctx, r"(a+)+", 0, 10)

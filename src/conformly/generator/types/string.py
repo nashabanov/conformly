@@ -4,7 +4,6 @@ import string
 from ...resolver.semantics.string import StringSemantic
 from ...types import ViolationType
 from ..context import GenerationContext
-import rstr
 
 DEFAULT_MIN_LENGTH = 5
 DEFAULT_MAX_LENGTH = 15
@@ -20,13 +19,14 @@ def generate_value(
     return (
         _generate_valid_string(ctx, semantic)
         if not violation
-        else _generate_invalid_string(semantic, violation)
+        else _generate_invalid_string(ctx, semantic, violation)
     )
 
 
 def _generate_valid_string(ctx: GenerationContext, semantic: StringSemantic) -> str:
     if semantic.pattern:
         return _random_pattern_with_length(
+            ctx,
             semantic.pattern,
             semantic.length_range.min_length,
             semantic.length_range.max_length,
@@ -38,17 +38,21 @@ def _generate_valid_string(ctx: GenerationContext, semantic: StringSemantic) -> 
 
 
 def _generate_invalid_string(
-    semantic: StringSemantic, violation: ViolationType | None
+    ctx: GenerationContext, semantic: StringSemantic, violation: ViolationType | None
 ) -> str:
     match violation:
         case ViolationType.TOO_SHORT if semantic.length_range.min_length > 0:
-            return _random_string_fixed_length(semantic.length_range.min_length - 1)
+            return _random_string_fixed_length(
+                ctx, semantic.length_range.min_length - 1
+            )
 
         case ViolationType.TOO_LONG if semantic.length_range.max_length is not None:
-            return _random_string_fixed_length(semantic.length_range.max_length + 1)
+            return _random_string_fixed_length(
+                ctx, semantic.length_range.max_length + 1
+            )
 
         case ViolationType.PATTERN_MISMATCH if semantic.pattern is not None:
-            valid_example = rstr.xeger(semantic.pattern)
+            valid_example = ctx.rstr.xeger(semantic.pattern)
             return _invert_pattern_string(valid_example, semantic.pattern)
 
         case _:
@@ -63,18 +67,20 @@ def _random_string_with_length(
     else:
         length = ctx.rng.randint(min_len, max_len)
 
-    return rstr.rstr(DEFAULT_CHARSET, length)
+    return ctx.rstr.rstr(DEFAULT_CHARSET, length)
 
 
-def _random_string_fixed_length(length: int) -> str:
+def _random_string_fixed_length(ctx: GenerationContext, length: int) -> str:
     if length < 0:
         raise ValueError("Length must be non-negative")
     if length == 0:
         return ""
-    return rstr.rstr(DEFAULT_CHARSET + string.digits, length)
+    return ctx.rstr.rstr(DEFAULT_CHARSET + string.digits, length)
 
 
-def _random_pattern_with_length(pattern: str, min_len: int, max_len: int | None) -> str:
+def _random_pattern_with_length(
+    ctx: GenerationContext, pattern: str, min_len: int, max_len: int | None
+) -> str:
     if max_len is not None and min_len > max_len:
         raise ValueError("min_len cannot be greater than max_len")
 
@@ -98,7 +104,7 @@ def _random_pattern_with_length(pattern: str, min_len: int, max_len: int | None)
             )
     for _ in range(MAX_GENERATION_ATTEMPTS):
         try:
-            candidate = rstr.xeger(pattern)
+            candidate = ctx.rstr.xeger(pattern)
         except Exception as e:
             raise ValueError(f"Invalid or unsupported regex pattern: {pattern}") from e
 

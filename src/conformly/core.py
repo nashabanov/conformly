@@ -1,6 +1,7 @@
 from typing import Any
 
 from .generator import (
+    GenerationContext,
     create_context,
     generate_invalid,
     generate_valid,
@@ -42,6 +43,7 @@ def _parse_strategy_input(strategy: str) -> tuple[str, ViolationType | None]:
 def _plan_tasks(
     model: ResolvedModel,
     *,
+    ctx: GenerationContext,
     strategy: CasesStrategy,
     allow_all: bool,
     count: int | None = None,
@@ -53,6 +55,7 @@ def _plan_tasks(
 
     paths = select_paths(
         model,
+        ctx=ctx,
         strategy=field_strategy,
         allow_all=allow_all,
         count=count or 1,
@@ -153,6 +156,7 @@ def case(
 
     task = _plan_tasks(
         model,
+        ctx=ctx,
         strategy=strategy,
         allow_all=False,
         count=1,
@@ -269,6 +273,7 @@ def cases(
     if strategy == "all":
         tasks = _plan_tasks(
             model,
+            ctx=ctx,
             strategy="all",
             allow_all=True,
             allow_type_mismatch=allow_type_mismatch,
@@ -279,6 +284,7 @@ def cases(
     elif strategy == "all_violations":
         tasks = _plan_tasks(
             model,
+            ctx=ctx,
             strategy="all",
             allow_all=True,
             allow_type_mismatch=allow_type_mismatch,
@@ -289,6 +295,7 @@ def cases(
     else:
         tasks = _plan_tasks(
             model,
+            ctx=ctx,
             strategy=strategy,
             allow_all=False,
             count=count,
