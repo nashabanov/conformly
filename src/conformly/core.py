@@ -1,6 +1,10 @@
 from typing import Any
 
-from .generator import generate_invalid, generate_valid
+from .generator import (
+    create_context,
+    generate_invalid,
+    generate_valid,
+)
 from .parsing import parse_model
 from .planner import PlannedTask, plan_violation_task, select_paths
 from .resolver import ResolvedModel, resolve_model
@@ -82,6 +86,7 @@ def case(
     model_or_spec: ModelSpec | type,
     *,
     valid: bool = True,
+    seed: int | None = None,
     strategy: CaseStrategy = "first",
     allow_type_mismatch: bool = False,
 ) -> dict[str, Any]:
@@ -126,6 +131,8 @@ def case(
     """
     model = _ensure_model_or_spec(model_or_spec)
 
+    _ = create_context(seed)
+
     if valid:
         if allow_type_mismatch:
             raise ValueError("Type mismatching availiable inly for invald generation")
@@ -154,6 +161,7 @@ def cases(
     model_or_spec: ModelSpec | type,
     *,
     valid: bool = True,
+    seed: int | None = None,
     strategy: CasesStrategy = "first",
     count: int = 1,
     allow_type_mismatch: bool = False,
@@ -220,6 +228,8 @@ def cases(
         raise ValueError("count must be >= 1")
 
     model = _ensure_model_or_spec(model_or_spec)
+
+    _ = create_context(seed)
 
     if valid:
         if allow_type_mismatch:
