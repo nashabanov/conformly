@@ -2,6 +2,7 @@ import re
 
 import pytest
 
+from conformly.generator.context import GenerationContext
 from conformly.generator.types.string import (
     _generate_invalid_string,
     _generate_valid_string,
@@ -14,20 +15,20 @@ from conformly.resolver.semantics import StringSemantic
 from conformly.types import FieldKind, LengthRange, ViolationType
 
 
-def test_random_string_min_only() -> None:
-    result = _random_string_with_length(10, None)
+def test_random_string_min_only(ctx: GenerationContext) -> None:
+    result = _random_string_with_length(ctx, 10, None)
     assert isinstance(result, str)
     assert 10 <= len(result) <= 60
 
 
-def test_random_string_max_only() -> None:
-    result = _random_string_with_length(0, 7)
+def test_random_string_max_only(ctx: GenerationContext) -> None:
+    result = _random_string_with_length(ctx, 0, 7)
     assert isinstance(result, str)
     assert 0 <= len(result) <= 7
 
 
-def test_random_string_min_max() -> None:
-    result = _random_string_with_length(15, 35)
+def test_random_string_min_max(ctx: GenerationContext) -> None:
+    result = _random_string_with_length(ctx, 15, 35)
     assert isinstance(result, str)
     assert 15 <= len(result) <= 35
 
@@ -121,31 +122,31 @@ def test_pattern_complex_but_compatible() -> None:
     assert re.fullmatch(r"user_\d{4}@[a-z]{3,5}\.(com|org)", s)
 
 
-def test_generate_valid_no_constraints() -> None:
+def test_generate_valid_no_constraints(ctx: GenerationContext) -> None:
     result = _generate_valid_string(
-        StringSemantic(FieldKind.STRING, LengthRange(0, None), None, False)
+        ctx, StringSemantic(FieldKind.STRING, LengthRange(0, None), None, False)
     )
     assert isinstance(result, str)
     assert 0 <= len(result) <= 50
 
 
-def test_generate_valid_min_length_only() -> None:
+def test_generate_valid_min_length_only(ctx: GenerationContext) -> None:
     result = _generate_valid_string(
-        StringSemantic(FieldKind.STRING, LengthRange(8, None), None, True)
+        ctx, StringSemantic(FieldKind.STRING, LengthRange(8, None), None, True)
     )
     assert len(result) >= 8
 
 
-def test_generate_valid_pattern_only() -> None:
+def test_generate_valid_pattern_only(ctx: GenerationContext) -> None:
     result = _generate_valid_string(
-        StringSemantic(FieldKind.STRING, LengthRange(0, None), r"[A-Z]{3}", True)
+        ctx, StringSemantic(FieldKind.STRING, LengthRange(0, None), r"[A-Z]{3}", True)
     )
     assert re.fullmatch(r"[A-Z]{3}", result)
 
 
-def test_generate_valid_all_constraints() -> None:
+def test_generate_valid_all_constraints(ctx: GenerationContext) -> None:
     result = _generate_valid_string(
-        StringSemantic(FieldKind.STRING, LengthRange(6, 10), r"[a-z]{5,12}", True)
+        ctx, StringSemantic(FieldKind.STRING, LengthRange(6, 10), r"[a-z]{5,12}", True)
     )
     assert 6 <= len(result) <= 10
     assert re.fullmatch(r"[a-z]{5,12}", result)
@@ -232,15 +233,18 @@ def test_generate_invalid_pattern_only() -> None:
     assert not re.fullmatch(r"\d{4}", result)
 
 
-def test_generate_random_string_valid() -> None:
+def test_generate_random_string_valid(ctx: GenerationContext) -> None:
     result = generate_value(
-        StringSemantic(FieldKind.STRING, LengthRange(3, None), None, True), None
+        ctx,
+        StringSemantic(FieldKind.STRING, LengthRange(3, None), None, True),
+        None,
     )
     assert len(result) >= 3
 
 
-def test_generate_random_string_invalid() -> None:
+def test_generate_random_string_invalid(ctx: GenerationContext) -> None:
     result = generate_value(
+        ctx,
         StringSemantic(FieldKind.STRING, LengthRange(0, 2), None, True),
         ViolationType.TOO_LONG,
     )

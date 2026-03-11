@@ -106,6 +106,11 @@ def case(
             If True, generate a valid instance.
             If False, generate an invalid one.
 
+        seed:
+            Random seed for reproducible generation.
+            - `None` (default): Use system randomness (different output each run).
+            - `int`: Initialize RNG with fixed seed (same output for same seed).
+
         strategy:
             Define which field to violate when valid=False.
 
@@ -131,7 +136,7 @@ def case(
     """
     model = _ensure_model_or_spec(model_or_spec)
 
-    _ = create_context(seed)
+    ctx = create_context(seed)
 
     if valid:
         if allow_type_mismatch:
@@ -139,7 +144,7 @@ def case(
 
         if strategy != "first":
             raise ValueError("Strategy is only applicable when valid=False")
-        return generate_valid(model)
+        return generate_valid(ctx, model)
 
     if strategy == "all":
         raise ValueError(
@@ -153,7 +158,7 @@ def case(
         count=1,
         allow_type_mismatch=allow_type_mismatch,
     )[0]
-    return generate_invalid(model, task)
+    return generate_invalid(ctx, model, task)
 
 
 # ===== cases =====
@@ -182,6 +187,11 @@ def cases(
         valid:
             If True, generate valid instances.
             If False, generate invalid ones.
+
+        seed:
+            Random seed for reproducible generation.
+            - `None` (default): Use system randomness (different output each run).
+            - `int`: Initialize RNG with fixed seed (same output for same seed).
 
         strategy:
             Define how fields are selected for violation when valid=False.
@@ -229,7 +239,7 @@ def cases(
 
     model = _ensure_model_or_spec(model_or_spec)
 
-    _ = create_context(seed)
+    ctx = create_context(seed)
 
     if valid:
         if allow_type_mismatch:
@@ -243,7 +253,7 @@ def cases(
         if strategy != "first":
             raise ValueError("Strategy is only applicable when valid=False")
 
-        return [generate_valid(model) for _ in range(count)]
+        return [generate_valid(ctx, model) for _ in range(count)]
 
     if (
         allow_structural_violations
@@ -285,4 +295,4 @@ def cases(
             allow_type_mismatch=allow_type_mismatch,
         )
 
-    return [generate_invalid(model, task) for task in tasks]
+    return [generate_invalid(ctx, model, task) for task in tasks]

@@ -1,11 +1,10 @@
-import random
 import re
 import string
 
+from ...resolver.semantics.string import StringSemantic
+from ...types import ViolationType
+from ..context import GenerationContext
 import rstr
-
-from conformly.resolver.semantics.string import StringSemantic
-from conformly.types import ViolationType
 
 DEFAULT_MIN_LENGTH = 5
 DEFAULT_MAX_LENGTH = 15
@@ -15,15 +14,17 @@ MAX_CANDIDATE_LENGTH = 1000
 BAD_CHARS_FOR_INVERSION = [" ", "!", "@", "#", "\n", "\t", "\x00"]
 
 
-def generate_value(semantic: StringSemantic, violation: ViolationType | None) -> str:
+def generate_value(
+    ctx: GenerationContext, semantic: StringSemantic, violation: ViolationType | None
+) -> str:
     return (
-        _generate_valid_string(semantic)
+        _generate_valid_string(ctx, semantic)
         if not violation
         else _generate_invalid_string(semantic, violation)
     )
 
 
-def _generate_valid_string(semantic: StringSemantic) -> str:
+def _generate_valid_string(ctx: GenerationContext, semantic: StringSemantic) -> str:
     if semantic.pattern:
         return _random_pattern_with_length(
             semantic.pattern,
@@ -32,7 +33,7 @@ def _generate_valid_string(semantic: StringSemantic) -> str:
         )
 
     return _random_string_with_length(
-        semantic.length_range.min_length, semantic.length_range.max_length
+        ctx, semantic.length_range.min_length, semantic.length_range.max_length
     )
 
 
@@ -54,11 +55,13 @@ def _generate_invalid_string(
             return "INVALID"
 
 
-def _random_string_with_length(min_len: int, max_len: int | None) -> str:
+def _random_string_with_length(
+    ctx: GenerationContext, min_len: int, max_len: int | None
+) -> str:
     if max_len is None:
-        length = random.randint(min_len, min_len + 50)
+        length = ctx.rng.randint(min_len, min_len + 50)
     else:
-        length = random.randint(min_len, max_len)
+        length = ctx.rng.randint(min_len, max_len)
 
     return rstr.rstr(DEFAULT_CHARSET, length)
 

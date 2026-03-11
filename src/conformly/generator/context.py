@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import random
 
 
-@dataclass
+@dataclass(frozen=True)
 class GenerationContext:
     rng: random.Random
     seed: int | None = None

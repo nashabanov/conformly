@@ -1,20 +1,22 @@
 import math
-from random import uniform
 
 from ...resolver.semantics import NumericSemantic
 from ...types import FLOAT_MAX, FLOAT_MIN, ViolationType
+from ..context import GenerationContext
 
 
-def generate_value(semantic: NumericSemantic, violation: ViolationType | None) -> float:
+def generate_value(
+    ctx: GenerationContext, semantic: NumericSemantic, violation: ViolationType | None
+) -> float:
     if violation is None:
         low, high = semantic.valid_range.min_value, semantic.valid_range.max_value
 
         if low == FLOAT_MIN or high == FLOAT_MAX:
             gen_low = max(low, -1e300)
             gen_high = min(high, 1e300)
-            return uniform(gen_low, gen_high)
+            return ctx.rng.uniform(gen_low, gen_high)
         else:
-            return uniform(low, high)
+            return ctx.rng.uniform(low, high)
     else:
         return _generate_invalid_float(semantic, violation)
 

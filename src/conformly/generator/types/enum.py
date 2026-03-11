@@ -1,18 +1,20 @@
-from random import choice, randint
 from typing import Any
 
 from ...resolver.semantics import EnumSemantic
 from ...types import ViolationType
+from ..context import GenerationContext
 
 _INVALID_ENUM_PREFIX = "__INVALID_ENUM_"
 
 
-def generate_value(semantic: EnumSemantic, violation: ViolationType | None) -> Any:
+def generate_value(
+    ctx: GenerationContext, semantic: EnumSemantic, violation: ViolationType | None
+) -> Any:
     if violation is None:
-        return choice(semantic.values)
+        return ctx.rng.choice(semantic.values)
 
     if violation is ViolationType.NOT_ALLOWED_VALUE:
-        return _generate_not_allowed_value(semantic)
+        return _generate_not_allowed_value(ctx, semantic)
 
     raise ValueError(
         f"For enum semantic allowed only NONE_FOR_NOT_OPTIONAL violation, "
@@ -20,16 +22,16 @@ def generate_value(semantic: EnumSemantic, violation: ViolationType | None) -> A
     )
 
 
-def _generate_not_allowed_value(semantic: EnumSemantic) -> Any:
+def _generate_not_allowed_value(ctx: GenerationContext, semantic: EnumSemantic) -> Any:
     values = semantic.values
     first_type = type(values[0])
     is_homogeneous = all(type(v) is first_type for v in values)
 
     if is_homogeneous:
-        base = choice(values)
+        base = ctx.rng.choice(values)
 
         if first_type is str:
-            suffix = f"{_INVALID_ENUM_PREFIX}{randint(10, 1000)}"
+            suffix = f"{_INVALID_ENUM_PREFIX}{ctx.rng.randint(10, 1000)}"
             return base + suffix
 
         elif first_type is int:
@@ -48,4 +50,4 @@ def _generate_not_allowed_value(semantic: EnumSemantic) -> Any:
             if len(values) == 1:
                 return not base
 
-    return f"{_INVALID_ENUM_PREFIX}{randint(1_000_000, 9_999_999)}__"
+    return f"{_INVALID_ENUM_PREFIX}{ctx.rng.randint(1_000_000, 9_999_999)}__"

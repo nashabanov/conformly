@@ -2,6 +2,7 @@ import math
 
 import pytest
 
+from conformly.generator.context import GenerationContext
 from conformly.generator.types.float import (
     _generate_invalid_float,
     generate_value,
@@ -36,7 +37,7 @@ semantic_10_20 = NumericSemantic(
 )
 def test_generate_invalid_float_always_outside_bounds(
     semantic: NumericSemantic, violation: ViolationType
-):
+) -> None:
     valid_range = semantic.valid_range
     for _ in range(10):
         invalid_val = _generate_invalid_float(semantic, violation)
@@ -50,7 +51,7 @@ def test_generate_invalid_float_always_outside_bounds(
             assert invalid_val < valid_range.min_value
 
 
-def test_generate_invalid_float_no_matching_range_raises():
+def test_generate_invalid_float_no_matching_range_raises() -> None:
     semantic_no_below = NumericSemantic(
         kind=FieldKind.FLOAT,
         valid_range=Range(0.0, 1.0),
@@ -108,13 +109,13 @@ unbounded_semantic = NumericSemantic(
     ],
 )
 def test_generate_value_respects_valid_flag(
-    semantic: NumericSemantic, violation: ViolationType | None
-):
+    semantic: NumericSemantic, violation: ViolationType | None, ctx: GenerationContext
+) -> None:
     valid_range = semantic.valid_range
     min, max = valid_range.min_value, valid_range.max_value
 
     for _ in range(10):
-        value = generate_value(semantic, violation)
+        value = generate_value(ctx, semantic, violation)
 
         if not violation:
             assert min <= value <= max, (
@@ -126,14 +127,14 @@ def test_generate_value_respects_valid_flag(
             )
 
 
-def test_generate_value_invalid_on_unbounded_raises():
+def test_generate_value_invalid_on_unbounded_raises(ctx: GenerationContext) -> None:
     with pytest.raises(ValueError, match="No invalid ranges available"):
-        generate_value(unbounded_semantic, ViolationType.BELOW_MIN)
+        generate_value(ctx, unbounded_semantic, ViolationType.BELOW_MIN)
 
 
-def test_generate_value_unbounded_uses_safe_range():
+def test_generate_value_unbounded_uses_safe_range(ctx: GenerationContext) -> None:
     semantic = unbounded_semantic
-    values = [generate_value(semantic, None) for _ in range(100)]
+    values = [generate_value(ctx, semantic, None) for _ in range(100)]
     for v in values:
         assert -1e300 <= v <= 1e300
         assert math.isfinite(v)

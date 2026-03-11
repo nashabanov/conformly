@@ -1,5 +1,6 @@
 import pytest
 
+from conformly.generator.context import GenerationContext
 from conformly.generator.types.integer import (
     _generate_invalid_integer,
     generate_value,
@@ -44,9 +45,11 @@ int_semantic_le100 = NumericSemantic(
         (int_semantic_le100, ViolationType.ABOVE_MAX),
     ],
 )
-def test_generate_invalid_integer(semantic: NumericSemantic, violation: ViolationType):
+def test_generate_invalid_integer(
+    semantic: NumericSemantic, violation: ViolationType, ctx: GenerationContext
+) -> None:
     for _ in range(30):
-        val = _generate_invalid_integer(semantic, violation)
+        val = _generate_invalid_integer(ctx, semantic, violation)
         assert (
             val < semantic.valid_range.min_value or val > semantic.valid_range.max_value
         )
@@ -57,7 +60,9 @@ def test_generate_invalid_integer(semantic: NumericSemantic, violation: Violatio
             assert val > semantic.valid_range.max_value
 
 
-def test_generate_invalid_integer_no_matching_range_raises():
+def test_generate_invalid_integer_no_matching_range_raises(
+    ctx: GenerationContext,
+) -> None:
     semantic = NumericSemantic(
         kind=FieldKind.INTEGER,
         valid_range=Range(0.0, 10.0),
@@ -66,7 +71,7 @@ def test_generate_invalid_integer_no_matching_range_raises():
     )
 
     with pytest.raises(ValueError):
-        _generate_invalid_integer(semantic, ViolationType.BELOW_MIN)
+        _generate_invalid_integer(ctx, semantic, ViolationType.BELOW_MIN)
 
 
 # ===== TESTS FOR generate_value() =====
@@ -85,13 +90,15 @@ def test_generate_invalid_integer_no_matching_range_raises():
         (int_semantic_le100, ViolationType.ABOVE_MAX),
     ],
 )
-def test_generate(semantic: NumericSemantic, violation: ViolationType | None):
+def test_generate(
+    semantic: NumericSemantic, violation: ViolationType | None, ctx: GenerationContext
+) -> None:
     if not violation:
-        val = generate_value(semantic, violation)
+        val = generate_value(ctx, semantic, violation)
         assert semantic.valid_range.min_value <= val <= semantic.valid_range.max_value
     else:
         for _ in range(30):
-            val = generate_value(semantic, violation)
+            val = generate_value(ctx, semantic, violation)
             assert (
                 val < semantic.valid_range.min_value
                 or val > semantic.valid_range.max_value
