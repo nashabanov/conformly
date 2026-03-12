@@ -1,12 +1,18 @@
 from typing import Any, Protocol
 
 from ..types import ViolationType
+from .context import GenerationContext
 
 
 class TypeGeneratorProtocol(Protocol):
     """Interface for all type-specific generators"""
 
-    def generate_value(self, semantic: Any, violation: ViolationType | None) -> Any:
+    def generate_value(
+        self,
+        ctx: GenerationContext,
+        semantic: Any,
+        violation: ViolationType | None,
+    ) -> Any:
         """
         Generate a value from field semantic
 

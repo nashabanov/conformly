@@ -94,8 +94,25 @@ valid = case(User, valid=True)
 
 ## API Reference
 ```python
-case(model, *, valid: bool, strategy: str | None = None, allow_type_mismatch: bool = False) -> dict
-cases(model, *, valid: bool, strategy: str = "all", count: int | None = None, allow_type_mismatch: bool = False, allow_structural_violations: bool = False) -> list[dict]
+case(
+    model,
+    *,
+    valid: bool,
+    seed: int | None = None,
+    strategy: str | None = None,
+    allow_type_mismatch: bool = False
+) -> dict
+
+cases(
+    model,
+    *,
+    valid: bool,
+    seed: int | None = None,
+    strategy: str = "all",
+    count: int | None = None,
+    allow_type_mismatch: bool = False,
+    allow_structural_violations: bool = False
+) -> list[dict]
 ```
 `strategy` values:
 - `<field_name>` - target specific field for invalidation (for nested fields using dot syntax `"profile.name"`)

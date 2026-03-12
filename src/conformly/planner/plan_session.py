@@ -1,5 +1,4 @@
-import random
-
+from ..generator import GenerationContext
 from ..resolver import ResolvedModel
 from ..types import CasesStrategy, FieldPath
 
@@ -9,6 +8,7 @@ NameIndexMap = tuple[tuple[FieldPath, str], ...]
 def select_paths(
     model: ResolvedModel,
     *,
+    ctx: GenerationContext,
     strategy: CasesStrategy,
     allow_all: bool,
     count: int = 1,
@@ -25,7 +25,7 @@ def select_paths(
         raise ValueError("Cannot generate invalid case(s): no fields have constraints")
 
     return _select_violation_fields(
-        strategy, allow_all, candidates, count, model.name_to_path
+        ctx, strategy, allow_all, candidates, count, model.name_to_path
     )
 
 
@@ -53,6 +53,7 @@ def _filter_candidate_paths(
 
 
 def _select_violation_fields(
+    ctx: GenerationContext,
     strategy: CasesStrategy,
     allow_all: bool,
     candidates: tuple[FieldPath, ...],
@@ -93,6 +94,6 @@ def _select_violation_fields(
                 f"Cannot select {count} random fields from "
                 f"{len(candidates)} constrained fields"
             )
-        return tuple(random.sample(candidates, k=count))
+        return tuple(ctx.rng.sample(candidates, k=count))
 
     raise AssertionError(f"Unhandled strategy: {strategy!r}")

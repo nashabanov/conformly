@@ -1,6 +1,11 @@
 from typing import Any
 
-from .generator import generate_invalid, generate_valid
+from .generator import (
+    GenerationContext,
+    create_context,
+    generate_invalid,
+    generate_valid,
+)
 from .parsing import parse_model
 from .planner import PlannedTask, plan_violation_task, select_paths
 from .resolver import ResolvedModel, resolve_model
@@ -38,6 +43,7 @@ def _parse_strategy_input(strategy: str) -> tuple[str, ViolationType | None]:
 def _plan_tasks(
     model: ResolvedModel,
     *,
+    ctx: GenerationContext,
     strategy: CasesStrategy,
     allow_all: bool,
     count: int | None = None,
@@ -49,6 +55,7 @@ def _plan_tasks(
 
     paths = select_paths(
         model,
+        ctx=ctx,
         strategy=field_strategy,
         allow_all=allow_all,
         count=count or 1,
@@ -82,6 +89,7 @@ def case(
     model_or_spec: ModelSpec | type,
     *,
     valid: bool = True,
+    seed: int | None = None,
     strategy: CaseStrategy = "first",
     allow_type_mismatch: bool = False,
 ) -> dict[str, Any]:
@@ -100,6 +108,11 @@ def case(
         valid:
             If True, generate a valid instance.
             If False, generate an invalid one.
+
+        seed:
+            Random seed for reproducible generation.
+            - `None` (default): Use system randomness (different output each run).
+            - `int`: Initialize RNG with fixed seed (same output for same seed).
 
         strategy:
             Define which field to violate when valid=False.
@@ -126,13 +139,15 @@ def case(
     """
     model = _ensure_model_or_spec(model_or_spec)
 
+    ctx = create_context(seed)
+
     if valid:
         if allow_type_mismatch:
             raise ValueError("Type mismatching availiable inly for invald generation")
 
         if strategy != "first":
             raise ValueError("Strategy is only applicable when valid=False")
-        return generate_valid(model)
+        return generate_valid(ctx, model)
 
     if strategy == "all":
         raise ValueError(
@@ -141,12 +156,13 @@ def case(
 
     task = _plan_tasks(
         model,
+        ctx=ctx,
         strategy=strategy,
         allow_all=False,
         count=1,
         allow_type_mismatch=allow_type_mismatch,
     )[0]
-    return generate_invalid(model, task)
+    return generate_invalid(ctx, model, task)
 
 
 # ===== cases =====
@@ -154,6 +170,7 @@ def cases(
     model_or_spec: ModelSpec | type,
     *,
     valid: bool = True,
+    seed: int | None = None,
     strategy: CasesStrategy = "first",
     count: int = 1,
     allow_type_mismatch: bool = False,
@@ -174,6 +191,11 @@ def cases(
         valid:
             If True, generate valid instances.
             If False, generate invalid ones.
+
+        seed:
+            Random seed for reproducible generation.
+            - `None` (default): Use system randomness (different output each run).
+            - `int`: Initialize RNG with fixed seed (same output for same seed).
 
         strategy:
             Define how fields are selected for violation when valid=False.
@@ -221,6 +243,8 @@ def cases(
 
     model = _ensure_model_or_spec(model_or_spec)
 
+    ctx = create_context(seed)
+
     if valid:
         if allow_type_mismatch:
             raise ValueError("Type mismatching availiable only for invalid generation")
@@ -233,7 +257,7 @@ def cases(
         if strategy != "first":
             raise ValueError("Strategy is only applicable when valid=False")
 
-        return [generate_valid(model) for _ in range(count)]
+        return [generate_valid(ctx, model) for _ in range(count)]
 
     if (
         allow_structural_violations
@@ -249,6 +273,7 @@ def cases(
     if strategy == "all":
         tasks = _plan_tasks(
             model,
+            ctx=ctx,
             strategy="all",
             allow_all=True,
             allow_type_mismatch=allow_type_mismatch,
@@ -259,6 +284,7 @@ def cases(
     elif strategy == "all_violations":
         tasks = _plan_tasks(
             model,
+            ctx=ctx,
             strategy="all",
             allow_all=True,
             allow_type_mismatch=allow_type_mismatch,
@@ -269,10 +295,11 @@ def cases(
     else:
         tasks = _plan_tasks(
             model,
+            ctx=ctx,
             strategy=strategy,
             allow_all=False,
             count=count,
             allow_type_mismatch=allow_type_mismatch,
         )
 
-    return [generate_invalid(model, task) for task in tasks]
+    return [generate_invalid(ctx, model, task) for task in tasks]
