@@ -48,12 +48,17 @@ jobs:
     needs: quality
     strategy:
       matrix:
-          python-version: ["3.12", "3.13"]
           include:
-          - config: core
+          - python-version: "3.12"
+            config: core
             extras: ""
             collect-coverage: false
-          - config: pydantic
+          - python-version: "3.13"
+            config: core
+            extras: ""
+            collect-coverage: false
+          - python-version: "3.13"
+            config: pydantic
             extras: "pydantic"
             collect-coverage: true
     name: Test (${{ matrix.config }}, py${{ matrix.python-version }})
