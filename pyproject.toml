@@ -1,6 +1,6 @@
 [project]
 name = "conformly"
-version = "0.3.8"
+version = "0.3.9"
 description = "Generate valid & invalid test data from your typed schemas"
 readme = "README.md"
 requires-python = ">=3.12"
