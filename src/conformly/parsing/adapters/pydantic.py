@@ -88,23 +88,17 @@ def parse_field(
         name=name,
         type=runtime_type,
         constraints=all_constraints,
-        default=_parse_default(field_info, name, PydanticUndefined),
+        default=_parse_default(field_info, PydanticUndefined),
         nullable=is_nullable(field_type),
         nested_model=nested_model,
     )
 
 
-def _parse_default(
-    field_info: FieldInfo, field_name: str, PydanticUndefined: Any
-) -> Any:
+def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
     from ...types import _UNSET
 
-    # TODO: inmplement default_factory usage in generator
     if field_info.default_factory is not None:
-        raise NotImplementedError(
-            f"Field '{field_name} uses default_factory, which not supported yet'"
-            f"Track progress in https://github.com/nashabanov/conformly/issues"
-        )
+        return field_info.default_factory
 
     if field_info.default is not PydanticUndefined:
         return field_info.default
