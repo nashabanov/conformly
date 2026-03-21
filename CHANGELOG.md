@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Deterministic generation** new `seed: int | None = None` parameter in `case()` and `cases()` for reproducible test data
 - **GenerationContext** - immutable context object passed through entire generation pipeline
+- **pydantic default_factory support** - save `callable` object and call it at generation stage
 
 ### Changed
 - **Internal architecture** - all generators now receive `GenerationContext` instead of raw `rng`

@@ -185,7 +185,7 @@ def test_parse_default_valid(field_name: str, expected: Any) -> None:
         required_str: str
 
     field_info = _get_field_info(Model, field_name)
-    result = _parse_default(field_info, field_name, PydanticUndefined)
+    result = _parse_default(field_info, PydanticUndefined)
     assert result == expected
 
 
@@ -195,8 +195,7 @@ def test_parse_default_raises_default_factory() -> None:
 
     field_info = _get_field_info(Model, "list_factory")
 
-    with pytest.raises(NotImplementedError):
-        _parse_default(field_info, "list_factory", NotImplementedError)
+    assert callable(_parse_default(field_info, PydanticUndefined))
 
 
 # ===== TESTS for parse_field() =====

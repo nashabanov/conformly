@@ -93,6 +93,10 @@ def generate_field(
             return None
 
         if field.default is not _UNSET:
+            default = field.default
+            if callable(default):
+                return default()
+
             return field.default
 
         if field.nested_model:
