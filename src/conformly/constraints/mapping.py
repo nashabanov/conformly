@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from .numeric import GreaterOrEqual, GreaterThan, LessOrEqual, LessThan
+from .numeric import GreaterOrEqual, GreaterThan, LessOrEqual, LessThan, MultipleOf
 from .string import MaxLength, MinLength, Pattern
 
 if TYPE_CHECKING:
@@ -19,6 +19,7 @@ CONSTRAINT_MAPPING: dict[ConstraintType, Callable[[Any], Constraint]] = {
     "max_length": MaxLength,
     "min_length": MinLength,
     "pattern": Pattern,
+    "multiple_of": MultipleOf,
 }
 
 

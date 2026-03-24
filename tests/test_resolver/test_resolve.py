@@ -11,11 +11,13 @@ from conformly.constraints import (
     LessThan,
     MaxLength,
     MinLength,
+    MultipleOf,
+    OneOf,
     Pattern,
 )
-from conformly.constraints.enum import OneOf
 from conformly.resolver.resolve import (
     _build_indexes,
+    _extract_numeric_multiple_of,
     calculate_invalid_numeric_ranges,
     calculate_max_offset,
     calculate_numeric_bounds,
@@ -426,6 +428,23 @@ def test_extract_enum_included_values_more_than_one_constraints() -> None:
 def test_extract_enum_included_values_not_one_of() -> None:
     with pytest.raises(TypeError):
         extract_enum_included_values((MaxLength(1),))
+
+
+# ===== TESTS for _extract_numeric_multiple_of
+
+
+@pytest.mark.parametrize(
+    "constraints, expected",
+    [
+        ((MultipleOf(2),), 2),
+        ((MultipleOf(2.0), LessOrEqual(10)), 2.0),
+        ((LessOrEqual(2.0),), None),
+    ],
+)
+def test_extract_numeric_multiple_of(
+    constraints: tuple[Constraint, ...], expected: int | float | None
+) -> None:
+    assert _extract_numeric_multiple_of(constraints) == expected
 
 
 # ===== TESTS for resolve_field() =====

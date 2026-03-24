@@ -32,6 +32,14 @@ int_semantic_le100 = NumericSemantic(
     has_constraints=True,
 )
 
+int_semantic_multiple_of = NumericSemantic(
+    kind=FieldKind.INTEGER,
+    valid_range=Range(10, 20),
+    invalid_ranges=(Range(-100, 9), Range(21, 100)),
+    has_constraints=True,
+    multiple_of=2,
+)
+
 
 # ===== TESTS FOR _generate_invalid_integer() =====
 
@@ -43,6 +51,7 @@ int_semantic_le100 = NumericSemantic(
         (int_semantic_10_20, ViolationType.ABOVE_MAX),
         (int_semantic_ge5, ViolationType.BELOW_MIN),
         (int_semantic_le100, ViolationType.ABOVE_MAX),
+        (int_semantic_multiple_of, ViolationType.NOT_MULTIPLE),
     ],
 )
 def test_generate_invalid_integer(
@@ -58,6 +67,10 @@ def test_generate_invalid_integer(
 
         if violation == ViolationType.ABOVE_MAX:
             assert val > semantic.valid_range.max_value
+
+        if violation == ViolationType.NOT_MULTIPLE:
+            assert semantic.multiple_of is not None
+            assert val % int(semantic.multiple_of) != 0
 
 
 def test_generate_invalid_integer_no_matching_range_raises(
@@ -88,6 +101,7 @@ def test_generate_invalid_integer_no_matching_range_raises(
         (int_semantic_10_20, ViolationType.ABOVE_MAX),
         (int_semantic_ge5, ViolationType.BELOW_MIN),
         (int_semantic_le100, ViolationType.ABOVE_MAX),
+        (int_semantic_multiple_of, None),
     ],
 )
 def test_generate(
@@ -95,6 +109,8 @@ def test_generate(
 ) -> None:
     if not violation:
         val = generate_value(ctx, semantic, violation)
+        if semantic.multiple_of is not None:
+            assert val % semantic.multiple_of == 0
         assert semantic.valid_range.min_value <= val <= semantic.valid_range.max_value
     else:
         for _ in range(30):
@@ -103,3 +119,17 @@ def test_generate(
                 val < semantic.valid_range.min_value
                 or val > semantic.valid_range.max_value
             )
+
+
+def test_generate_value_raises_on_ranges_conflict_with_multiple(
+    ctx: GenerationContext,
+) -> None:
+    semantic = NumericSemantic(
+        kind=FieldKind.INTEGER,
+        valid_range=Range(10, 20),
+        invalid_ranges=(Range(-100, 9), Range(21, 100)),
+        has_constraints=True,
+        multiple_of=21,
+    )
+    with pytest.raises(ValueError):
+        generate_value(ctx, semantic, None)

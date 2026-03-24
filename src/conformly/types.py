@@ -23,6 +23,7 @@ class ViolationType(Enum):
     # numeric
     BELOW_MIN = "below_min"
     ABOVE_MAX = "above_max"
+    NOT_MULTIPLE = "not_multiple"
 
     # string
     TOO_LONG = "too_long"

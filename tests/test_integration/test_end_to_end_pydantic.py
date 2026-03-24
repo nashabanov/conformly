@@ -14,11 +14,13 @@ def test_registry_routes_pydantic_model_to_adapter() -> None:
         name: str = Field(min_length=2, max_length=50)
         age: int = Field(ge=0, le=150)
         role: Literal["user", "admin"]
+        rating: int = Field(ge=0, le=100, multiple_of=5)
 
     result = case(User, valid=True)
     assert 2 <= len(result["name"]) <= 50
     assert 0 <= result["age"] <= 150
     assert result["role"] in ("user", "admin")
+    assert 0 <= result["rating"] <= 100 and result["rating"] % 5 == 0
 
 
 def test_default_factory() -> None:

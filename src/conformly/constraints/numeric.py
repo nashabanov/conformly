@@ -35,3 +35,11 @@ class LessOrEqual(Constraint):
 
     def __repr__(self) -> str:
         return f"LessOrEqual(value={self.value})"
+
+
+@dataclass(frozen=True)
+class MultipleOf(Constraint):
+    value: TNum
+
+    def __repr__(self) -> str:
+        return f"MultipleOf(value={self.value})"

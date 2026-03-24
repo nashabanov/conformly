@@ -10,3 +10,4 @@ class NumericSemantic:
     valid_range: Range
     invalid_ranges: tuple[Range, ...]
     has_constraints: bool
+    multiple_of: int | float | None = None
