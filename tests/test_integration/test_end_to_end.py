@@ -19,8 +19,6 @@ from conformly.constraints import (
 
 @dataclass
 class User:
-    """Social media user"""
-
     username: Annotated[str, MinLength(3)]
     full_name: Annotated[str, MinLength(2), MaxLength(100)]
     email: Annotated[
@@ -34,8 +32,6 @@ class User:
 
 @dataclass
 class BlogPost:
-    """Blog post model"""
-
     title: Annotated[str, "min_length=5", "max_length=200"]
     slug: Annotated[str, "pattern=^[a-z0-9-]+$"]
     content: Annotated[str, "min_length=10"]
@@ -45,19 +41,15 @@ class BlogPost:
 
 @dataclass
 class Product:
-    """E-commerce product"""
-
     sku: str = field(metadata={"pattern": r"^[A-Z0-9]{8}$"})
     name: str = field(metadata={"min_length": 1, "max_length": 100})
     price: float = field(metadata={"gt": 0})
     stock: int = field(metadata={"ge": 0})
-    discount: float = field(metadata={"ge": 0, "le": 100})
+    discount: float = field(metadata={"ge": 0, "le": 100, "multiple_of": 5})
 
 
 @dataclass
 class CreateUserRequest:
-    """User registration request"""
-
     age: Annotated[int, GreaterOrEqual(18), LessThan(120)]
     email: Annotated[str, Pattern(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")]
     password: Annotated[str, MinLength(8), MaxLength(128)]
@@ -66,8 +58,6 @@ class CreateUserRequest:
 
 @dataclass
 class OrderItem:
-    """Line item in an order"""
-
     product_id: Annotated[int, GreaterThan(0)]
     quantity: Annotated[int, GreaterOrEqual(1), LessOrEqual(1000)]
     unit_price: Annotated[float, GreaterThan(0)]
@@ -75,8 +65,6 @@ class OrderItem:
 
 @dataclass
 class Transaction:
-    """Bank transfer"""
-
     account_id: Annotated[str, Pattern(r"^ACC[0-9]{10}$")]
     amount: Annotated[float, GreaterThan(0), LessOrEqual(1_000_000)]
     description: Annotated[str, MinLength(5), MaxLength(256)]
@@ -255,7 +243,7 @@ class TestProductModel:
             assert 1 <= len(product["name"]) <= 100
             assert product["price"] > 0
             assert product["stock"] >= 0
-            assert 0 <= product["discount"] <= 100
+            assert 0 <= product["discount"] <= 100 and product["discount"] % 5 == 0
 
     def test_invalid_product_zero_price(self):
         invalid = case(Product, valid=False, strategy="price")
@@ -279,6 +267,7 @@ class TestProductModel:
                 and p["price"] > 0
                 and p["stock"] >= 0
                 and 0 <= p["discount"] <= 100
+                and p["discount"] % 5 == 0
             )
 
         assert any(not is_valid_product(p) for p in invalid_products)

@@ -22,6 +22,7 @@ semantic_10_20 = NumericSemantic(
     valid_range=valid_range_10_20,
     invalid_ranges=invalid_ranges_10_20,
     has_constraints=True,
+    multiple_of=2.5,
 )
 
 
@@ -33,17 +34,19 @@ semantic_10_20 = NumericSemantic(
     [
         (semantic_10_20, ViolationType.BELOW_MIN),
         (semantic_10_20, ViolationType.ABOVE_MAX),
+        (semantic_10_20, ViolationType.NOT_MULTIPLE),
     ],
 )
 def test_generate_invalid_float_always_outside_bounds(
-    semantic: NumericSemantic, violation: ViolationType
+    semantic: NumericSemantic, violation: ViolationType, ctx: GenerationContext
 ) -> None:
     valid_range = semantic.valid_range
     for _ in range(10):
-        invalid_val = _generate_invalid_float(semantic, violation)
-        assert (
-            invalid_val < valid_range.min_value or invalid_val > valid_range.max_value
-        )
+        invalid_val = _generate_invalid_float(ctx, semantic, violation)
+        if violation == ViolationType.NOT_MULTIPLE:
+            assert semantic.multiple_of is not None
+            assert invalid_val % semantic.multiple_of != 0
+
         if violation == ViolationType.ABOVE_MAX:
             assert invalid_val > valid_range.max_value
 
@@ -51,7 +54,9 @@ def test_generate_invalid_float_always_outside_bounds(
             assert invalid_val < valid_range.min_value
 
 
-def test_generate_invalid_float_no_matching_range_raises() -> None:
+def test_generate_invalid_float_no_matching_range_raises(
+    ctx: GenerationContext,
+) -> None:
     semantic_no_below = NumericSemantic(
         kind=FieldKind.FLOAT,
         valid_range=Range(0.0, 1.0),
@@ -60,7 +65,7 @@ def test_generate_invalid_float_no_matching_range_raises() -> None:
     )
 
     with pytest.raises(ValueError, match="No invalid ranges available for violation"):
-        _generate_invalid_float(semantic_no_below, ViolationType.BELOW_MIN)
+        _generate_invalid_float(ctx, semantic_no_below, ViolationType.BELOW_MIN)
 
 
 # ===== TESTS FOR generate_value() =====
@@ -102,6 +107,7 @@ unbounded_semantic = NumericSemantic(
         (upper_bounded_semantic, None),
         (lower_bounded_semantic, None),
         (unbounded_semantic, None),
+        (semantic_10_20, None),
         (bounded_semantic, ViolationType.BELOW_MIN),
         (bounded_semantic, ViolationType.ABOVE_MAX),
         (upper_bounded_semantic, ViolationType.ABOVE_MAX),
@@ -118,6 +124,9 @@ def test_generate_value_respects_valid_flag(
         value = generate_value(ctx, semantic, violation)
 
         if not violation:
+            if semantic.multiple_of is not None:
+                assert value % semantic.multiple_of == 0
+
             assert min <= value <= max, (
                 f"Generated valid value {value} is outside [{min}, {max}]"
             )

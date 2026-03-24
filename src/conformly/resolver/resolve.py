@@ -113,6 +113,7 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
                 field_type=t, bounds=valid_bounds
             ),
             has_constraints=field_spec.has_constraints(),
+            multiple_of=_extract_numeric_multiple_of(c),
         )
 
     elif t is float:
