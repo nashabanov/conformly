@@ -164,6 +164,7 @@ If you need **deterministic control** over which exact constraint to violate, th
 | Numeric | `GreaterOrEqual(v)` | `ge=v` |
 | Numeric | `LessThan(v)` | `lt=v` |
 | Numeric | `LessOrEqual(v)` | `le=v` |
+| Numeric | `MultipleOf(v)` | `multitiple_of=v` |
 | Closed-set | `OneOf(values)` | `Literal[...]`, `Enum` |
 
 > Important: Pydantic's constr(), conint(), and functional validators are not interpreted as constraints.

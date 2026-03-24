@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.3.10] - Planned
+
+### Added
+- **Full support for `multiple_of` constraint**. Added `MultipleOf` constraint in conformly-style semantics and `Field(multiple_of=...)` support for Pydantic models. Values are now generated respecting the step, including invalid value generation (`NOT_MULTIPLE` violation).
+
+
 ## [0.3.9] - 2025.03.21
 
 ### Added
