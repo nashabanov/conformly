@@ -1,9 +1,15 @@
 from collections.abc import Mapping
 from typing import Annotated, Any, cast, get_args, get_origin
 
-from ..constraints import Constraint, ConstraintType, OneOf
+from ..constraints import (
+    ALLOWED_CONSTRAINT_TYPE,
+    NUMERIC_CONSTRAINTS,
+    STRING_CONSTRAINTS,
+    Constraint,
+    ConstraintType,
+    OneOf,
+)
 from ..constraints.mapping import create_constraint
-from ..constraints.types import ALLOWED_CONSTRAINT_TYPE
 
 
 def is_constraints_consistent(constraints: tuple[Constraint, ...]) -> bool:
@@ -48,7 +54,7 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
     if k == "pattern":
         return str(v)
 
-    if k in ("min_length", "max_length"):
+    if k in STRING_CONSTRAINTS:
         if isinstance(v, int):
             return v
         if isinstance(v, str):
@@ -59,7 +65,7 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
                 raise ValueError(f"Constraint {k!r} expects int, got {v!r}") from e
         raise ValueError(f"Constraint {k!r} expects int, got {type(v).__name__}")
 
-    if k in ("gt", "ge", "lt", "le"):
+    if k in NUMERIC_CONSTRAINTS:
         if isinstance(v, (int, float)):
             return v
         if isinstance(v, str):

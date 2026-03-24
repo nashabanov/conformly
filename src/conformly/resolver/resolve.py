@@ -10,6 +10,7 @@ from ..constraints import (
     LessThan,
     MaxLength,
     MinLength,
+    MultipleOf,
     OneOf,
     Pattern,
 )
@@ -123,6 +124,7 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
                 field_type=t, bounds=valid_bounds
             ),
             has_constraints=field_spec.has_constraints(),
+            multiple_of=_extract_numeric_multiple_of(c),
         )
 
     elif t is str:
@@ -260,6 +262,18 @@ def _calculate_float_bounds(constraints: tuple[Constraint, ...]) -> Range:
     if low > high:
         raise ValueError(f"Invalid numeric bounds: min {low} > max {high}")
     return Range(min_value=low, max_value=high)
+
+
+def _extract_numeric_multiple_of(
+    constraints: tuple[Constraint, ...],
+) -> int | float | None:
+    for c in constraints:
+        if not isinstance(c, MultipleOf):
+            continue
+
+        return c.value
+
+    return None
 
 
 def create_string_semantic(constraints: tuple[Constraint, ...]) -> StringSemantic:

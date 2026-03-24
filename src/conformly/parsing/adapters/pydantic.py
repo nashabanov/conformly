@@ -107,10 +107,8 @@ def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
 
 
 def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...]:
-    from ...constraints import Constraint, create_constraint
+    from ...constraints import ALLOWED_CONSTRAINT_TYPE, Constraint, create_constraint
     from ..constraints import _validate_constraint_type
-
-    SUPPORTED_ATTRS = ("gt", "ge", "lt", "le", "min_length", "max_length", "pattern")
 
     constraints = []
 
@@ -119,7 +117,7 @@ def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...
             constraints.append(meta)
             continue
 
-        for attr in SUPPORTED_ATTRS:
+        for attr in ALLOWED_CONSTRAINT_TYPE:
             if hasattr(meta, attr):
                 value = getattr(meta, attr)
                 if value is None:
