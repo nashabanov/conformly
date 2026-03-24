@@ -24,6 +24,7 @@ _VIOLATION_PRIORITY: tuple[ViolationType, ...] = (
     # Semantic
     ViolationType.BELOW_MIN,
     ViolationType.ABOVE_MAX,
+    ViolationType.NOT_MULTIPLE,
     ViolationType.TOO_SHORT,
     ViolationType.TOO_LONG,
     ViolationType.PATTERN_MISMATCH,
@@ -129,6 +130,9 @@ def _define_numeric_violations(
     result: list[ViolationType] = []
     valid = semantic.valid_range
     invalid_ranges = semantic.invalid_ranges
+
+    if semantic.multiple_of is not None:
+        result.append(ViolationType.NOT_MULTIPLE)
 
     for r in invalid_ranges:
         if r.max_value <= valid.min_value:
