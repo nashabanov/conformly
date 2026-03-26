@@ -294,7 +294,7 @@ def create_string_semantic(
     constraints: tuple[Constraint, ...],
     field_kind: FieldKind = FieldKind.STRING,
 ) -> StringSemantic:
-    has_constraints = len(constraints) > 0
+    has_constraints = len(constraints) > 0 or field_kind is FieldKind.EMAIL
     min_length = 0
     max_length = None
     pattern = None

@@ -111,6 +111,24 @@ from conformly.types import (
             ),
             set(),
         ),
+        (
+            StringSemantic(
+                kind=FieldKind.EMAIL,
+                length_range=LengthRange(0, None),
+                pattern=None,
+                has_constraints=False,
+            ),
+            {ViolationType.NOT_EMAIL},
+        ),
+        (
+            StringSemantic(
+                kind=FieldKind.EMAIL,
+                length_range=LengthRange(5, 65),
+                pattern=None,
+                has_constraints=False,
+            ),
+            {ViolationType.NOT_EMAIL, ViolationType.TOO_SHORT, ViolationType.TOO_LONG},
+        ),
     ],
 )
 def test_define_string_violations(

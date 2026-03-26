@@ -220,7 +220,7 @@ def test_create_email_kind_string_semantic() -> None:
         kind=FieldKind.EMAIL,
         length_range=LengthRange(0, None),
         pattern=None,
-        has_constraints=False,
+        has_constraints=True,
     )
 
 

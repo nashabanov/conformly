@@ -1,3 +1,4 @@
+from email_validator import EmailSyntaxError
 import pytest
 
 pytest.importorskip("pydantic", reason="Pydantic adapter requires 'pydantic' package")
@@ -53,23 +54,36 @@ def test_default_factory_called_each_time() -> None:
     assert result2["value"] == 2
 
 
-@pytest.mark.skip
-def test_emailstr_valid() -> None:
-    class Model(BaseModel):
-        email: EmailStr
+class EmailModel(BaseModel):
+    email: EmailStr
 
-    result = case(Model, valid=True)
+
+def test_emailstr_valid() -> None:
+    result = case(EmailModel, valid=True)
 
     assert "email" in result
-    assert result["email"]
     assert isinstance(result["email"], str)
-
-    assert "@" in result["email"]
-    assert "." in result["email"].split("@")[1]
 
     try:
         from email_validator import validate_email
 
-        validate_email(result["email"])
+        validate_email(result["email"], check_deliverability=False)
+
+    except ImportError:
+        pass
+
+
+def test_emailstr_invalid() -> None:
+    result = case(EmailModel, valid=False)
+
+    assert "email" in result
+    assert isinstance(result["email"], str)
+
+    try:
+        from email_validator import validate_email
+
+        with pytest.raises(EmailSyntaxError):
+            validate_email(result["email"], check_deliverability=False)
+
     except ImportError:
         pass

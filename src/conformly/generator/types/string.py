@@ -2,13 +2,12 @@ import re
 import string
 
 from ...resolver.semantics.string import StringSemantic
-from ...types import ViolationType
+from ...types import MAX_GENERATION_ATTEMPTS, ViolationType
 from ..context import GenerationContext
 
 DEFAULT_MIN_LENGTH = 5
 DEFAULT_MAX_LENGTH = 15
 DEFAULT_CHARSET = string.ascii_letters + string.digits
-MAX_GENERATION_ATTEMPTS = 20
 MAX_CANDIDATE_LENGTH = 1000
 BAD_CHARS_FOR_INVERSION = [" ", "!", "@", "#", "\n", "\t", "\x00"]
 
