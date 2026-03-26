@@ -25,5 +25,7 @@ def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
             return EnumSemantic(kind, ("__type_mismatch__",), False)
         case FieldKind.OBJECT:
             return ObjectSemantic(kind)
+        case FieldKind.EMAIL:
+            return StringSemantic(kind, LengthRange(0, None), None, False)
         case _:
             raise ValueError(f"Unsupported FieldKind: {kind}")

@@ -4,7 +4,7 @@ from typing import Annotated, Literal, Optional, Union
 
 import pytest
 
-from conformly.constraints import Constraint, Email, OneOf, Pattern
+from conformly.constraints import Constraint, Email, OneOf
 from conformly.parsing.type_analysis import (
     extract_runtime_type_and_constraints,
     is_nullable,
@@ -178,15 +178,7 @@ def test_extract_runtime_type_unsupported_annotation():
 
 
 def test_extract_runtime_type_email():
-    assert extract_runtime_type_and_constraints(Email, "email") == (
-        str,
-        (
-            Pattern(
-                r"^[a-zA-Z0-9](\.?[a-zA-Z0-9_+%+-])*@[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])"
-                r"?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,63}$"
-            ),
-        ),
-    )
+    assert extract_runtime_type_and_constraints(Email, "email") == (Email, ())
 
 
 # ====== TESTS FOR is_nullable() ======

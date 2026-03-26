@@ -13,6 +13,7 @@ from pydantic.types import StringConstraints
 from pydantic_core import PydanticUndefined
 
 from conformly.constraints import (
+    Email,
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -165,20 +166,6 @@ def test_mixed_sources_preserve_all_constraints() -> None:
     assert any(c == MaxLength(10) for c in constraints)
 
 
-def test_parse_fieldinfo_constraints_email() -> None:
-    class Model(BaseModel):
-        email: EmailStr
-
-    field_info = _get_field_info(Model, "email")
-    constraints = _parse_fieldinfo_constraints(field_info)
-
-    assert len(constraints) == 1
-    assert constraints[0] == Pattern(
-        r"^[a-zA-Z0-9](\.?[a-zA-Z0-9_+%+-])*@[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])"
-        r"?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,63}$"
-    )
-
-
 # ===== TESTS for _parse_default() =====
 
 
@@ -275,13 +262,8 @@ def test_parse_field_emailstr() -> None:
     field_spec = parse_field(
         field_info, field_info.annotation, "email", PydanticUndefined
     )
-    assert field_spec.type is str
-    assert field_spec.constraints == (
-        Pattern(
-            r"^[a-zA-Z0-9](\.?[a-zA-Z0-9_+%+-])*@[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])"
-            r"?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,63}$"
-        ),
-    )
+    assert field_spec.type is Email
+    assert field_spec.constraints == ()
 
 
 # ===== TESTS for parse_fields() =====
@@ -348,10 +330,4 @@ def test_parse_emailstr() -> None:
     spec = parse(Model)
     assert len(spec.fields) == 1
     field_spec = spec.fields[0]
-    assert field_spec.type is str
-    assert field_spec.constraints == (
-        Pattern(
-            r"^[a-zA-Z0-9](\.?[a-zA-Z0-9_+%+-])*@[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])"
-            r"?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,63}$"
-        ),
-    )
+    assert field_spec.type is Email

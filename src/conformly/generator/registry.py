@@ -17,6 +17,7 @@ _MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
     FieldKind.FLOAT: FieldKind.STRING,
     FieldKind.ENUM: FieldKind.FLOAT,
     FieldKind.OBJECT: FieldKind.ENUM,
+    FieldKind.EMAIL: FieldKind.INTEGER,
 }
 
 
