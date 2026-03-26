@@ -200,6 +200,37 @@ sku: str = field(metadata={"pattern": r"^[A-Z0-9]{8}$"})
 ```
 > All syntaxes are fully compatible within their respective frameworks.
 
+### Special String types
+
+`conformly` provides semantic marker types for common string formats. These types enable realistic test data generation while maintaining type safety.
+
+
+#### Available types
+| Type | Description | Pydantic type| Example output |
+|------|-------------|--------------|----------------|
+| `Email` | RFC 5322-compliant email address | `EmailStr` | `user@example.com` |
+
+
+#### Usage
+
+```python
+from typing import Annotated
+from conformly.constraints.special import Email, URL
+from conformly.constraints import MinLength
+
+# Basic usage
+contact: Email
+
+# With additional constraints
+website: Annotated[URL, MinLength(20)]
+
+# Pydantic models (auto-mapped)
+from pydantic import BaseModel, EmailStr
+
+class Config(BaseModel):
+    admin_email: EmailStr  # Automatically uses Email generator
+```
+
 ## Use Cases
 
 ### API Testing
@@ -323,10 +354,9 @@ uv run -m twine check dist/*
 
 ## Roadmap
 
-- **Deterministic invalid generation** - explicitly select which constraint to violate
 - **Better regex invalidation** - guarantee that invalid strings don't match patterns
 - **More adapters** - TypedDict, attrs support
-- **More constraints and types** - `multitiple_of`, `list[T]`, `dict[T]` etc.
+- **More constraints and types** - `list[T]`, `dict[T]` etc.
 
 ## Changelog
 

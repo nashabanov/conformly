@@ -1,15 +1,15 @@
 from collections.abc import Callable
 from dataclasses import InitVar, dataclass, field, fields
 from enum import Enum
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 import pytest
 
 from conformly.constraints import (
+    Email,
     GreaterOrEqual,
     LessOrEqual,
     MinLength,
-    Pattern,
 )
 from conformly.constraints.enum import OneOf
 from conformly.constraints.string import MaxLength
@@ -82,43 +82,43 @@ class BaseEnum(Enum):
 # ====== TESTS FOR supports() ======
 
 
-def test_supports_dataclass():
+def test_supports_dataclass() -> None:
     assert supports(DummyDataclass)
 
 
-def test_supports_not_dataclass():
+def test_supports_not_dataclass() -> None:
     assert not supports(NotDataclass)
 
 
-def test_supports_int():
+def test_supports_int() -> None:
     assert not supports(int)
 
 
 # ====== TESTS FOR resolve_type() ======
 
 
-def test_resolve_type_simple():
+def test_resolve_type_simple() -> None:
     type_hints = {"name": str}
     assert resolve_type(type_hints, "name") is str
 
 
-def test_resolve_type_int():
+def test_resolve_type_int() -> None:
     type_hints = {"age": int}
     assert resolve_type(type_hints, "age") is int
 
 
-def test_resolve_type_optional():
+def test_resolve_type_optional() -> None:
     type_hints = {"email": str | None}
     assert resolve_type(type_hints, "email") == str | None
 
 
-def test_resolve_type_annotated():
+def test_resolve_type_annotated() -> None:
     type_hints = {"age": Annotated[int, "ge=0", "le=150"]}
     field_type = resolve_type(type_hints, "age")
     assert field_type == Annotated[int, "ge=0", "le=150"]
 
 
-def test_resolve_type_missing_field():
+def test_resolve_type_missing_field() -> None:
     type_hints = {"name": str}
     with pytest.raises(KeyError):
         resolve_type(type_hints, "missing_field")
@@ -127,17 +127,17 @@ def test_resolve_type_missing_field():
 # ====== TESTS FOR parse_defaults() ======
 
 
-def test_parse_default_simple():
+def test_parse_default_simple() -> None:
     default = parse_defaults(fields(DefaultDataclass)[0])
     assert default == "John"
 
 
-def test_parse_default_factory():
+def test_parse_default_factory() -> None:
     default = parse_defaults(fields(DefaultDataclass)[1])
     assert default is list
 
 
-def test_parse_default_factory_creates_new():
+def test_parse_default_factory_creates_new() -> None:
     factory = parse_defaults(fields(DefaultDataclass)[1])
     first = factory()
     second = factory()
@@ -145,18 +145,18 @@ def test_parse_default_factory_creates_new():
     assert first == second
 
 
-def test_parse_default_missing():
+def test_parse_default_missing() -> None:
     default = parse_defaults(fields(DummyDataclass)[0])
     assert default == _UNSET
 
 
-def test_parse_default_none():
+def test_parse_default_none() -> None:
     default = parse_defaults(fields(OptionalDataclass)[0])
     assert default is None
     assert default is not _UNSET
 
 
-def test_parse_default_factory_dict():
+def test_parse_default_factory_dict() -> None:
     @dataclass
     class DictDataclass:
         config: dict = field(default_factory=dict)
@@ -166,7 +166,7 @@ def test_parse_default_factory_dict():
     assert default() == {}
 
 
-def test_parse_default_zero():
+def test_parse_default_zero() -> None:
     @dataclass
     class ZeroDefault:
         count: int = 0
@@ -176,7 +176,7 @@ def test_parse_default_zero():
     assert default is not _UNSET
 
 
-def test_parse_default_empty_string():
+def test_parse_default_empty_string() -> None:
     @dataclass
     class EmptyStringDefault:
         text: str = ""
@@ -186,7 +186,7 @@ def test_parse_default_empty_string():
     assert default is not _UNSET
 
 
-def test_parse_default_factory_returns_callable():
+def test_parse_default_factory_returns_callable() -> None:
     @dataclass
     class CallableDefault:
         fn: Callable = field(default_factory=lambda: len)
@@ -196,13 +196,13 @@ def test_parse_default_factory_returns_callable():
     assert default() == len
 
 
-def test_parse_default_factory_exception():
-    def bad_factory():
+def test_parse_default_factory_exception() -> None:
+    def bad_factory() -> None:
         raise RuntimeError("should not be called during parsing")
 
     @dataclass
     class BadFactory:
-        x: int = field(default_factory=bad_factory)
+        x: Any = field(default_factory=bad_factory)
 
     # Should not call factory during parsing
     default = parse_defaults(fields(BadFactory)[0])
@@ -212,7 +212,7 @@ def test_parse_default_factory_exception():
 # ====== TESTS FOR parse_field() ======
 
 
-def test_parse_field_simple():
+def test_parse_field_simple() -> None:
     f = fields(DummyDataclass)[0]
     field_spec = parse_field(f, str)
     assert isinstance(field_spec, FieldSpec)
@@ -220,33 +220,33 @@ def test_parse_field_simple():
     assert field_spec.type is str
 
 
-def test_parse_field_with_default():
+def test_parse_field_with_default() -> None:
     f = fields(DefaultDataclass)[0]
     field_spec = parse_field(f, str)
     assert field_spec.default == "John"
 
 
-def test_parse_field_with_constraints():
+def test_parse_field_with_constraints() -> None:
     f = fields(ConstraintsDataclass)[0]
     field_type = Annotated[int, "ge=0", "le=150"]
     field_spec = parse_field(f, field_type)
     assert len(field_spec.constraints) > 0
 
 
-def test_parse_field_nullable():
+def test_parse_field_nullable() -> None:
     f = fields(OptionalDataclass)[0]
     field_type = str | None
     field_spec = parse_field(f, field_type)
     assert field_spec.nullable is True
 
 
-def test_parse_field_not_nullable():
+def test_parse_field_not_nullable() -> None:
     f = fields(DummyDataclass)[0]
     field_spec = parse_field(f, str)
     assert field_spec.nullable is False
 
 
-def test_parse_field_has_default_method():
+def test_parse_field_has_default_method() -> None:
     # Field with default
     f1 = fields(DefaultDataclass)[0]
     fs1 = parse_field(f1, str)
@@ -257,7 +257,7 @@ def test_parse_field_has_default_method():
     assert fs2.has_default() is False
 
 
-def test_parse_field_literal():
+def test_parse_field_literal() -> None:
     f = fields(EnumeratedDataclass)[0]
     field_spec = parse_field(f, Literal["admin", "guest", "user"])
     assert field_spec.type is ENUMERATED_TYPE
@@ -265,7 +265,7 @@ def test_parse_field_literal():
     assert field_spec.constraints[0] == OneOf(("admin", "guest", "user"))
 
 
-def test_parse_field_enum():
+def test_parse_field_enum() -> None:
     f = fields(EnumeratedDataclass)[1]
     field_spec = parse_field(f, RoleTypeEnum)
     assert field_spec.type is ENUMERATED_TYPE
@@ -276,24 +276,24 @@ def test_parse_field_enum():
 # ====== TESTS FOR parse_fields() ======
 
 
-def test_parse_fields_count():
+def test_parse_fields_count() -> None:
     field_specs = parse_fields(DummyDataclass)
     assert len(field_specs) == 2
 
 
-def test_parse_fields_types():
+def test_parse_fields_types() -> None:
     field_specs = parse_fields(DummyDataclass)
     for fs in field_specs:
         assert isinstance(fs, FieldSpec)
 
 
-def test_parse_fields_names():
+def test_parse_fields_names() -> None:
     field_specs = parse_fields(DummyDataclass)
     names = [fs.name for fs in field_specs]
     assert names == ["name", "age"]
 
 
-def test_parse_fields_mixed():
+def test_parse_fields_mixed() -> None:
     field_specs = parse_fields(MixedDataclass)
     assert len(field_specs) == 4
 
@@ -314,7 +314,7 @@ def test_parse_fields_mixed():
     assert field_specs[3].nullable is False
 
 
-def test_parse_fields_resolves_types_once():
+def test_parse_fields_resolves_types_once() -> None:
     field_specs = parse_fields(DummyDataclass)
 
     assert all(isinstance(fs.type, type) for fs in field_specs)
@@ -323,28 +323,28 @@ def test_parse_fields_resolves_types_once():
 # ====== TESTS FOR parse() ======
 
 
-def test_parse_creates_model_spec():
+def test_parse_creates_model_spec() -> None:
     spec = parse(DummyDataclass)
     assert isinstance(spec, ModelSpec)
 
 
-def test_parse_model_name():
+def test_parse_model_name() -> None:
     spec = parse(DummyDataclass)
     assert spec.name == "DummyDataclass"
 
 
-def test_parse_model_type():
+def test_parse_model_type() -> None:
     spec = parse(DummyDataclass)
     assert spec.type == "dataclass"
 
 
-def test_parse_model_fields():
+def test_parse_model_fields() -> None:
     spec = parse(DummyDataclass)
     assert isinstance(spec.fields, tuple)
     assert len(spec.fields) == 2
 
 
-def test_parse_mixed_model():
+def test_parse_mixed_model() -> None:
     spec = parse(MixedDataclass)
     assert spec.name == "MixedDataclass"
     assert len(spec.fields) == 4
@@ -355,14 +355,14 @@ def test_parse_mixed_model():
     assert id_field.has_default() is False
 
 
-def test_parse_returns_model_spec_attributes():
+def test_parse_returns_model_spec_attributes() -> None:
     spec = parse(DefaultDataclass)
     assert hasattr(spec, "name")
     assert hasattr(spec, "type")
     assert hasattr(spec, "fields")
 
 
-def test_parse_ignores_initvar_and_classvar():
+def test_parse_ignores_initvar_and_classvar() -> None:
     @dataclass
     class WithSpecialVars:
         normal: str
@@ -378,7 +378,7 @@ def test_parse_ignores_initvar_and_classvar():
 # ====== EDGE CASES ======
 
 
-def test_empty_dataclass():
+def test_empty_dataclass() -> None:
     @dataclass
     class EmptyDataclass:
         pass
@@ -388,7 +388,7 @@ def test_empty_dataclass():
     assert len(spec.fields) == 0
 
 
-def test_dataclass_with_only_defaults():
+def test_dataclass_with_only_defaults() -> None:
     @dataclass
     class AllDefaults:
         x: int = 1
@@ -398,7 +398,7 @@ def test_dataclass_with_only_defaults():
     assert all(f.has_default() for f in spec.fields)
 
 
-def test_dataclass_with_private_fields():
+def test_dataclass_with_private_fields() -> None:
     @dataclass
     class PrivateFields:
         _private: str = "private"
@@ -409,32 +409,32 @@ def test_dataclass_with_private_fields():
     assert spec.fields[0].name == "_private"
 
 
-def test_parse_not_dataclass_raises():
+def test_parse_not_dataclass_raises() -> None:
     with pytest.raises(TypeError):
         parse(NotDataclass)
 
 
-def test_parse_get_field_method():
+def test_parse_get_field_method() -> None:
     spec = parse(DummyDataclass)
     field = spec.get_field("name")
     assert field.name == "name"
     assert field.type is str
 
 
-def test_parse_get_field_not_found():
+def test_parse_get_field_not_found() -> None:
     spec = parse(DummyDataclass)
     with pytest.raises(KeyError):
         spec.get_field("nonexistent")
 
 
-def test_parse_get_required_fields():
+def test_parse_get_required_fields() -> None:
     spec = parse(MixedDataclass)
     required = spec.get_requiered_fields()
     assert len(required) == 1
     assert required[0].name == "id"
 
 
-def test_parse_get_optional_fields():
+def test_parse_get_optional_fields() -> None:
     spec = parse(MixedDataclass)
     optional = spec.get_optional_fields()
     assert len(optional) == 1
@@ -470,12 +470,12 @@ class User:
     id: int
     name: Name
     age: Annotated[int, GreaterOrEqual(18), LessOrEqual(120)]
-    email: Annotated[str, Pattern("^\\w+@\\w+\\.\\w+$")]
+    email: Email
     role: Role
     group: Group
 
 
-def test_parse_nested_models():
+def test_parse_nested_models() -> None:
     spec = parse(User)
 
     assert spec.name == "User"
@@ -496,7 +496,7 @@ def test_parse_nested_models():
     assert any(isinstance(c, MinLength) for c in name_field.constraints)
 
 
-def test_parse_is_consistent():
+def test_parse_is_consistent() -> None:
     spec1 = parse(User)
     spec2 = parse(User)
     assert repr(spec1) == repr(spec2)

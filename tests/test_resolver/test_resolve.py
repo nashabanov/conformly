@@ -5,6 +5,7 @@ import pytest
 
 from conformly.constraints import (
     Constraint,
+    Email,
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -213,6 +214,23 @@ def test_create_string_semantic_valid(
     assert semantic == expected
 
 
+def test_create_email_kind_string_semantic() -> None:
+    semantic = create_string_semantic((), FieldKind.EMAIL)
+    assert semantic == StringSemantic(
+        kind=FieldKind.EMAIL,
+        length_range=LengthRange(0, None),
+        pattern=None,
+        has_constraints=True,
+    )
+
+
+def test_email_kind_raises_with_pattern() -> None:
+    with pytest.raises(ValueError):
+        create_string_semantic(
+            constraints=(Pattern(r"\d+"),), field_kind=FieldKind.EMAIL
+        )
+
+
 def test_create_string_semantic_invalid_bounds() -> None:
     with pytest.raises(ValueError):
         create_string_semantic((MinLength(10), MaxLength(3)))
@@ -376,6 +394,7 @@ def test_unsupported_field_type():
         (str, (), None, StringSemantic),
         (bool, (), None, BooleanSemantic),
         (dict, (), ModelSpec("Inner", "dataclass", ()), ObjectSemantic),
+        (Email, (), None, StringSemantic),
     ],
 )
 def test_create_field_semantic_dispatch(

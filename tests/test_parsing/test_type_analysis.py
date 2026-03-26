@@ -4,8 +4,7 @@ from typing import Annotated, Literal, Optional, Union
 
 import pytest
 
-from conformly.constraints import Constraint
-from conformly.constraints.enum import OneOf
+from conformly.constraints import Constraint, Email, OneOf
 from conformly.parsing.type_analysis import (
     extract_runtime_type_and_constraints,
     is_nullable,
@@ -176,6 +175,10 @@ def test_extract_runtime_type_only_none():
 def test_extract_runtime_type_unsupported_annotation():
     with pytest.raises(TypeError, match="unsupported type annotation"):
         extract_runtime_type_and_constraints(list[int], "field")
+
+
+def test_extract_runtime_type_email():
+    assert extract_runtime_type_and_constraints(Email, "email") == (Email, ())
 
 
 # ====== TESTS FOR is_nullable() ======

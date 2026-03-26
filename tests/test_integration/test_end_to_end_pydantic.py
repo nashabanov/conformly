@@ -4,7 +4,7 @@ pytest.importorskip("pydantic", reason="Pydantic adapter requires 'pydantic' pac
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from conformly import case
 
@@ -51,3 +51,38 @@ def test_default_factory_called_each_time() -> None:
 
     assert result1["value"] == 1
     assert result2["value"] == 2
+
+
+class EmailModel(BaseModel):
+    email: EmailStr
+
+
+def test_emailstr_valid() -> None:
+    result = case(EmailModel, valid=True)
+
+    assert "email" in result
+    assert isinstance(result["email"], str)
+
+    try:
+        from email_validator import validate_email
+
+        validate_email(result["email"], check_deliverability=False)
+
+    except ImportError:
+        pass
+
+
+def test_emailstr_invalid() -> None:
+    result = case(EmailModel, valid=False)
+
+    assert "email" in result
+    assert isinstance(result["email"], str)
+
+    try:
+        from email_validator import EmailSyntaxError, validate_email
+
+        with pytest.raises(EmailSyntaxError):
+            validate_email(result["email"], check_deliverability=False)
+
+    except ImportError:
+        pass

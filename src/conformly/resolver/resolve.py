@@ -4,6 +4,7 @@ from typing import Any
 
 from ..constraints import (
     Constraint,
+    Email,
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -13,6 +14,7 @@ from ..constraints import (
     MultipleOf,
     OneOf,
     Pattern,
+    SpecialString,
 )
 from ..specs import FieldSpec, ModelSpec
 from ..types import (
@@ -103,6 +105,17 @@ def _build_indexes(model: ResolvedModel) -> None:
 def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
     t = field_spec.type
     c = field_spec.constraints
+
+    if isinstance(t, type) and issubclass(t, SpecialString):
+        special_kinds: dict[type[SpecialString], FieldKind] = {Email: FieldKind.EMAIL}
+
+        kind = special_kinds.get(t)
+        if kind is None:
+            raise NotImplementedError(
+                f"No FieldKind mapped for SpecialStr subclass: {t.__name__}"
+            )
+
+        return create_string_semantic(c, kind)
 
     if t is int:
         valid_bounds = calculate_numeric_bounds(t, c)
@@ -277,8 +290,11 @@ def _extract_numeric_multiple_of(
     return None
 
 
-def create_string_semantic(constraints: tuple[Constraint, ...]) -> StringSemantic:
-    has_constraints = len(constraints) > 0
+def create_string_semantic(
+    constraints: tuple[Constraint, ...],
+    field_kind: FieldKind = FieldKind.STRING,
+) -> StringSemantic:
+    has_constraints = len(constraints) > 0 or field_kind is FieldKind.EMAIL
     min_length = 0
     max_length = None
     pattern = None
@@ -295,6 +311,11 @@ def create_string_semantic(constraints: tuple[Constraint, ...]) -> StringSemanti
                 if max_length is None or v < int(max_length):
                     max_length = v
             case Pattern(r):
+                if field_kind != FieldKind.STRING:
+                    raise ValueError(
+                        f"Pattern constraint cannot be combined "
+                        f"with {field_kind.value} type."
+                    )
                 if pattern is not None:
                     raise ValueError("Multiple Pattern constraints are not supported")
                 pattern = r
@@ -305,7 +326,7 @@ def create_string_semantic(constraints: tuple[Constraint, ...]) -> StringSemanti
         )
 
     return StringSemantic(
-        kind=FieldKind.STRING,
+        kind=field_kind,
         length_range=LengthRange(
             min_length=min_length,
             max_length=max_length,

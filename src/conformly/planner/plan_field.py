@@ -25,6 +25,7 @@ _VIOLATION_PRIORITY: tuple[ViolationType, ...] = (
     ViolationType.BELOW_MIN,
     ViolationType.ABOVE_MAX,
     ViolationType.NOT_MULTIPLE,
+    ViolationType.NOT_EMAIL,
     ViolationType.TOO_SHORT,
     ViolationType.TOO_LONG,
     ViolationType.PATTERN_MISMATCH,
@@ -92,6 +93,9 @@ def _define_allowed_violation_types(
         case StringSemantic(kind=FieldKind.STRING):
             violations = _define_string_violations(semantic)
 
+        case StringSemantic(kind=FieldKind.EMAIL):
+            violations = _define_string_violations(semantic)
+
         case NumericSemantic(kind=(FieldKind.INTEGER | FieldKind.FLOAT)):
             violations = _define_numeric_violations(semantic)
 
@@ -148,6 +152,9 @@ def _define_string_violations(
     semantic: StringSemantic,
 ) -> list[ViolationType]:
     result: list[ViolationType] = []
+
+    if semantic.kind == FieldKind.EMAIL:
+        result.append(ViolationType.NOT_EMAIL)
 
     if semantic.length_range.min_length > 0:
         result.append(ViolationType.TOO_SHORT)

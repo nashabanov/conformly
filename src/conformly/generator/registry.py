@@ -1,6 +1,6 @@
 from ..types import FieldKind
 from .protocol import TypeGeneratorProtocol
-from .types import boolean, enum, float, integer, string
+from .types import boolean, email, enum, float, integer, string
 
 _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
     FieldKind.STRING: string,
@@ -8,6 +8,7 @@ _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
     FieldKind.FLOAT: float,
     FieldKind.INTEGER: integer,
     FieldKind.ENUM: enum,
+    FieldKind.EMAIL: email,
 }
 
 _MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
@@ -17,6 +18,7 @@ _MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
     FieldKind.FLOAT: FieldKind.STRING,
     FieldKind.ENUM: FieldKind.FLOAT,
     FieldKind.OBJECT: FieldKind.ENUM,
+    FieldKind.EMAIL: FieldKind.INTEGER,
 }
 
 

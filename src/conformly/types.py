@@ -17,6 +17,7 @@ class FieldKind(Enum):
     BOOLEAN = "boolean"
     OBJECT = "object"
     ENUM = "enum"
+    EMAIL = "email"
 
 
 class ViolationType(Enum):
@@ -29,6 +30,9 @@ class ViolationType(Enum):
     TOO_LONG = "too_long"
     TOO_SHORT = "too_short"
     PATTERN_MISMATCH = "pattern_mismatch"
+
+    # email
+    NOT_EMAIL = "not_email"
 
     # typing
     TYPE_MISMATCH = "type_mismatch"
@@ -62,5 +66,6 @@ class LengthRange:
 
 ENUMERATED_TYPE = type("EnummeratedType", (), {})
 
+MAX_GENERATION_ATTEMPTS = 20
 
 _UNSET = object()

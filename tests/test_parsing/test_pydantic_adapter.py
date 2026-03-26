@@ -7,12 +7,13 @@ from enum import Enum
 import re
 from typing import Annotated, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from pydantic.fields import FieldInfo
 from pydantic.types import StringConstraints
 from pydantic_core import PydanticUndefined
 
 from conformly.constraints import (
+    Email,
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -253,6 +254,18 @@ def test_parse_field_compiled_pattern() -> None:
     assert any(isinstance(c, Pattern) and c.regex == r"^[A-Z]{3}$" for c in constraints)
 
 
+def test_parse_field_emailstr() -> None:
+    class Model(BaseModel):
+        email: EmailStr
+
+    field_info = _get_field_info(Model, "email")
+    field_spec = parse_field(
+        field_info, field_info.annotation, "email", PydanticUndefined
+    )
+    assert field_spec.type is Email
+    assert field_spec.constraints == ()
+
+
 # ===== TESTS for parse_fields() =====
 
 
@@ -308,3 +321,13 @@ def test_parse_empty_model() -> None:
 
     spec = parse(Empty)
     assert len(spec.fields) == 0
+
+
+def test_parse_emailstr() -> None:
+    class Model(BaseModel):
+        email: EmailStr
+
+    spec = parse(Model)
+    assert len(spec.fields) == 1
+    field_spec = spec.fields[0]
+    assert field_spec.type is Email
