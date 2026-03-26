@@ -1,4 +1,3 @@
-from email_validator import EmailSyntaxError
 import pytest
 
 pytest.importorskip("pydantic", reason="Pydantic adapter requires 'pydantic' package")
@@ -80,7 +79,7 @@ def test_emailstr_invalid() -> None:
     assert isinstance(result["email"], str)
 
     try:
-        from email_validator import validate_email
+        from email_validator import EmailSyntaxError, validate_email
 
         with pytest.raises(EmailSyntaxError):
             validate_email(result["email"], check_deliverability=False)
