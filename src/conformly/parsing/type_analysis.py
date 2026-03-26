@@ -47,6 +47,11 @@ def extract_runtime_type_and_constraints(
         return ENUMERATED_TYPE, (OneOf(values),)
 
     if isinstance(t, type):
+        from ..constraints import Pattern, SpecialString
+
+        if issubclass(t, SpecialString):
+            return str, (Pattern(t.PATTERN),)
+
         return t, ()
 
     raise TypeError(f"Field '{field_name}': unsupported type annotation {field_type!r}")

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any, get_args, get_origin
 
 from ...specs import FieldSpec, ModelSpec
 
@@ -9,6 +9,9 @@ if TYPE_CHECKING:
     from ...constraints import Constraint
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo
+
+
+_PYDANTIC_TYPE_RESOLUTION: dict[str, type] = {"EmailStr": str}
 
 
 def supports(model: type) -> bool:
@@ -62,8 +65,10 @@ def parse_field(
     )
     from ..type_analysis import extract_runtime_type_and_constraints, is_nullable
 
+    resolved_type = _resolve_pydantic_special_type(field_type)
+
     runtime_type, intrinsic_constraints = extract_runtime_type_and_constraints(
-        field_type, name
+        resolved_type, name
     )
 
     all_constraints = (
@@ -94,6 +99,17 @@ def parse_field(
     )
 
 
+def _resolve_pydantic_special_type(field_type: Any) -> Any:
+    if get_origin(field_type) is Annotated:
+        field_type = get_args(field_type)[0]
+
+    type_name = getattr(field_type, "__name__", None)
+    if type_name and type_name in _PYDANTIC_TYPE_RESOLUTION:
+        return _PYDANTIC_TYPE_RESOLUTION[type_name]
+
+    return field_type
+
+
 def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
     from ...types import _UNSET
 
@@ -107,10 +123,28 @@ def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
 
 
 def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...]:
-    from ...constraints import ALLOWED_CONSTRAINT_TYPE, Constraint, create_constraint
+    from ...constraints import (
+        ALLOWED_CONSTRAINT_TYPE,
+        Constraint,
+        Email,
+        Pattern,
+        SpecialString,
+        create_constraint,
+    )
     from ..constraints import _validate_constraint_type
 
-    constraints = []
+    constraints: list[Constraint] = []
+
+    _PYDANTIC_TYPE_MAP: dict[str, type[SpecialString]] = {"EmailStr": Email}
+
+    annotation = field_info.annotation
+    if get_origin(annotation) is Annotated:
+        annotation = get_args(annotation)[0]
+
+    type_name = getattr(field_info.annotation, "__name__", None)
+    if type_name and type_name in _PYDANTIC_TYPE_MAP:
+        target_class = _PYDANTIC_TYPE_MAP[type_name]
+        constraints.append(Pattern(regex=target_class.PATTERN))
 
     for meta in field_info.metadata:
         if isinstance(meta, Constraint):
