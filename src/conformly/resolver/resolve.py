@@ -7,6 +7,9 @@ from ..constraints import (
     Email,
     GreaterOrEqual,
     GreaterThan,
+    IPv4,
+    IPv6,
+    IPvAny,
     LessOrEqual,
     LessThan,
     MaxLength,
@@ -107,7 +110,12 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
     c = field_spec.constraints
 
     if isinstance(t, type) and issubclass(t, SpecialString):
-        special_kinds: dict[type[SpecialString], FieldKind] = {Email: FieldKind.EMAIL}
+        special_kinds: dict[type[SpecialString], FieldKind] = {
+            Email: FieldKind.EMAIL,
+            IPv4: FieldKind.IPv4,
+            IPv6: FieldKind.IPv6,
+            IPvAny: FieldKind.IPvAny,
+        }
 
         kind = special_kinds.get(t)
         if kind is None:
@@ -294,7 +302,12 @@ def create_string_semantic(
     constraints: tuple[Constraint, ...],
     field_kind: FieldKind = FieldKind.STRING,
 ) -> StringSemantic:
-    has_constraints = len(constraints) > 0 or field_kind is FieldKind.EMAIL
+    has_constraints = len(constraints) > 0 or field_kind in (
+        FieldKind.IPvAny,
+        FieldKind.IPv4,
+        FieldKind.IPv6,
+        FieldKind.EMAIL,
+    )
     min_length = 0
     max_length = None
     pattern = None
@@ -305,9 +318,19 @@ def create_string_semantic(
 
         match c:
             case MinLength(v):
+                if field_kind in (FieldKind.IPv4, FieldKind.IPv6, FieldKind.IPvAny):
+                    raise ValueError(
+                        f"Pattern constraint cannot be combined "
+                        f"with {field_kind.value} type."
+                    )
                 if min_length == 0 or v > min_length:
                     min_length = v
             case MaxLength(v):
+                if field_kind in (FieldKind.IPv4, FieldKind.IPv6, FieldKind.IPvAny):
+                    raise ValueError(
+                        f"Pattern constraint cannot be combined "
+                        f"with {field_kind.value} type."
+                    )
                 if max_length is None or v < int(max_length):
                     max_length = v
             case Pattern(r):
