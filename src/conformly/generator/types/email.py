@@ -130,7 +130,7 @@ def _generate_invalid_email(
                 local = "a" * (MAX_LOCAL_LENGTH + 10)
                 return f"{local}@example.com"
 
-        case ViolationType.NOT_EMAIL:
+        case ViolationType.WRONG_EMAIL_FORMAT:
             return ctx.rng.choice(INVALID_FORMATS)
 
         case _:

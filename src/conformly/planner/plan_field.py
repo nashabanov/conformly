@@ -25,7 +25,8 @@ _VIOLATION_PRIORITY: tuple[ViolationType, ...] = (
     ViolationType.BELOW_MIN,
     ViolationType.ABOVE_MAX,
     ViolationType.NOT_MULTIPLE,
-    ViolationType.NOT_EMAIL,
+    ViolationType.WRONG_EMAIL_FORMAT,
+    ViolationType.WRONG_IP_FORMAT,
     ViolationType.TOO_SHORT,
     ViolationType.TOO_LONG,
     ViolationType.PATTERN_MISMATCH,
@@ -154,7 +155,7 @@ def _define_string_violations(
     result: list[ViolationType] = []
 
     if semantic.kind == FieldKind.EMAIL:
-        result.append(ViolationType.NOT_EMAIL)
+        result.append(ViolationType.WRONG_EMAIL_FORMAT)
 
     if semantic.length_range.min_length > 0:
         result.append(ViolationType.TOO_SHORT)
