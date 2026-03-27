@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any, get_args, get_origin
 
-from ...constraints import Email, SpecialString
+from ...constraints import Email, IPv4, IPv6, IPvAny, SpecialString
 from ...specs import FieldSpec, ModelSpec
 
 if TYPE_CHECKING:
@@ -12,7 +12,12 @@ if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
 
 
-_PYDANTIC_TYPE_RESOLUTION: dict[str, type[SpecialString]] = {"EmailStr": Email}
+_PYDANTIC_TYPE_RESOLUTION: dict[str, type[SpecialString]] = {
+    "EmailStr": Email,
+    "IPv4Address": IPv4,
+    "IPv6Address": IPv6,
+    "IPvAnyAddress": IPvAny,
+}
 
 
 def supports(model: type) -> bool:

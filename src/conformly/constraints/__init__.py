@@ -2,7 +2,7 @@ from .base import Constraint
 from .enum import OneOf
 from .mapping import create_constraint
 from .numeric import GreaterOrEqual, GreaterThan, LessOrEqual, LessThan, MultipleOf
-from .special import Email, SpecialString
+from .special import Email, IPv4, IPv6, IPvAny, SpecialString
 from .string import MaxLength, MinLength, Pattern
 from .types import (
     ALLOWED_CONSTRAINT_TYPE,
@@ -20,6 +20,9 @@ __all__ = [
     "Email",
     "GreaterOrEqual",
     "GreaterThan",
+    "IPv4",
+    "IPv6",
+    "IPvAny",
     "LessOrEqual",
     "LessThan",
     "MaxLength",

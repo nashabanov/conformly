@@ -6,3 +6,15 @@ class SpecialString(str):
 
 class Email(SpecialString):
     pass
+
+
+class IPv4(SpecialString):
+    pass
+
+
+class IPv6(SpecialString):
+    pass
+
+
+class IPvAny(SpecialString):
+    pass
