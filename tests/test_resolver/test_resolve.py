@@ -5,7 +5,6 @@ import pytest
 
 from conformly.constraints import (
     Constraint,
-    Email,
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -16,6 +15,8 @@ from conformly.constraints import (
     OneOf,
     Pattern,
 )
+from conformly.fields import Email
+from conformly.fields.special_registry import SPECIAL_KINDS
 from conformly.resolver.resolve import (
     _build_indexes,
     _extract_numeric_multiple_of,
@@ -224,11 +225,28 @@ def test_create_email_kind_string_semantic() -> None:
     )
 
 
-def test_email_kind_raises_with_pattern() -> None:
+@pytest.mark.parametrize("kind", SPECIAL_KINDS)
+def test_special_string_kind_raises_with_pattern(kind: FieldKind) -> None:
     with pytest.raises(ValueError):
-        create_string_semantic(
-            constraints=(Pattern(r"\d+"),), field_kind=FieldKind.EMAIL
-        )
+        create_string_semantic(constraints=(Pattern(r"\d+"),), field_kind=kind)
+
+
+@pytest.mark.parametrize("kind", [FieldKind.IPv4, FieldKind.IPv6, FieldKind.IPvAny])
+def test_ip_string_kind_raises_with_lengths(kind: FieldKind) -> None:
+    with pytest.raises(ValueError):
+        create_string_semantic(constraints=(MinLength(1),), field_kind=kind)
+
+    with pytest.raises(ValueError):
+        create_string_semantic(constraints=(MaxLength(25),), field_kind=kind)
+
+
+def test_create_string_semantic_ignore_other_constraints() -> None:
+    assert create_string_semantic(constraints=(GreaterOrEqual(1),)) == StringSemantic(
+        kind=FieldKind.STRING,
+        length_range=LengthRange(0, None),
+        pattern=None,
+        has_constraints=True,
+    )
 
 
 def test_create_string_semantic_invalid_bounds() -> None:
@@ -297,6 +315,12 @@ def test_calculate_numeric_bounds_invalid_raises(
 ):
     with pytest.raises(ValueError):
         calculate_numeric_bounds(field_type, constraints)
+
+
+@pytest.mark.parametrize("field_type", [int, float])
+def test_calculate_numeric_bounds_raises_on_nan(field_type: type) -> None:
+    with pytest.raises(ValueError):
+        calculate_numeric_bounds(field_type, (GreaterOrEqual(math.nan),))
 
 
 # ===== TESTS for calculate_invalid_numeric_ranges =====

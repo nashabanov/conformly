@@ -17,7 +17,12 @@ class FieldKind(Enum):
     BOOLEAN = "boolean"
     OBJECT = "object"
     ENUM = "enum"
+
+    # special strings
     EMAIL = "email"
+    IPv4 = "ipv4"
+    IPv6 = "ipv6"
+    IPvAny = "ipvany"
 
 
 class ViolationType(Enum):
@@ -32,7 +37,10 @@ class ViolationType(Enum):
     PATTERN_MISMATCH = "pattern_mismatch"
 
     # email
-    NOT_EMAIL = "not_email"
+    WRONG_EMAIL_FORMAT = "wrong_email_format"
+
+    # ip
+    WRONG_IP_FORMAT = "WRONG_IP_FORMAT"
 
     # typing
     TYPE_MISMATCH = "type_mismatch"

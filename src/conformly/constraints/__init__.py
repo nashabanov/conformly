@@ -2,7 +2,6 @@ from .base import Constraint
 from .enum import OneOf
 from .mapping import create_constraint
 from .numeric import GreaterOrEqual, GreaterThan, LessOrEqual, LessThan, MultipleOf
-from .special import Email, SpecialString
 from .string import MaxLength, MinLength, Pattern
 from .types import (
     ALLOWED_CONSTRAINT_TYPE,
@@ -17,7 +16,6 @@ __all__ = [
     "STRING_CONSTRAINTS",
     "Constraint",
     "ConstraintType",
-    "Email",
     "GreaterOrEqual",
     "GreaterThan",
     "LessOrEqual",
@@ -27,6 +25,5 @@ __all__ = [
     "MultipleOf",
     "OneOf",
     "Pattern",
-    "SpecialString",
     "create_constraint",
 ]

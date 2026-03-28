@@ -9,7 +9,13 @@ from .string import StringSemantic
 
 def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
     match kind:
-        case FieldKind.STRING:
+        case (
+            FieldKind.STRING
+            | FieldKind.EMAIL
+            | FieldKind.IPv4
+            | FieldKind.IPv6
+            | FieldKind.IPvAny
+        ):
             return StringSemantic(kind, LengthRange(0, None), None, False)
         case FieldKind.BOOLEAN:
             return BooleanSemantic(kind)
@@ -25,7 +31,5 @@ def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
             return EnumSemantic(kind, ("__type_mismatch__",), False)
         case FieldKind.OBJECT:
             return ObjectSemantic(kind)
-        case FieldKind.EMAIL:
-            return StringSemantic(kind, LengthRange(0, None), None, False)
         case _:
             raise ValueError(f"Unsupported FieldKind: {kind}")

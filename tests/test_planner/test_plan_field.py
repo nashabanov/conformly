@@ -118,7 +118,7 @@ from conformly.types import (
                 pattern=None,
                 has_constraints=False,
             ),
-            {ViolationType.NOT_EMAIL},
+            {ViolationType.WRONG_EMAIL_FORMAT},
         ),
         (
             StringSemantic(
@@ -127,7 +127,11 @@ from conformly.types import (
                 pattern=None,
                 has_constraints=False,
             ),
-            {ViolationType.NOT_EMAIL, ViolationType.TOO_SHORT, ViolationType.TOO_LONG},
+            {
+                ViolationType.WRONG_EMAIL_FORMAT,
+                ViolationType.TOO_SHORT,
+                ViolationType.TOO_LONG,
+            },
         ),
     ],
 )

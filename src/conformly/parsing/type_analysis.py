@@ -47,7 +47,7 @@ def extract_runtime_type_and_constraints(
         return ENUMERATED_TYPE, (OneOf(values),)
 
     if isinstance(t, type):
-        from ..constraints import SpecialString
+        from ..fields import SpecialString
 
         if issubclass(t, SpecialString):
             return t, ()

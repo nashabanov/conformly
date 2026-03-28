@@ -10,14 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Full support for `multiple_of` constraint**. Added `MultipleOf` constraint in conformly-style semantics and `Field(multiple_of=...)` support for Pydantic models. Values are now generated respecting the step, including invalid value generation (`NOT_MULTIPLE` violation).
-- **Special string semantic types**. Introduced `Email`, as semantic markers (subclasses of `SpecialStr`) for type-safe schema definitions.
-- **Specialized generators**. Implemented realistic data generation for `Email` (RFC-compliant local-parts, safe domains)
-- **Constraint composition**. Special types now support `MinLength`/`MaxLength` constraints (e.g., `Annotated[Email, MinLength(10)]`), while `Pattern` is restricted to avoid semantic conflicts.
+- **Special string semantic types**. Introduced `Email`, `IPv4`, `IPv6`, `IPvAny` as semantic markers (subclasses of `SpecialStr`) for type-safe schema definitions.
+- **Specialized generators**. Implemented realistic data generation for new string semantics.
+- **Constraint composition**. Some special types (`Email`) support `MinLength`/`MaxLength` constraints (e.g., `Annotated[Email, MinLength(10)]`), while `Pattern` is restricted to avoid semantic conflicts.
 
 ### Changed
 - **Type resolution architecture**. `extract_runtime_type_and_constraints` now preserves semantic types (e.g., `Email`) for generator routing, instead of collapsing them to `str`.
 - **StringSemantic extensibility**. `StringSemantic.kind` now accepts extended `FieldKind` values (`EMAIL`) for specialized generator dispatch.
-
+- **New module `fields`**. Contains special string markers and registry for type mapping with `pydantic` types and field_kinds.
 
 
 ## [0.3.9] - 2025.03.21

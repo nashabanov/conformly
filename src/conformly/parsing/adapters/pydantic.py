@@ -3,16 +3,13 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any, get_args, get_origin
 
-from ...constraints import Email, SpecialString
+from ...fields import SPECIAL_NAME_TO_TYPE
 from ...specs import FieldSpec, ModelSpec
 
 if TYPE_CHECKING:
     from ...constraints import Constraint
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo
-
-
-_PYDANTIC_TYPE_RESOLUTION: dict[str, type[SpecialString]] = {"EmailStr": Email}
 
 
 def supports(model: type) -> bool:
@@ -105,8 +102,8 @@ def _resolve_pydantic_special_type(field_type: Any) -> Any:
         field_type = get_args(field_type)[0]
 
     type_name = getattr(field_type, "__name__", None)
-    if type_name and type_name in _PYDANTIC_TYPE_RESOLUTION:
-        return _PYDANTIC_TYPE_RESOLUTION[type_name]
+    if type_name and type_name in SPECIAL_NAME_TO_TYPE:
+        return SPECIAL_NAME_TO_TYPE[type_name]
 
     return field_type
 

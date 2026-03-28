@@ -11,7 +11,13 @@ class StringSemantic:
     has_constraints: bool
 
     def __post_init__(self) -> None:
-        _ALLOWED_KINDS = {FieldKind.STRING, FieldKind.EMAIL}
+        _ALLOWED_KINDS = {
+            FieldKind.STRING,
+            FieldKind.EMAIL,
+            FieldKind.IPv6,
+            FieldKind.IPvAny,
+            FieldKind.IPv4,
+        }
         if self.kind not in _ALLOWED_KINDS:
             raise ValueError(
                 f"StringSemantic does not support kind: {self.kind}. "

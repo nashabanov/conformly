@@ -4,7 +4,8 @@ from typing import Annotated, Literal, Optional, Union
 
 import pytest
 
-from conformly.constraints import Constraint, Email, OneOf
+from conformly.constraints import Constraint, OneOf
+from conformly.fields import Email
 from conformly.parsing.type_analysis import (
     extract_runtime_type_and_constraints,
     is_nullable,

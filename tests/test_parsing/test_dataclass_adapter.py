@@ -6,13 +6,13 @@ from typing import Annotated, Any, ClassVar, Literal
 import pytest
 
 from conformly.constraints import (
-    Email,
     GreaterOrEqual,
     LessOrEqual,
+    MaxLength,
     MinLength,
+    OneOf,
 )
-from conformly.constraints.enum import OneOf
-from conformly.constraints.string import MaxLength
+from conformly.fields import Email
 from conformly.parsing.adapters.dataclass import (
     parse,
     parse_defaults,

@@ -13,7 +13,6 @@ from pydantic.types import StringConstraints
 from pydantic_core import PydanticUndefined
 
 from conformly.constraints import (
-    Email,
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -23,6 +22,7 @@ from conformly.constraints import (
     OneOf,
     Pattern,
 )
+from conformly.fields import Email
 from conformly.parsing.adapters.pydantic import (
     _parse_default,
     _parse_fieldinfo_constraints,

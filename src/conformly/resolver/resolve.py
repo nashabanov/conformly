@@ -4,7 +4,6 @@ from typing import Any
 
 from ..constraints import (
     Constraint,
-    Email,
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -14,7 +13,6 @@ from ..constraints import (
     MultipleOf,
     OneOf,
     Pattern,
-    SpecialString,
 )
 from ..specs import FieldSpec, ModelSpec
 from ..types import (
@@ -38,6 +36,9 @@ from .semantics import (
     ObjectSemantic,
     StringSemantic,
 )
+
+from conformly.fields import SPECIAL_TYPE_TO_KIND, SpecialString
+from conformly.fields.special_registry import SPECIAL_KINDS
 
 
 @lru_cache(maxsize=128)
@@ -107,9 +108,7 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
     c = field_spec.constraints
 
     if isinstance(t, type) and issubclass(t, SpecialString):
-        special_kinds: dict[type[SpecialString], FieldKind] = {Email: FieldKind.EMAIL}
-
-        kind = special_kinds.get(t)
+        kind = SPECIAL_TYPE_TO_KIND.get(t)
         if kind is None:
             raise NotImplementedError(
                 f"No FieldKind mapped for SpecialStr subclass: {t.__name__}"
@@ -294,7 +293,7 @@ def create_string_semantic(
     constraints: tuple[Constraint, ...],
     field_kind: FieldKind = FieldKind.STRING,
 ) -> StringSemantic:
-    has_constraints = len(constraints) > 0 or field_kind is FieldKind.EMAIL
+    has_constraints = len(constraints) > 0 or field_kind in SPECIAL_KINDS
     min_length = 0
     max_length = None
     pattern = None
@@ -305,9 +304,19 @@ def create_string_semantic(
 
         match c:
             case MinLength(v):
+                if field_kind in (FieldKind.IPv4, FieldKind.IPv6, FieldKind.IPvAny):
+                    raise ValueError(
+                        f"Pattern constraint cannot be combined "
+                        f"with {field_kind.value} type."
+                    )
                 if min_length == 0 or v > min_length:
                     min_length = v
             case MaxLength(v):
+                if field_kind in (FieldKind.IPv4, FieldKind.IPv6, FieldKind.IPvAny):
+                    raise ValueError(
+                        f"Pattern constraint cannot be combined "
+                        f"with {field_kind.value} type."
+                    )
                 if max_length is None or v < int(max_length):
                     max_length = v
             case Pattern(r):

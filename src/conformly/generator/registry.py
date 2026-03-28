@@ -1,6 +1,6 @@
 from ..types import FieldKind
 from .protocol import TypeGeneratorProtocol
-from .types import boolean, email, enum, float, integer, string
+from .types import boolean, email, enum, float, integer, ipv4, ipv6, ipvany, string
 
 _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
     FieldKind.STRING: string,
@@ -9,6 +9,9 @@ _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
     FieldKind.INTEGER: integer,
     FieldKind.ENUM: enum,
     FieldKind.EMAIL: email,
+    FieldKind.IPv4: ipv4,
+    FieldKind.IPv6: ipv6,
+    FieldKind.IPvAny: ipvany,
 }
 
 _MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
@@ -19,6 +22,9 @@ _MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
     FieldKind.ENUM: FieldKind.FLOAT,
     FieldKind.OBJECT: FieldKind.ENUM,
     FieldKind.EMAIL: FieldKind.INTEGER,
+    FieldKind.IPv4: FieldKind.INTEGER,
+    FieldKind.IPv6: FieldKind.INTEGER,
+    FieldKind.IPvAny: FieldKind.INTEGER,
 }
 
 
