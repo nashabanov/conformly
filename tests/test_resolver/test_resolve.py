@@ -5,7 +5,6 @@ import pytest
 
 from conformly.constraints import (
     Constraint,
-    Email,
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -16,6 +15,7 @@ from conformly.constraints import (
     OneOf,
     Pattern,
 )
+from conformly.fields import Email
 from conformly.resolver.resolve import (
     _build_indexes,
     _extract_numeric_multiple_of,

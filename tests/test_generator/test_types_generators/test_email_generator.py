@@ -159,7 +159,7 @@ def test_generate_invalid_email_pattern_mismatch(ctx: GenerationContext) -> None
     )
 
     results = [
-        generate_value(ctx, semantic, violation=ViolationType.NOT_EMAIL)
+        generate_value(ctx, semantic, violation=ViolationType.WRONG_EMAIL_FORMAT)
         for _ in range(20)
     ]
 
