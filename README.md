@@ -207,7 +207,7 @@ sku: str = field(metadata={"pattern": r"^[A-Z0-9]{8}$"})
 
 
 #### Available types
-| Type | Description | Pydantic type| Example output | Available constraints |
+| Type | Description | Pydantic type| Example output | Availiable constraints |
 |------|-------------|--------------|----------------|-----------------------|
 | `Email` | RFC 5322-compliant email address | `EmailStr` | `user@example.com` | `MinLength`, `MaxLength` |
 | `IPv4` | RFC 791-compliant IPv4 address (dotted-quad notation) | `IPv4Address` | `192.0.2.1` | - |
