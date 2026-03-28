@@ -41,7 +41,7 @@ def _generate_valid_ipv4(ctx: GenerationContext) -> str:
     prefix, min_last, max_last = ctx.rng.choice(TEST_RANGES)
 
     if prefix.startswith("172.16"):
-        second = ctx.rng.randint(16, 32)
+        second = ctx.rng.randint(16, 31)
         prefix = f"172.{second}.0"
 
     last = ctx.rng.randint(min_last, max_last)
