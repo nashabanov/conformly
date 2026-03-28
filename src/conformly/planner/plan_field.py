@@ -95,9 +95,6 @@ def _define_allowed_violation_types(
         case StringSemantic(kind=kind) if kind in SPECIAL_KINDS | {FieldKind.STRING}:
             violations = _define_string_violations(semantic)
 
-        case StringSemantic(kind=FieldKind.EMAIL):
-            violations = _define_string_violations(semantic)
-
         case NumericSemantic(kind=(FieldKind.INTEGER | FieldKind.FLOAT)):
             violations = _define_numeric_violations(semantic)
 
