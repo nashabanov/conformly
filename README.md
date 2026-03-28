@@ -30,6 +30,7 @@ No factories, no hardcoded fixtures, no drift when schema changes.
 - [Constraints](#constraints)
   - [Supported Constraints](#supported-constraints)
   - [Defining Constraints](#defining-constraints)
+  - [Special String types](#special-string-types)
 - [User Cases](#use-cases)
 - [Nested Models](#nested-models)
 - [Development](#development)
@@ -206,16 +207,19 @@ sku: str = field(metadata={"pattern": r"^[A-Z0-9]{8}$"})
 
 
 #### Available types
-| Type | Description | Pydantic type| Example output |
-|------|-------------|--------------|----------------|
-| `Email` | RFC 5322-compliant email address | `EmailStr` | `user@example.com` |
+| Type | Description | Pydantic type| Example output | Available constraints |
+|------|-------------|--------------|----------------|-----------------------|
+| `Email` | RFC 5322-compliant email address | `EmailStr` | `user@example.com` | `MinLength`, `MaxLength` |
+| `IPv4` | RFC 791-compliant IPv4 address (dotted-quad notation) | `IPv4Address` | `192.0.2.1` | - |
+| `IPv6` | RFC 4291-compliant IPv6 address (hex groups with :: compression) | `IPv6Address` | `2001:db8::1` | - |
+| `IPvAny` | Either IPv4 or IPv6 address (randomly selected at generation time) | `IPvAnyAddress` | `fe80::1` or `10.0.0.1` | - |
 
 
 #### Usage
 
 ```python
 from typing import Annotated
-from conformly.constraints.special import Email, URL
+from conformly.fields import Email
 from conformly.constraints import MinLength
 
 # Basic usage
