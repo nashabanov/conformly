@@ -17,6 +17,8 @@ class FieldKind(Enum):
     BOOLEAN = "boolean"
     OBJECT = "object"
     ENUM = "enum"
+
+    # special strings
     EMAIL = "email"
     IPv4 = "ipv4"
     IPv6 = "ipv6"

@@ -1,3 +1,4 @@
+from ..fields import SPECIAL_KINDS
 from ..resolver import ResolvedModel
 from ..resolver.semantics import (
     BooleanSemantic,
@@ -91,7 +92,7 @@ def _define_allowed_violation_types(
     allow_structural_violations: bool = False,
 ) -> tuple[ViolationType, ...]:
     match semantic:
-        case StringSemantic(kind=FieldKind.STRING):
+        case StringSemantic(kind=kind) if kind in SPECIAL_KINDS | {FieldKind.STRING}:
             violations = _define_string_violations(semantic)
 
         case StringSemantic(kind=FieldKind.EMAIL):
@@ -156,6 +157,9 @@ def _define_string_violations(
 
     if semantic.kind == FieldKind.EMAIL:
         result.append(ViolationType.WRONG_EMAIL_FORMAT)
+
+    if semantic.kind in (FieldKind.IPv4, FieldKind.IPv6, FieldKind.IPvAny):
+        result.append(ViolationType.WRONG_IP_FORMAT)
 
     if semantic.length_range.min_length > 0:
         result.append(ViolationType.TOO_SHORT)
