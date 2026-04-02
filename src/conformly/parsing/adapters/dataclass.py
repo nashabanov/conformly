@@ -40,8 +40,8 @@ def resolve_type(type_hints: dict[str, Any], field_name: str) -> Any:
 
 
 def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
-    runtime_type, intrinsic_constraints = extract_runtime_type_and_constraints(
-        field_type, field.name
+    runtime_type, intrinsic_constraints, collection_type = (
+        extract_runtime_type_and_constraints(field_type, field.name)
     )
 
     external_constraints = (
@@ -65,11 +65,12 @@ def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
 
     return FieldSpec(
         name=field.name,
-        type=runtime_type,
+        field_type=runtime_type,
         constraints=all_constraints,
         default=parse_defaults(field),
         nullable=is_nullable(field_type),
         nested_model=nested_model,
+        collection_type=collection_type,
     )
 
 

@@ -70,6 +70,12 @@ class ConstrainedModel(BaseModel):
     color: Colors
 
 
+class ListFieldModel(BaseModel):
+    emails: list[EmailStr]
+    names: list[Annotated[str, MinLength(5), MaxLength(15)]]
+    model_list: list[ConstrainedModel]
+
+
 def _get_field_info(model: type[BaseModel], name: str) -> FieldInfo:
     field_info = model.model_fields.get(name)
     assert field_info is not None
@@ -211,7 +217,7 @@ def test_parse_field_basic() -> None:
     assert field_spec.has_default
     assert field_spec.default == ""
     assert not field_spec.nullable
-    assert field_spec.type is str
+    assert field_spec.field_type is str
     assert len(field_spec.constraints) == 1
 
 
@@ -220,7 +226,7 @@ def test_parse_field_enum() -> None:
 
     field_spec = parse_field(field_info, Colors, "color", PydanticUndefined)
     assert field_spec.name == "color"
-    assert field_spec.type == ENUMERATED_TYPE
+    assert field_spec.field_type == ENUMERATED_TYPE
     assert len(field_spec.constraints) == 1
     assert field_spec.constraints == (OneOf(("red", "green")),)
 
@@ -242,7 +248,7 @@ def test_parse_field_nested_model() -> None:
 
     field_spec = parse_field(field_info, SimpleModel, "nested", PydanticUndefined)
     assert field_spec.name == "nested"
-    assert field_spec.type is SimpleModel
+    assert field_spec.field_type is SimpleModel
     assert isinstance(field_spec.nested_model, ModelSpec)
 
 
@@ -262,7 +268,7 @@ def test_parse_field_emailstr() -> None:
     field_spec = parse_field(
         field_info, field_info.annotation, "email", PydanticUndefined
     )
-    assert field_spec.type is Email
+    assert field_spec.field_type is Email
     assert field_spec.constraints == ()
 
 
@@ -276,10 +282,10 @@ def test_parse_fields_count() -> None:
 def test_parse_fields_types() -> None:
     fields = parse_fields(ConstrainedModel, PydanticUndefined)
 
-    assert fields[0].type is str
-    assert fields[6].type is int
-    assert fields[8].type is ENUMERATED_TYPE
-    assert fields[5].type is str
+    assert fields[0].field_type is str
+    assert fields[6].field_type is int
+    assert fields[8].field_type is ENUMERATED_TYPE
+    assert fields[5].field_type is str
 
 
 # ===== TESTS for parse() =====
@@ -330,4 +336,24 @@ def test_parse_emailstr() -> None:
     spec = parse(Model)
     assert len(spec.fields) == 1
     field_spec = spec.fields[0]
-    assert field_spec.type is Email
+    assert field_spec.field_type is Email
+
+
+def test_parse_dataclass_with_list_fields() -> None:
+    spec = parse(ListFieldModel)
+
+    assert len(spec.fields) == 3
+
+    emails = spec.fields[0]
+    names = spec.fields[1]
+    model_list = spec.fields[2]
+
+    assert emails.field_type is Email
+    assert emails.collection_type is list
+    assert len(emails.constraints) == 0
+    assert names.field_type is str
+    assert names.collection_type is list
+    assert len(names.constraints) == 2
+    assert model_list.field_type is ConstrainedModel
+    assert model_list.nested_model is not None
+    assert model_list.collection_type is list

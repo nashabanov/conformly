@@ -23,7 +23,7 @@ class ResolvedField:
 
     @property
     def py_type(self) -> type:
-        return self.field_spec.type
+        return self.field_spec.field_type
 
     @property
     def default(self) -> Any:

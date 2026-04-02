@@ -104,7 +104,7 @@ def _build_indexes(model: ResolvedModel) -> None:
 
 
 def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
-    t = field_spec.type
+    t = field_spec.field_type
     c = field_spec.constraints
 
     if isinstance(t, type) and issubclass(t, SpecialString):

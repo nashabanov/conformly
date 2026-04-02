@@ -442,13 +442,13 @@ def test_define_allowed_violations_unsupported_semantic_kind():
 
 
 city_field = ResolvedField(
-    field_spec=FieldSpec(name="city", type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="city", field_type=str, default=_UNSET, nullable=False),
     path=(2, 0, 0),
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, None), None, False),
 )
 
 zip_field = ResolvedField(
-    field_spec=FieldSpec(name="zip", type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="zip", field_type=str, default=_UNSET, nullable=False),
     path=(2, 0, 1),
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 120), None, True),
 )
@@ -456,14 +456,16 @@ zip_field = ResolvedField(
 second_nested = ResolvedModel("Address", (city_field, zip_field))
 
 address_field = ResolvedField(
-    field_spec=FieldSpec(name="address", type=object, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(
+        name="address", field_type=object, default=_UNSET, nullable=False
+    ),
     path=(2, 0),
     semantic=ObjectSemantic(FieldKind.OBJECT, False),
     nested_model=second_nested,
 )
 
 phone_field = ResolvedField(
-    field_spec=FieldSpec(name="phone", type=str, default=_UNSET, nullable=True),
+    field_spec=FieldSpec(name="phone", field_type=str, default=_UNSET, nullable=True),
     path=(2, 1),
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, False),
 )
@@ -471,7 +473,7 @@ phone_field = ResolvedField(
 first_nested = ResolvedModel("Profile", (address_field, phone_field))
 
 name_field = ResolvedField(
-    field_spec=FieldSpec(name="name", type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="name", field_type=str, default=_UNSET, nullable=False),
     path=(0,),
     semantic=StringSemantic(
         FieldKind.STRING, LengthRange(0, None), pattern=None, has_constraints=True
@@ -479,7 +481,7 @@ name_field = ResolvedField(
 )
 
 age_field = ResolvedField(
-    field_spec=FieldSpec(name="age", type=int, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="age", field_type=int, default=_UNSET, nullable=False),
     path=(1,),
     semantic=NumericSemantic(
         FieldKind.INTEGER,
@@ -490,7 +492,9 @@ age_field = ResolvedField(
 )
 
 profile_field = ResolvedField(
-    field_spec=FieldSpec(name="profile", type=object, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(
+        name="profile", field_type=object, default=_UNSET, nullable=False
+    ),
     path=(2,),
     semantic=ObjectSemantic(FieldKind.OBJECT, False),
     nested_model=first_nested,

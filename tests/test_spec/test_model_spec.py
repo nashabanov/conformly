@@ -5,35 +5,35 @@ from conformly.specs import FieldSpec, ModelSpec
 
 
 @pytest.fixture
-def default_field():
+def default_field() -> FieldSpec:
     return FieldSpec(
         name="name",
-        type=str,
-        constraints=[MaxLength(30)],
+        field_type=str,
+        constraints=(MaxLength(30),),
     )
 
 
 @pytest.fixture
-def optional_field():
+def optional_field() -> FieldSpec:
     return FieldSpec(
         name="age",
-        type=int,
-        constraints=[GreaterOrEqual(18)],
+        field_type=int,
+        constraints=(GreaterOrEqual(18),),
         nullable=True,
         default=20,
     )
 
 
-def test_create_model_spec(default_field):
-    model = ModelSpec(name="User", type="dataclass", fields=[default_field])
+def test_create_model_spec(default_field: FieldSpec) -> None:
+    model = ModelSpec(name="User", type="dataclass", fields=(default_field,))
     assert model.name == "User"
     assert model.type == "dataclass"
     assert len(model.fields) == 1
 
 
-def test_get_field(default_field, optional_field):
+def test_get_field(default_field: FieldSpec, optional_field: FieldSpec) -> None:
     model = ModelSpec(
-        name="User", type="dataclass", fields=[default_field, optional_field]
+        name="User", type="dataclass", fields=(default_field, optional_field)
     )
     field1 = model.get_field(default_field.name)
     field2 = model.get_field(optional_field.name)
@@ -41,15 +41,17 @@ def test_get_field(default_field, optional_field):
     assert field2.name == optional_field.name
 
 
-def test_get_spec_raises_on_missing(default_field):
-    model = ModelSpec(name="User", type="dataclass", fields=[default_field])
+def test_get_spec_raises_on_missing(default_field: FieldSpec) -> None:
+    model = ModelSpec(name="User", type="dataclass", fields=(default_field,))
     with pytest.raises(KeyError, match=r"Field 'age' is not defined in model: 'User'"):
         model.get_field("age")
 
 
-def test_get_filtred_fields(default_field, optional_field):
+def test_get_filtred_fields(
+    default_field: FieldSpec, optional_field: FieldSpec
+) -> None:
     model = ModelSpec(
-        name="User", type="dataclass", fields=[default_field, optional_field]
+        name="User", type="dataclass", fields=(default_field, optional_field)
     )
     required_fields = model.get_requiered_fields()
     optional_fields = model.get_optional_fields()
@@ -59,10 +61,10 @@ def test_get_filtred_fields(default_field, optional_field):
     assert optional_fields[0].name == optional_field.name
 
 
-def test_model_repr():
-    field1 = FieldSpec(name="id", type=int)
-    field2 = FieldSpec(name="name", type=str, nullable=True)
-    model = ModelSpec(name="User", type="dataclass", fields=[field1, field2])
+def test_model_repr() -> None:
+    field1 = FieldSpec(name="id", field_type=int)
+    field2 = FieldSpec(name="name", field_type=str, nullable=True)
+    model = ModelSpec(name="User", type="dataclass", fields=(field1, field2))
 
     repr_str = repr(model)
 

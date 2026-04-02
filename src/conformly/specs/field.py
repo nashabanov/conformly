@@ -13,11 +13,12 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class FieldSpec:
     name: str
-    type: type
+    field_type: type
     constraints: tuple[Constraint, ...] = ()
     default: Any = _UNSET
     nullable: bool = False
     nested_model: ModelSpec | None = None
+    collection_type: type | None = None
 
     def has_default(self) -> bool:
         return self.default is not _UNSET
@@ -31,7 +32,7 @@ class FieldSpec:
     def __repr__(self) -> str:
         parts = [
             f"name={self.name!r}",
-            f"type={self.type!r}",
+            f"type={self.field_type!r}",
         ]
         if self.constraints:
             parts.append(f"constraints={[repr(c) for c in self.constraints]!r}")

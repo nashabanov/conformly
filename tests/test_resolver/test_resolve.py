@@ -428,7 +428,10 @@ def test_create_field_semantic_dispatch(
     expected_semantic_type,
 ) -> None:
     field_spec = FieldSpec(
-        name="test", type=field_type, constraints=constraints, nested_model=nested_model
+        name="test",
+        field_type=field_type,
+        constraints=constraints,
+        nested_model=nested_model,
     )
 
     semantic = create_field_semantic(field_spec)
@@ -496,7 +499,7 @@ def test_extract_numeric_multiple_of(
 def test_resolve_field_flat() -> None:
     field_spec = FieldSpec(
         name="count",
-        type=int,
+        field_type=int,
         default=43,
         nullable=False,
         constraints=(GreaterThan(2),),

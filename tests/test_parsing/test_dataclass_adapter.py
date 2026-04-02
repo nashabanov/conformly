@@ -74,6 +74,14 @@ class MixedDataclass:
     age: Annotated[int, "ge=0", "le=150"] = 18
 
 
+@dataclass
+class ListFieldDataclass:
+    text: str
+    emails: list[Email]
+    names: list[Annotated[str, MinLength(5), MaxLength(15)]]
+    model_list: list[DefaultDataclass]
+
+
 class BaseEnum(Enum):
     a = "a"
     b = "b"
@@ -217,7 +225,7 @@ def test_parse_field_simple() -> None:
     field_spec = parse_field(f, str)
     assert isinstance(field_spec, FieldSpec)
     assert field_spec.name == "name"
-    assert field_spec.type is str
+    assert field_spec.field_type is str
 
 
 def test_parse_field_with_default() -> None:
@@ -260,7 +268,7 @@ def test_parse_field_has_default_method() -> None:
 def test_parse_field_literal() -> None:
     f = fields(EnumeratedDataclass)[0]
     field_spec = parse_field(f, Literal["admin", "guest", "user"])
-    assert field_spec.type is ENUMERATED_TYPE
+    assert field_spec.field_type is ENUMERATED_TYPE
     assert len(field_spec.constraints) == 1
     assert field_spec.constraints[0] == OneOf(("admin", "guest", "user"))
 
@@ -268,7 +276,7 @@ def test_parse_field_literal() -> None:
 def test_parse_field_enum() -> None:
     f = fields(EnumeratedDataclass)[1]
     field_spec = parse_field(f, RoleTypeEnum)
-    assert field_spec.type is ENUMERATED_TYPE
+    assert field_spec.field_type is ENUMERATED_TYPE
     assert len(field_spec.constraints) == 1
     assert field_spec.constraints[0] == OneOf((0, 1, 2))
 
@@ -309,7 +317,7 @@ def test_parse_fields_mixed() -> None:
     assert field_specs[2].default is None
 
     assert field_specs[3].name == "age"
-    assert field_specs[3].type is int
+    assert field_specs[3].field_type is int
     assert field_specs[3].default == 18
     assert field_specs[3].nullable is False
 
@@ -317,7 +325,7 @@ def test_parse_fields_mixed() -> None:
 def test_parse_fields_resolves_types_once() -> None:
     field_specs = parse_fields(DummyDataclass)
 
-    assert all(isinstance(fs.type, type) for fs in field_specs)
+    assert all(isinstance(fs.field_type, type) for fs in field_specs)
 
 
 # ====== TESTS FOR parse() ======
@@ -375,6 +383,28 @@ def test_parse_ignores_initvar_and_classvar() -> None:
     assert spec.fields[0].name == "normal"
 
 
+def test_parse_dataclass_with_list_fields() -> None:
+    spec = parse(ListFieldDataclass)
+
+    assert len(spec.fields) == 4
+
+    text = spec.fields[0]
+    emails = spec.fields[1]
+    names = spec.fields[2]
+    model_list = spec.fields[3]
+
+    assert text.collection_type is None
+    assert emails.field_type is Email
+    assert emails.collection_type is list
+    assert len(emails.constraints) == 0
+    assert names.field_type is str
+    assert names.collection_type is list
+    assert len(names.constraints) == 2
+    assert model_list.field_type is DefaultDataclass
+    assert model_list.nested_model is not None
+    assert model_list.collection_type is list
+
+
 # ====== EDGE CASES ======
 
 
@@ -418,7 +448,7 @@ def test_parse_get_field_method() -> None:
     spec = parse(DummyDataclass)
     field = spec.get_field("name")
     assert field.name == "name"
-    assert field.type is str
+    assert field.field_type is str
 
 
 def test_parse_get_field_not_found() -> None:

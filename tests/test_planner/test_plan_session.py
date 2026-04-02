@@ -17,7 +17,7 @@ resolved_model = ResolvedModel(
         ResolvedField(
             field_spec=FieldSpec(
                 name="name",
-                type=str,
+                field_type=str,
                 default=_UNSET,
                 nullable=False,
             ),
@@ -32,7 +32,7 @@ resolved_model = ResolvedModel(
         ResolvedField(
             field_spec=FieldSpec(
                 name="age",
-                type=int,
+                field_type=int,
                 default=_UNSET,
                 nullable=False,
             ),
@@ -47,7 +47,7 @@ resolved_model = ResolvedModel(
         ResolvedField(
             field_spec=FieldSpec(
                 name="is_admin",
-                type=bool,
+                field_type=bool,
                 default=True,
                 nullable=False,
             ),
@@ -57,7 +57,7 @@ resolved_model = ResolvedModel(
         ResolvedField(
             field_spec=FieldSpec(
                 name="profile",
-                type=object,
+                field_type=object,
                 default=_UNSET,
                 nullable=False,
             ),
@@ -69,7 +69,7 @@ resolved_model = ResolvedModel(
                     ResolvedField(
                         field_spec=FieldSpec(
                             name="is_blocked",
-                            type=bool,
+                            field_type=bool,
                             default=False,
                             nullable=False,
                         ),

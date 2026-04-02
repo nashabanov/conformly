@@ -26,27 +26,31 @@ from conformly.types import (
 )
 
 simple_string_field = ResolvedField(
-    field_spec=FieldSpec(name="name", type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="name", field_type=str, default=_UNSET, nullable=False),
     path=(0,),
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, True),
 )
 
 default_string_field = ResolvedField(
-    field_spec=FieldSpec(name="city", type=str, default="Palo Alto", nullable=False),
+    field_spec=FieldSpec(
+        name="city", field_type=str, default="Palo Alto", nullable=False
+    ),
     path=(0, 1),
     semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 40), None, True),
 )
 
 optional_string_field = ResolvedField(
     field_spec=FieldSpec(
-        name="description", type=str, default="simple description", nullable=True
+        name="description", field_type=str, default="simple description", nullable=True
     ),
     path=(3,),
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 60), None, True),
 )
 
 bool_field = ResolvedField(
-    field_spec=FieldSpec(name="is_admin", type=bool, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(
+        name="is_admin", field_type=bool, default=_UNSET, nullable=False
+    ),
     path=(4,),
     semantic=BooleanSemantic(FieldKind.BOOLEAN),
 )
@@ -56,13 +60,15 @@ nested_model = ResolvedModel(
     fields=(
         ResolvedField(
             field_spec=FieldSpec(
-                name="address", type=str, default=_UNSET, nullable=True
+                name="address", field_type=str, default=_UNSET, nullable=True
             ),
             path=(1, 0),
             semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 25), None, True),
         ),
         ResolvedField(
-            field_spec=FieldSpec(name="age", type=int, default=_UNSET, nullable=False),
+            field_spec=FieldSpec(
+                name="age", field_type=int, default=_UNSET, nullable=False
+            ),
             path=(1, 1),
             semantic=NumericSemantic(
                 kind=FieldKind.INTEGER,
@@ -78,7 +84,9 @@ nested_model = ResolvedModel(
 )
 
 nested_field = ResolvedField(
-    field_spec=FieldSpec(name="profile", type=object, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(
+        name="profile", field_type=object, default=_UNSET, nullable=False
+    ),
     path=(1,),
     nested_model=nested_model,
     semantic=ObjectSemantic(kind=FieldKind.OBJECT),
