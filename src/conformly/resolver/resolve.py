@@ -14,6 +14,8 @@ from ..constraints import (
     OneOf,
     Pattern,
 )
+from ..fields import SPECIAL_TYPE_TO_KIND, SpecialString
+from ..fields.special_registry import SPECIAL_KINDS
 from ..specs import FieldSpec, ModelSpec
 from ..types import (
     ENUMERATED_TYPE,
@@ -32,13 +34,11 @@ from .semantics import (
     BooleanSemantic,
     EnumSemantic,
     FieldSemantics,
+    ListSemantic,
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
 )
-
-from conformly.fields import SPECIAL_TYPE_TO_KIND, SpecialString
-from conformly.fields.special_registry import SPECIAL_KINDS
 
 
 @lru_cache(maxsize=128)
@@ -54,10 +54,15 @@ def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:
 
 
 def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
+    list_semantic = None
+
+    if field_spec.collection_type is list:
+        list_semantic = ListSemantic(create_field_semantic(field_spec))
+
     return ResolvedField(
         field_spec=field_spec,
         path=path,
-        semantic=create_field_semantic(field_spec),
+        semantic=list_semantic or create_field_semantic(field_spec),
         nested_model=resolve_model(field_spec.nested_model, path)
         if field_spec.nested_model
         else None,
