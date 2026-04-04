@@ -63,11 +63,11 @@ def parse_field(
     )
     from ..type_analysis import extract_runtime_type_and_constraints, is_nullable
 
-    resolved_type = _resolve_pydantic_special_type(field_type)
-
-    runtime_type, intrinsic_constraints = extract_runtime_type_and_constraints(
-        resolved_type, name
+    runtime_type, intrinsic_constraints, collection_type = (
+        extract_runtime_type_and_constraints(field_type, name)
     )
+
+    resolved_type = _resolve_pydantic_special_type(runtime_type)
 
     all_constraints = (
         *intrinsic_constraints,
@@ -82,18 +82,19 @@ def parse_field(
         )
 
     nested_model = (
-        parse(runtime_type)
-        if runtime_type is not ENUMERATED_TYPE and supports(runtime_type)
+        parse(resolved_type)
+        if resolved_type is not ENUMERATED_TYPE and supports(resolved_type)
         else None
     )
 
     return FieldSpec(
         name=name,
-        type=runtime_type,
+        field_type=resolved_type,
         constraints=all_constraints,
         default=_parse_default(field_info, PydanticUndefined),
         nullable=is_nullable(field_type),
         nested_model=nested_model,
+        collection_type=collection_type,
     )
 
 

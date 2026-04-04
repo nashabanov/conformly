@@ -2,6 +2,7 @@ from typing import Any
 
 from ..planner import PlannedTask
 from ..resolver import ResolvedField, ResolvedModel, create_minimal_semantic
+from ..resolver.semantics import ListSemantic
 from ..types import _UNSET, FieldKind, FieldPath, ViolationType
 from .context import GenerationContext
 from .registry import choose_mismatch_kind, get_generator
@@ -99,7 +100,7 @@ def generate_field(
 
             return field.default
 
-        if field.nested_model:
+        if field.nested_model and not isinstance(field.semantic, ListSemantic):
             return generate_valid(ctx, field.nested_model)
 
     violation = _choose_violation(violations)

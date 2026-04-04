@@ -24,6 +24,9 @@ class FieldKind(Enum):
     IPv6 = "ipv6"
     IPvAny = "ipvany"
 
+    # collections
+    LIST = "list"
+
 
 class ViolationType(Enum):
     # numeric

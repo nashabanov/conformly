@@ -14,6 +14,8 @@ from ..constraints import (
     OneOf,
     Pattern,
 )
+from ..fields import SPECIAL_TYPE_TO_KIND, SpecialString
+from ..fields.special_registry import SPECIAL_KINDS
 from ..specs import FieldSpec, ModelSpec
 from ..types import (
     ENUMERATED_TYPE,
@@ -32,13 +34,11 @@ from .semantics import (
     BooleanSemantic,
     EnumSemantic,
     FieldSemantics,
+    ListSemantic,
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
 )
-
-from conformly.fields import SPECIAL_TYPE_TO_KIND, SpecialString
-from conformly.fields.special_registry import SPECIAL_KINDS
 
 
 @lru_cache(maxsize=128)
@@ -54,13 +54,24 @@ def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:
 
 
 def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
+    resolved_nested = (
+        resolve_model(field_spec.nested_model, path)
+        if field_spec.nested_model
+        else None
+    )
+    list_semantic = None
+
+    if field_spec.collection_type is list:
+        list_semantic = ListSemantic(
+            element_semantic=create_field_semantic(field_spec),
+            element_nested_model=resolved_nested,
+        )
+
     return ResolvedField(
         field_spec=field_spec,
         path=path,
-        semantic=create_field_semantic(field_spec),
-        nested_model=resolve_model(field_spec.nested_model, path)
-        if field_spec.nested_model
-        else None,
+        semantic=list_semantic or create_field_semantic(field_spec),
+        nested_model=resolved_nested,
     )
 
 
@@ -104,7 +115,7 @@ def _build_indexes(model: ResolvedModel) -> None:
 
 
 def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
-    t = field_spec.type
+    t = field_spec.field_type
     c = field_spec.constraints
 
     if isinstance(t, type) and issubclass(t, SpecialString):
@@ -144,14 +155,13 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
         return create_string_semantic(c)
 
     elif field_spec.nested_model is not None:
-        return ObjectSemantic(FieldKind.OBJECT, field_spec.has_constraints())
+        return ObjectSemantic(field_spec.has_constraints())
 
     elif t is bool:
-        return BooleanSemantic(FieldKind.BOOLEAN, field_spec.has_constraints())
+        return BooleanSemantic(field_spec.has_constraints())
 
     elif t is ENUMERATED_TYPE:
         return EnumSemantic(
-            FieldKind.ENUM,
             extract_enum_included_values(c),
             field_spec.has_constraints(),
         )

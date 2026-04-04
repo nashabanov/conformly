@@ -4,6 +4,7 @@ from ..resolver.semantics import (
     BooleanSemantic,
     EnumSemantic,
     FieldSemantics,
+    ListSemantic,
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
@@ -97,6 +98,14 @@ def _define_allowed_violation_types(
 
         case NumericSemantic(kind=(FieldKind.INTEGER | FieldKind.FLOAT)):
             violations = _define_numeric_violations(semantic)
+
+        case ListSemantic(element_semantic=elem_sem):
+            try:
+                violations = list(
+                    _define_allowed_violation_types(elem_sem, False, False)
+                )
+            except NotImplementedError:
+                violations = []
 
         case EnumSemantic(kind=FieldKind.ENUM):
             violations = [ViolationType.NOT_ALLOWED_VALUE]

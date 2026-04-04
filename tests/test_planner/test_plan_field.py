@@ -17,6 +17,7 @@ from conformly.resolver.semantics import (
     BooleanSemantic,
     EnumSemantic,
     FieldSemantics,
+    ListSemantic,
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
@@ -230,11 +231,45 @@ def test_define_numeric_violations(
         ),
         (
             EnumSemantic(
-                kind=FieldKind.ENUM,
                 values=("a", "b", "c"),
                 has_constraints=True,
             ),
             (ViolationType.NOT_ALLOWED_VALUE,),
+        ),
+        (
+            ListSemantic(
+                element_semantic=StringSemantic(
+                    kind=FieldKind.STRING,
+                    length_range=LengthRange(5, 15),
+                    pattern=r"/\d+/",
+                    has_constraints=True,
+                ),
+                has_constraints=False,
+            ),
+            (
+                ViolationType.TOO_SHORT,
+                ViolationType.TOO_LONG,
+                ViolationType.PATTERN_MISMATCH,
+            ),
+        ),
+        (
+            ListSemantic(
+                element_semantic=NumericSemantic(
+                    kind=FieldKind.INTEGER,
+                    valid_range=Range(2, 10),
+                    invalid_ranges=(Range(INT_MIN, 1), Range(11, INT_MAX)),
+                    has_constraints=True,
+                ),
+                has_constraints=False,
+            ),
+            (ViolationType.BELOW_MIN, ViolationType.ABOVE_MAX),
+        ),
+        (
+            ListSemantic(
+                element_semantic=BooleanSemantic(has_constraints=False),
+                has_constraints=False,
+            ),
+            (),
         ),
     ],
 )
@@ -276,18 +311,57 @@ def test_define_allowed_violations_valid(
         ),
         (
             EnumSemantic(
-                kind=FieldKind.ENUM,
                 values=("a", "b", "c"),
                 has_constraints=True,
             ),
             (ViolationType.TYPE_MISMATCH, ViolationType.NOT_ALLOWED_VALUE),
         ),
         (
-            BooleanSemantic(kind=FieldKind.BOOLEAN, has_constraints=False),
+            BooleanSemantic(has_constraints=False),
             (ViolationType.TYPE_MISMATCH,),
         ),
         (
-            ObjectSemantic(kind=FieldKind.OBJECT, has_constraints=False),
+            ObjectSemantic(has_constraints=False),
+            (ViolationType.TYPE_MISMATCH,),
+        ),
+        (
+            ListSemantic(
+                element_semantic=StringSemantic(
+                    kind=FieldKind.STRING,
+                    length_range=LengthRange(5, 15),
+                    pattern=r"/\d+/",
+                    has_constraints=True,
+                ),
+                has_constraints=False,
+            ),
+            (
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.TOO_SHORT,
+                ViolationType.TOO_LONG,
+                ViolationType.PATTERN_MISMATCH,
+            ),
+        ),
+        (
+            ListSemantic(
+                element_semantic=NumericSemantic(
+                    kind=FieldKind.INTEGER,
+                    valid_range=Range(2, 10),
+                    invalid_ranges=(Range(INT_MIN, 1), Range(11, INT_MAX)),
+                    has_constraints=True,
+                ),
+                has_constraints=False,
+            ),
+            (
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.BELOW_MIN,
+                ViolationType.ABOVE_MAX,
+            ),
+        ),
+        (
+            ListSemantic(
+                element_semantic=BooleanSemantic(has_constraints=False),
+                has_constraints=False,
+            ),
             (ViolationType.TYPE_MISMATCH,),
         ),
     ],
@@ -330,18 +404,57 @@ def test_define_allowed_violations_allow_type_mismatch(
         ),
         (
             EnumSemantic(
-                kind=FieldKind.ENUM,
                 values=("a", "b", "c"),
                 has_constraints=True,
             ),
             (ViolationType.MISSING_FIELD, ViolationType.NOT_ALLOWED_VALUE),
         ),
         (
-            BooleanSemantic(kind=FieldKind.BOOLEAN, has_constraints=False),
+            BooleanSemantic(has_constraints=False),
             (ViolationType.MISSING_FIELD,),
         ),
         (
-            ObjectSemantic(kind=FieldKind.OBJECT, has_constraints=False),
+            ObjectSemantic(has_constraints=False),
+            (ViolationType.MISSING_FIELD,),
+        ),
+        (
+            ListSemantic(
+                element_semantic=StringSemantic(
+                    kind=FieldKind.STRING,
+                    length_range=LengthRange(5, 15),
+                    pattern=r"/\d+/",
+                    has_constraints=True,
+                ),
+                has_constraints=False,
+            ),
+            (
+                ViolationType.MISSING_FIELD,
+                ViolationType.TOO_SHORT,
+                ViolationType.TOO_LONG,
+                ViolationType.PATTERN_MISMATCH,
+            ),
+        ),
+        (
+            ListSemantic(
+                element_semantic=NumericSemantic(
+                    kind=FieldKind.INTEGER,
+                    valid_range=Range(2, 10),
+                    invalid_ranges=(Range(INT_MIN, 1), Range(11, INT_MAX)),
+                    has_constraints=True,
+                ),
+                has_constraints=False,
+            ),
+            (
+                ViolationType.MISSING_FIELD,
+                ViolationType.BELOW_MIN,
+                ViolationType.ABOVE_MAX,
+            ),
+        ),
+        (
+            ListSemantic(
+                element_semantic=BooleanSemantic(has_constraints=False),
+                has_constraints=False,
+            ),
             (ViolationType.MISSING_FIELD,),
         ),
     ],
@@ -386,7 +499,6 @@ def test_define_allowed_violations_allow_structural_violations(
         ),
         (
             EnumSemantic(
-                kind=FieldKind.ENUM,
                 values=("a", "b", "c"),
                 has_constraints=True,
             ),
@@ -397,18 +509,60 @@ def test_define_allowed_violations_allow_structural_violations(
             ),
         ),
         (
-            BooleanSemantic(kind=FieldKind.BOOLEAN, has_constraints=False),
+            BooleanSemantic(has_constraints=False),
             (
                 ViolationType.MISSING_FIELD,
                 ViolationType.TYPE_MISMATCH,
             ),
         ),
         (
-            ObjectSemantic(kind=FieldKind.OBJECT, has_constraints=False),
+            ObjectSemantic(has_constraints=False),
             (
                 ViolationType.MISSING_FIELD,
                 ViolationType.TYPE_MISMATCH,
             ),
+        ),
+        (
+            ListSemantic(
+                element_semantic=StringSemantic(
+                    kind=FieldKind.STRING,
+                    length_range=LengthRange(5, 15),
+                    pattern=r"/\d+/",
+                    has_constraints=True,
+                ),
+                has_constraints=False,
+            ),
+            (
+                ViolationType.MISSING_FIELD,
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.TOO_SHORT,
+                ViolationType.TOO_LONG,
+                ViolationType.PATTERN_MISMATCH,
+            ),
+        ),
+        (
+            ListSemantic(
+                element_semantic=NumericSemantic(
+                    kind=FieldKind.INTEGER,
+                    valid_range=Range(2, 10),
+                    invalid_ranges=(Range(INT_MIN, 1), Range(11, INT_MAX)),
+                    has_constraints=True,
+                ),
+                has_constraints=False,
+            ),
+            (
+                ViolationType.MISSING_FIELD,
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.BELOW_MIN,
+                ViolationType.ABOVE_MAX,
+            ),
+        ),
+        (
+            ListSemantic(
+                element_semantic=BooleanSemantic(has_constraints=False),
+                has_constraints=False,
+            ),
+            (ViolationType.MISSING_FIELD, ViolationType.TYPE_MISMATCH),
         ),
     ],
 )
@@ -418,9 +572,7 @@ def test_define_allowed_violations_all_flags(
     assert _define_allowed_violation_types(semantic, True, True) == expected
 
 
-@pytest.mark.parametrize(
-    "semantic", [BooleanSemantic(FieldKind.BOOLEAN), ObjectSemantic(FieldKind.OBJECT)]
-)
+@pytest.mark.parametrize("semantic", [BooleanSemantic(), ObjectSemantic()])
 def test_define_allowed_violations_no_sematic_violations(
     semantic: FieldSemantics,
 ) -> None:
@@ -428,7 +580,7 @@ def test_define_allowed_violations_no_sematic_violations(
         _define_allowed_violation_types(semantic)
 
 
-def test_define_allowed_violations_unsupported_semantic_kind():
+def test_define_allowed_violations_unsupported_semantic_kind() -> None:
     class UnsupportedSemantic:
         kind = FieldKind.OBJECT
 
@@ -438,17 +590,25 @@ def test_define_allowed_violations_unsupported_semantic_kind():
         _define_allowed_violation_types(semantic)
 
 
+def test_list_with_unviolatable_element_returns_empty() -> None:
+    semantic = ListSemantic(
+        element_semantic=BooleanSemantic(has_constraints=False),
+        has_constraints=False,
+    )
+    assert _define_allowed_violation_types(semantic) == ()
+
+
 # ===== TESTS for plan_violation_task() =====
 
 
 city_field = ResolvedField(
-    field_spec=FieldSpec(name="city", type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="city", field_type=str, default=_UNSET, nullable=False),
     path=(2, 0, 0),
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, None), None, False),
 )
 
 zip_field = ResolvedField(
-    field_spec=FieldSpec(name="zip", type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="zip", field_type=str, default=_UNSET, nullable=False),
     path=(2, 0, 1),
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 120), None, True),
 )
@@ -456,14 +616,16 @@ zip_field = ResolvedField(
 second_nested = ResolvedModel("Address", (city_field, zip_field))
 
 address_field = ResolvedField(
-    field_spec=FieldSpec(name="address", type=object, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(
+        name="address", field_type=object, default=_UNSET, nullable=False
+    ),
     path=(2, 0),
-    semantic=ObjectSemantic(FieldKind.OBJECT, False),
+    semantic=ObjectSemantic(False),
     nested_model=second_nested,
 )
 
 phone_field = ResolvedField(
-    field_spec=FieldSpec(name="phone", type=str, default=_UNSET, nullable=True),
+    field_spec=FieldSpec(name="phone", field_type=str, default=_UNSET, nullable=True),
     path=(2, 1),
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, False),
 )
@@ -471,7 +633,7 @@ phone_field = ResolvedField(
 first_nested = ResolvedModel("Profile", (address_field, phone_field))
 
 name_field = ResolvedField(
-    field_spec=FieldSpec(name="name", type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="name", field_type=str, default=_UNSET, nullable=False),
     path=(0,),
     semantic=StringSemantic(
         FieldKind.STRING, LengthRange(0, None), pattern=None, has_constraints=True
@@ -479,7 +641,7 @@ name_field = ResolvedField(
 )
 
 age_field = ResolvedField(
-    field_spec=FieldSpec(name="age", type=int, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="age", field_type=int, default=_UNSET, nullable=False),
     path=(1,),
     semantic=NumericSemantic(
         FieldKind.INTEGER,
@@ -490,9 +652,11 @@ age_field = ResolvedField(
 )
 
 profile_field = ResolvedField(
-    field_spec=FieldSpec(name="profile", type=object, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(
+        name="profile", field_type=object, default=_UNSET, nullable=False
+    ),
     path=(2,),
-    semantic=ObjectSemantic(FieldKind.OBJECT, False),
+    semantic=ObjectSemantic(False),
     nested_model=first_nested,
 )
 

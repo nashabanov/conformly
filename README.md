@@ -33,6 +33,7 @@ No factories, no hardcoded fixtures, no drift when schema changes.
   - [Special String types](#special-string-types)
 - [User Cases](#use-cases)
 - [Nested Models](#nested-models)
+- [Collections](#collections)
 - [Development](#development)
 - [Roadmap](#roadmap)
 - [Changelog](#changelog)
@@ -330,6 +331,45 @@ print(invalid_data_by_field)
 # }
 ```
 
+## Collections
+
+### List support (experimental)
+
+`conformly` supports basic generation of `list[T]` where `T` is a constrained primitive or a nested model.
+
+#### Example
+
+```python
+from dataclasses import dataclass
+from typing import Annotated
+from conformly import case
+from conformly.constraints import MinLength
+
+@dataclass
+class Product:
+    sku: str
+    price: float
+
+@dataclass
+class Order:
+    tags: list[str]                           # list of unconstrained strings
+    codes: Annotated[list[str], MinLength(5)] # each element must be ≥5 chars
+    items: list[Product]                      # list of nested models
+
+valid = case(Order, valid=True)
+# -> {"tags": ["abc"], "codes": ["ABCDE"], "items": [{"sku": "...", "price": 10.0}]}
+
+invalid = case(Order, valid=False, strategy="codes")
+# -> {"tags": [...], "codes": ["ab", "VALID"], "items": [...]}  # exactly one code violates min_length
+```
+
+#### Current limitations (v0.3.10)
+
+- No `min_items`/`max_items` control (list length is always 1–3 elements)
+- No nested collections (`list[list[T]]` not supported)
+- Invalid generation targets one random element; specific index targeting not available yet
+
+
 ## Development
 
 Install dependencies:
@@ -355,12 +395,6 @@ Build & check package:
 uv build
 uv run -m twine check dist/*
 ```
-
-## Roadmap
-
-- **Better regex invalidation** - guarantee that invalid strings don't match patterns
-- **More adapters** - TypedDict, attrs support
-- **More constraints and types** - `list[T]`, `dict[T]` etc.
 
 ## Changelog
 

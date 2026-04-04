@@ -17,7 +17,7 @@ resolved_model = ResolvedModel(
         ResolvedField(
             field_spec=FieldSpec(
                 name="name",
-                type=str,
+                field_type=str,
                 default=_UNSET,
                 nullable=False,
             ),
@@ -32,7 +32,7 @@ resolved_model = ResolvedModel(
         ResolvedField(
             field_spec=FieldSpec(
                 name="age",
-                type=int,
+                field_type=int,
                 default=_UNSET,
                 nullable=False,
             ),
@@ -47,34 +47,34 @@ resolved_model = ResolvedModel(
         ResolvedField(
             field_spec=FieldSpec(
                 name="is_admin",
-                type=bool,
+                field_type=bool,
                 default=True,
                 nullable=False,
             ),
             path=(2,),
-            semantic=BooleanSemantic(FieldKind.BOOLEAN),
+            semantic=BooleanSemantic(),
         ),
         ResolvedField(
             field_spec=FieldSpec(
                 name="profile",
-                type=object,
+                field_type=object,
                 default=_UNSET,
                 nullable=False,
             ),
             path=(3,),
-            semantic=ObjectSemantic(FieldKind.OBJECT),
+            semantic=ObjectSemantic(),
             nested_model=ResolvedModel(
                 name="Profile",
                 fields=(
                     ResolvedField(
                         field_spec=FieldSpec(
                             name="is_blocked",
-                            type=bool,
+                            field_type=bool,
                             default=False,
                             nullable=False,
                         ),
                         path=(3, 0),
-                        semantic=BooleanSemantic(FieldKind.BOOLEAN),
+                        semantic=BooleanSemantic(),
                     ),
                 ),
             ),

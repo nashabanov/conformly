@@ -17,6 +17,7 @@ from conformly.constraints import (
 )
 from conformly.fields import Email
 from conformly.fields.special_registry import SPECIAL_KINDS
+from conformly.resolver import ResolvedModel
 from conformly.resolver.resolve import (
     _build_indexes,
     _extract_numeric_multiple_of,
@@ -31,11 +32,12 @@ from conformly.resolver.resolve import (
 )
 from conformly.resolver.semantics import (
     BooleanSemantic,
+    EnumSemantic,
+    ListSemantic,
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
 )
-from conformly.resolver.semantics.enum import EnumSemantic
 from conformly.specs import FieldSpec, ModelSpec
 from conformly.types import (
     ENUMERATED_TYPE,
@@ -428,7 +430,10 @@ def test_create_field_semantic_dispatch(
     expected_semantic_type,
 ) -> None:
     field_spec = FieldSpec(
-        name="test", type=field_type, constraints=constraints, nested_model=nested_model
+        name="test",
+        field_type=field_type,
+        constraints=constraints,
+        nested_model=nested_model,
     )
 
     semantic = create_field_semantic(field_spec)
@@ -496,7 +501,7 @@ def test_extract_numeric_multiple_of(
 def test_resolve_field_flat() -> None:
     field_spec = FieldSpec(
         name="count",
-        type=int,
+        field_type=int,
         default=43,
         nullable=False,
         constraints=(GreaterThan(2),),
@@ -506,7 +511,7 @@ def test_resolve_field_flat() -> None:
     resolved = resolve_field(field_spec, path)
 
     assert resolved.name == "count"
-    assert resolved.path == (1, 3)
+    assert resolved.path == path
     assert resolved.py_type is int
     assert resolved.default == 43
     assert resolved.nullable is False
@@ -523,13 +528,63 @@ def test_resolve_field_with_nested_model():
     resolved = resolve_field(field_spec, path)
 
     assert resolved.name == "origin"
-    assert resolved.path == (0,)
+    assert resolved.path == path
     assert resolved.nested_model is not None
     assert resolved.nested_model.name == "Point"
     assert len(resolved.nested_model.fields) == 2
     assert resolved.nested_model.fields[0].name == "x"
     assert resolved.nested_model.fields[0].path == (0, 0)
     assert resolved.nested_model.fields[1].path == (0, 1)
+
+
+def test_resolve_list_field() -> None:
+    field_spec = FieldSpec(name="emails", field_type=Email, collection_type=list)
+    path: FieldPath = (0,)
+
+    resolved = resolve_field(field_spec, path)
+
+    assert resolved.name == "emails"
+    assert resolved.path == path
+    assert isinstance(resolved.semantic, ListSemantic)
+    assert isinstance(resolved.semantic.element_semantic, StringSemantic)
+
+
+def test_resolve_list_with_constrained_type() -> None:
+    field_spec = FieldSpec(
+        name="nums",
+        field_type=int,
+        collection_type=list,
+        constraints=(GreaterOrEqual(10), LessOrEqual(100)),
+    )
+    path: FieldPath = (1, 2)
+
+    resolved = resolve_field(field_spec, path)
+
+    assert resolved.name == "nums"
+    assert resolved.path == path
+    assert isinstance(resolved.semantic, ListSemantic)
+    assert isinstance(resolved.semantic.element_semantic, NumericSemantic)
+    assert resolved.semantic.element_semantic.kind == FieldKind.INTEGER
+    assert resolved.semantic.element_semantic.has_constraints is True
+    assert len(resolved.semantic.element_semantic.invalid_ranges) == 2
+
+
+def test_resolve_list_with_nested_model(simple_model_spec) -> None:
+    field_spec = FieldSpec(
+        name="models",
+        field_type=type,
+        collection_type=list,
+        nested_model=simple_model_spec,
+    )
+    path: FieldPath = (1, 2)
+
+    resolved = resolve_field(field_spec, path)
+
+    assert resolved.name == "models"
+    assert resolved.path == path
+    assert isinstance(resolved.semantic, ListSemantic)
+    assert isinstance(resolved.semantic.element_nested_model, ResolvedModel)
+    assert isinstance(resolved.semantic.element_semantic, ObjectSemantic)
 
 
 # ===== TESTS for resolve_model() =====
