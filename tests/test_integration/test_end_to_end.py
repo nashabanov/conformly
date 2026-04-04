@@ -79,6 +79,20 @@ class Article:
     publish_date: Annotated[int, GreaterOrEqual(0)]
 
 
+@dataclass
+class ProductItem:
+    sku: str
+    price: Annotated[float, GreaterOrEqual(0)]
+
+
+@dataclass
+class Order:
+    items: list[ProductItem]
+    tags: list[str]
+    codes: Annotated[list[str], MinLength(5)]
+    flags: list[bool]
+
+
 class TestUserModel:
     def test_generate_valid_user(self):
         for _ in range(20):
@@ -654,6 +668,36 @@ class TestApiErrors:
     def test_raises_if_count_less_than_one(self) -> None:
         with pytest.raises(ValueError):
             cases(User, count=0)
+
+
+class TestListGeneration:
+    def test_list_of_strings_length_and_type(self):
+        result = case(Order, valid=True)
+
+        assert isinstance(result["tags"], list)
+        assert 1 <= len(result["tags"]) <= 3
+        assert all(isinstance(t, str) for t in result["tags"])
+
+    def test_list_with_constraints_enforced(self):
+        result = case(Order, valid=True)
+
+        assert all(len(code) >= 5 for code in result["codes"])
+
+    def test_list_of_models_generates_nested_dicts(self):
+        result = case(Order, valid=True)
+
+        assert isinstance(result["items"], list)
+        assert len(result["items"]) >= 1
+        for item in result["items"]:
+            assert isinstance(item, dict)
+            assert "sku" in item and "price" in item
+            assert item["price"] >= 0
+
+    def test_list_of_primitives_without_constraints(self):
+        result = case(Order, valid=True)
+
+        assert isinstance(result["flags"], list)
+        assert all(isinstance(f, bool) for f in result["flags"])
 
 
 class TestDeterministicGeneration:

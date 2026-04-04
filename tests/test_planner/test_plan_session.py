@@ -52,7 +52,7 @@ resolved_model = ResolvedModel(
                 nullable=False,
             ),
             path=(2,),
-            semantic=BooleanSemantic(FieldKind.BOOLEAN),
+            semantic=BooleanSemantic(),
         ),
         ResolvedField(
             field_spec=FieldSpec(
@@ -62,7 +62,7 @@ resolved_model = ResolvedModel(
                 nullable=False,
             ),
             path=(3,),
-            semantic=ObjectSemantic(FieldKind.OBJECT),
+            semantic=ObjectSemantic(),
             nested_model=ResolvedModel(
                 name="Profile",
                 fields=(
@@ -74,7 +74,7 @@ resolved_model = ResolvedModel(
                             nullable=False,
                         ),
                         path=(3, 0),
-                        semantic=BooleanSemantic(FieldKind.BOOLEAN),
+                        semantic=BooleanSemantic(),
                     ),
                 ),
             ),

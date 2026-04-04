@@ -17,6 +17,7 @@ from conformly.constraints import (
 )
 from conformly.fields import Email
 from conformly.fields.special_registry import SPECIAL_KINDS
+from conformly.resolver import ResolvedModel
 from conformly.resolver.resolve import (
     _build_indexes,
     _extract_numeric_multiple_of,
@@ -566,6 +567,24 @@ def test_resolve_list_with_constrained_type() -> None:
     assert resolved.semantic.element_semantic.kind == FieldKind.INTEGER
     assert resolved.semantic.element_semantic.has_constraints is True
     assert len(resolved.semantic.element_semantic.invalid_ranges) == 2
+
+
+def test_resolve_list_with_nested_model(simple_model_spec) -> None:
+    field_spec = FieldSpec(
+        name="models",
+        field_type=type,
+        collection_type=list,
+        nested_model=simple_model_spec,
+    )
+    path: FieldPath = (1, 2)
+
+    resolved = resolve_field(field_spec, path)
+
+    assert resolved.name == "models"
+    assert resolved.path == path
+    assert isinstance(resolved.semantic, ListSemantic)
+    assert isinstance(resolved.semantic.element_nested_model, ResolvedModel)
+    assert isinstance(resolved.semantic.element_semantic, ObjectSemantic)
 
 
 # ===== TESTS for resolve_model() =====

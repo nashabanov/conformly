@@ -52,7 +52,7 @@ bool_field = ResolvedField(
         name="is_admin", field_type=bool, default=_UNSET, nullable=False
     ),
     path=(4,),
-    semantic=BooleanSemantic(FieldKind.BOOLEAN),
+    semantic=BooleanSemantic(),
 )
 
 nested_model = ResolvedModel(
@@ -89,7 +89,7 @@ nested_field = ResolvedField(
     ),
     path=(1,),
     nested_model=nested_model,
-    semantic=ObjectSemantic(kind=FieldKind.OBJECT),
+    semantic=ObjectSemantic(),
 )
 
 
