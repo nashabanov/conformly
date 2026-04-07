@@ -44,7 +44,11 @@ class ViolationType(Enum):
     WRONG_EMAIL_FORMAT = "wrong_email_format"
 
     # ip
-    WRONG_IP_FORMAT = "WRONG_IP_FORMAT"
+    WRONG_IP_FORMAT = "wrong_ip_format"
+
+    # uuid
+    WRONG_UUID_FORMAT = "wrong_uuid_format"
+    WRONG_UUID_CHARACTER = "wrong_uuid_character"
 
     # typing
     TYPE_MISMATCH = "type_mismatch"

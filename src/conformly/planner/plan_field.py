@@ -8,6 +8,7 @@ from ..resolver.semantics import (
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
+    UUIDSemantic,
 )
 from ..types import (
     FieldKind,
@@ -29,6 +30,8 @@ _VIOLATION_PRIORITY: tuple[ViolationType, ...] = (
     ViolationType.NOT_MULTIPLE,
     ViolationType.WRONG_EMAIL_FORMAT,
     ViolationType.WRONG_IP_FORMAT,
+    ViolationType.WRONG_UUID_FORMAT,
+    ViolationType.WRONG_UUID_CHARACTER,
     ViolationType.TOO_SHORT,
     ViolationType.TOO_LONG,
     ViolationType.PATTERN_MISMATCH,
@@ -109,6 +112,12 @@ def _define_allowed_violation_types(
 
         case EnumSemantic(kind=FieldKind.ENUM):
             violations = [ViolationType.NOT_ALLOWED_VALUE]
+
+        case UUIDSemantic(kind=FieldKind.UUID):
+            violations = [
+                ViolationType.WRONG_UUID_FORMAT,
+                ViolationType.WRONG_UUID_CHARACTER,
+            ]
 
         case (
             ObjectSemantic(kind=FieldKind.OBJECT)

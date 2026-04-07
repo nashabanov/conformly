@@ -22,6 +22,7 @@ from conformly.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
+from conformly.resolver.semantics.uuid import UUIDSemantic
 from conformly.specs import FieldSpec
 from conformly.types import (
     _UNSET,
@@ -271,6 +272,10 @@ def test_define_numeric_violations(
             ),
             (),
         ),
+        (
+            UUIDSemantic(),
+            (ViolationType.WRONG_UUID_FORMAT, ViolationType.WRONG_UUID_CHARACTER),
+        ),
     ],
 )
 def test_define_allowed_violations_valid(
@@ -364,6 +369,14 @@ def test_define_allowed_violations_valid(
             ),
             (ViolationType.TYPE_MISMATCH,),
         ),
+        (
+            UUIDSemantic(),
+            (
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.WRONG_UUID_FORMAT,
+                ViolationType.WRONG_UUID_CHARACTER,
+            ),
+        ),
     ],
 )
 def test_define_allowed_violations_allow_type_mismatch(
@@ -456,6 +469,14 @@ def test_define_allowed_violations_allow_type_mismatch(
                 has_constraints=False,
             ),
             (ViolationType.MISSING_FIELD,),
+        ),
+        (
+            UUIDSemantic(),
+            (
+                ViolationType.MISSING_FIELD,
+                ViolationType.WRONG_UUID_FORMAT,
+                ViolationType.WRONG_UUID_CHARACTER,
+            ),
         ),
     ],
 )
@@ -563,6 +584,15 @@ def test_define_allowed_violations_allow_structural_violations(
                 has_constraints=False,
             ),
             (ViolationType.MISSING_FIELD, ViolationType.TYPE_MISMATCH),
+        ),
+        (
+            UUIDSemantic(),
+            (
+                ViolationType.MISSING_FIELD,
+                ViolationType.TYPE_MISMATCH,
+                ViolationType.WRONG_UUID_FORMAT,
+                ViolationType.WRONG_UUID_CHARACTER,
+            ),
         ),
     ],
 )
