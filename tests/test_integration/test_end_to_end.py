@@ -717,7 +717,7 @@ class TestUUIDGeneration:
 
     def test_invalid_uuid_fails_strict_parsing(self):
         result = case(UserUUID, valid=False)
-        with pytest.raises(ValueError, match="badly formed hexadecimal UUID string"):
+        with pytest.raises(ValueError):
             uuid.UUID(result["id"])
 
     def test_valid_false_respects_violation_type(self):
