@@ -423,7 +423,7 @@ def test_unsupported_field_type():
         (bool, (), None, BooleanSemantic),
         (dict, (), ModelSpec("Inner", "dataclass", ()), ObjectSemantic),
         (Email, (), None, StringSemantic),
-        (uuid.UUID, (), None, UUIDSemantic()),
+        (uuid.UUID, (), None, UUIDSemantic),
     ],
 )
 def test_create_field_semantic_dispatch(
