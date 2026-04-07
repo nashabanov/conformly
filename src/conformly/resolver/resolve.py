@@ -1,6 +1,7 @@
 from functools import lru_cache
 import math
 from typing import Any
+import uuid
 
 from ..constraints import (
     Constraint,
@@ -38,6 +39,7 @@ from .semantics import (
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
+    UUIDSemantic,
 )
 
 
@@ -126,6 +128,9 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
             )
 
         return create_string_semantic(c, kind)
+
+    if t is uuid.UUID:
+        return UUIDSemantic()
 
     if t is int:
         valid_bounds = calculate_numeric_bounds(t, c)

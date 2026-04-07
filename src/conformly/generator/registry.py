@@ -38,6 +38,7 @@ _MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
     FieldKind.IPv6: FieldKind.INTEGER,
     FieldKind.IPvAny: FieldKind.INTEGER,
     FieldKind.LIST: FieldKind.INTEGER,
+    FieldKind.UUID: FieldKind.FLOAT,
 }
 
 

@@ -1,5 +1,6 @@
 import math
 from typing import Any
+import uuid
 
 import pytest
 
@@ -38,6 +39,7 @@ from conformly.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
+from conformly.resolver.semantics.uuid import UUIDSemantic
 from conformly.specs import FieldSpec, ModelSpec
 from conformly.types import (
     ENUMERATED_TYPE,
@@ -421,6 +423,7 @@ def test_unsupported_field_type():
         (bool, (), None, BooleanSemantic),
         (dict, (), ModelSpec("Inner", "dataclass", ()), ObjectSemantic),
         (Email, (), None, StringSemantic),
+        (uuid.UUID, (), None, UUIDSemantic()),
     ],
 )
 def test_create_field_semantic_dispatch(

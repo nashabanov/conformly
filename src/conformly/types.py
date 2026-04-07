@@ -17,6 +17,7 @@ class FieldKind(Enum):
     BOOLEAN = "boolean"
     OBJECT = "object"
     ENUM = "enum"
+    UUID = "uuid"
 
     # special strings
     EMAIL = "email"
