@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Full support for `multiple_of` constraint**. Added `MultipleOf` constraint in conformly-style semantics and `Field(multiple_of=...)` support for Pydantic models. Values are now generated respecting the step, including invalid value generation (`NOT_MULTIPLE` violation).
 - **Special string semantic types**. Introduced `Email`, `IPv4`, `IPv6`, `IPvAny` as semantic markers (subclasses of `SpecialStr`) for type-safe schema definitions.
+- **Basic `UUID` support**. Implemented canonical RFC 4122 v4 generation Fully integrated with the violation system (`TOO_SHORT`, `TOO_LONG`, `WRONG_UUID_FORMAT`, `WRONG_UUID_CHARACTER`).
 - **Specialized generators**. Implemented realistic data generation for new string semantics.
 - **Constraint composition**. Some special types (`Email`) support `MinLength`/`MaxLength` constraints (e.g., `Annotated[Email, MinLength(10)]`), while `Pattern` is restricted to avoid semantic conflicts.
 - **Basic `list[T]` support**. Generation of `list[str]`, `list[Annotated[T, Constraint]]`, and `list[Model]` with automatic element-wise constraint enforcement.

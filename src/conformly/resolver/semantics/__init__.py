@@ -4,6 +4,7 @@ from .list import ListSemantic
 from .numeric import NumericSemantic
 from .object import ObjectSemantic
 from .string import StringSemantic
+from .uuid import UUIDSemantic
 
 FieldSemantics = (
     NumericSemantic
@@ -12,6 +13,7 @@ FieldSemantics = (
     | BooleanSemantic
     | EnumSemantic
     | ListSemantic
+    | UUIDSemantic
 )
 
 
@@ -23,4 +25,5 @@ __all__ = [
     "NumericSemantic",
     "ObjectSemantic",
     "StringSemantic",
+    "UUIDSemantic",
 ]

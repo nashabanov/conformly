@@ -11,6 +11,7 @@ from .types import (
     ipvany,
     list,
     string,
+    uuid,
 )
 
 _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
@@ -24,6 +25,7 @@ _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
     FieldKind.IPv6: ipv6,
     FieldKind.IPvAny: ipvany,
     FieldKind.LIST: list,
+    FieldKind.UUID: uuid,
 }
 
 _MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
@@ -38,6 +40,7 @@ _MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
     FieldKind.IPv6: FieldKind.INTEGER,
     FieldKind.IPvAny: FieldKind.INTEGER,
     FieldKind.LIST: FieldKind.INTEGER,
+    FieldKind.UUID: FieldKind.FLOAT,
 }
 
 

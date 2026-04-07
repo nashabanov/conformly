@@ -236,6 +236,29 @@ class Config(BaseModel):
     admin_email: EmailStr  # Automatically uses Email generator
 ```
 
+#### UUID support
+
+Standard `uuid.UUID` fields are supported out of the box. Values are generated in canonical RFC 4122 v4 format (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`, lowercase).
+
+```python
+import uuid
+from dataclasses import dataclass
+from conformly import case
+
+@dataclass
+class Session:
+    id: uuid.UUID
+    user_id: uuid.UUID
+
+valid = case(Session, valid=True)
+# -> {"id": UUID("550e8400-e29b-41d4-a716-446655440000"), ...}
+
+invalid = case(Session, valid=False, strategy="id::too_short")
+# -> {"id": "550e8400-e29b-41d4-a716-44665544000"}  # TOO_SHORT
+invalid = case(Session, valid=False, strategy="id::wrong_uuid_character")
+# -> {"id": "550e8400-e29b-41d4-a71@-446655440000"} # WRONG_UUID_CHARACTER
+```
+
 ## Use Cases
 
 ### API Testing

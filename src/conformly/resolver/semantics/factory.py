@@ -6,6 +6,7 @@ from .list import ListSemantic
 from .numeric import NumericSemantic
 from .object import ObjectSemantic
 from .string import StringSemantic
+from .uuid import UUIDSemantic
 
 
 def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
@@ -39,5 +40,7 @@ def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
                 ),
                 has_constraints=False,
             )
+        case FieldKind.UUID:
+            return UUIDSemantic()
         case _:
             raise ValueError(f"Unsupported FieldKind: {kind}")
