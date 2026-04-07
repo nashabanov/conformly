@@ -130,7 +130,7 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
         return create_string_semantic(c, kind)
 
     if t is uuid.UUID:
-        return UUIDSemantic()
+        return UUIDSemantic(has_constraints=True)
 
     if t is int:
         valid_bounds = calculate_numeric_bounds(t, c)

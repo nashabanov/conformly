@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 import math
 import re
 from typing import Annotated, Literal
+import uuid
 
 import pytest
 
@@ -91,6 +92,11 @@ class Order:
     tags: list[str]
     codes: Annotated[list[str], MinLength(5)]
     flags: list[bool]
+
+
+@dataclass
+class UserUUID:
+    id: uuid.UUID
 
 
 class TestUserModel:
@@ -698,6 +704,26 @@ class TestListGeneration:
 
         assert isinstance(result["flags"], list)
         assert all(isinstance(f, bool) for f in result["flags"])
+
+
+class TestUUIDGeneration:
+    def test_valid_uuid(self):
+        result = case(UserUUID, valid=True)
+
+        assert isinstance(result["id"], str)
+        parsed = uuid.UUID(result["id"])
+        assert parsed.version == 4, f"Expected v4 UUID, got version {parsed.version}"
+        assert result["id"] == str(parsed)
+
+    def test_invalid_uuid_fails_strict_parsing(self):
+        result = case(UserUUID, valid=False)
+        with pytest.raises(ValueError, match="badly formed hexadecimal UUID string"):
+            uuid.UUID(result["id"])
+
+    def test_valid_false_respects_violation_type(self):
+        result = case(UserUUID, valid=False, strategy="id::wrong_uuid_character")
+        hex_clean = result["id"].replace("-", "").lower()
+        assert not all(c in "0123456789abcdef" for c in hex_clean)
 
 
 class TestDeterministicGeneration:
