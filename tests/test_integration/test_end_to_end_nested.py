@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from typing import Annotated
 
-from conformly import case, cases
-from conformly._internal.constraints import GreaterOrEqual, MinLength
+from conformly import GreaterOrEqual, MinLength, case, cases
 
 
 @dataclass

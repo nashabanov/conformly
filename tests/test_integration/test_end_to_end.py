@@ -6,8 +6,7 @@ import uuid
 
 import pytest
 
-from conformly import case, cases
-from conformly._internal.constraints import (
+from conformly import (
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -15,6 +14,8 @@ from conformly._internal.constraints import (
     MaxLength,
     MinLength,
     Pattern,
+    case,
+    cases,
 )
 
 

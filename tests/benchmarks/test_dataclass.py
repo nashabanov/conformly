@@ -3,14 +3,15 @@ from typing import Annotated, Literal
 
 import pytest
 
-from conformly import case, cases
-from conformly._internal.constraints import (
+from conformly import (
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
     MaxLength,
     MinLength,
     Pattern,
+    case,
+    cases,
 )
 from conformly._internal.parser.adapters.dataclass import parse
 from conformly.resolver.resolve import resolve_model

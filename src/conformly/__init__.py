@@ -8,6 +8,7 @@ from ._internal.constraints import (
     MinLength,
     MultipleOf,
     OneOf,
+    Pattern,
 )
 from ._internal.fields import Email, IPv4, IPv6, IPvAny
 from .core import case, cases
@@ -25,6 +26,7 @@ __all__ = [
     "MinLength",
     "MultipleOf",
     "OneOf",
+    "Pattern",
     "case",
     "cases",
 ]
