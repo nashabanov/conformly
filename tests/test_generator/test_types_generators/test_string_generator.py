@@ -2,6 +2,7 @@ import re
 
 import pytest
 
+from conformly._internal.types import FieldKind, LengthRange, ViolationType
 from conformly.generator.context import GenerationContext
 from conformly.generator.types.string import (
     _generate_invalid_string,
@@ -12,7 +13,6 @@ from conformly.generator.types.string import (
     generate_value,
 )
 from conformly.resolver.semantics import StringSemantic
-from conformly.types import FieldKind, LengthRange, ViolationType
 
 
 def test_random_string_min_only(ctx: GenerationContext) -> None:

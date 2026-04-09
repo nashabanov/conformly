@@ -1,9 +1,9 @@
 from typing import Any
 
+from .._internal.types import UNSET, FieldKind, FieldPath, ViolationType
 from ..planner import PlannedTask
 from ..resolver import ResolvedField, ResolvedModel, create_minimal_semantic
 from ..resolver.semantics import ListSemantic
-from ..types import _UNSET, FieldKind, FieldPath, ViolationType
 from .context import GenerationContext
 from .registry import choose_mismatch_kind, get_generator
 
@@ -55,7 +55,7 @@ def _built_dict_with_violations(
                 raise ValueError(f"Field '{field.name}' has no constraints to violate")
 
             value = generate_field(ctx, field, violations)
-            if value is not _UNSET:
+            if value is not UNSET:
                 result[field.name] = value
 
         else:
@@ -93,7 +93,7 @@ def generate_field(
         if field.nullable:
             return None
 
-        if field.default is not _UNSET:
+        if field.default is not UNSET:
             default = field.default
             if callable(default):
                 return default()
@@ -111,7 +111,7 @@ def generate_field(
         return get_generator(mismatch_kind).generate_value(ctx, mismatch_semantic, None)
 
     if violation == ViolationType.MISSING_FIELD:
-        return _UNSET
+        return UNSET
 
     return get_generator(field.semantic.kind).generate_value(
         ctx, field.semantic, violation

@@ -6,7 +6,7 @@ from conformly._internal.constraints import (
     MaxLength,
     MinLength,
 )
-from conformly._internal.parsing import FieldSpec, ModelSpec
+from conformly._internal.parser import FieldSpec, ModelSpec
 
 
 @pytest.fixture

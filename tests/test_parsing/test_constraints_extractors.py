@@ -10,7 +10,7 @@ from conformly._internal.constraints import (
     OneOf,
     Pattern,
 )
-from conformly._internal.parsing.extractors.constraints import (
+from conformly._internal.parser.extractors.constraints import (
     _metadata_to_constraints,
     is_constraints_consistent,
     parse_annotated_constraints,

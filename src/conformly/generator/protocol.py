@@ -1,6 +1,6 @@
 from typing import Any, Protocol
 
-from ..types import ViolationType
+from .._internal.types import ViolationType
 from .context import GenerationContext
 
 

@@ -12,7 +12,7 @@ from conformly._internal.constraints import (
     MinLength,
     Pattern,
 )
-from conformly._internal.parsing.adapters.dataclass import parse
+from conformly._internal.parser.adapters.dataclass import parse
 from conformly.resolver.resolve import resolve_model
 
 

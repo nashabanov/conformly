@@ -1,6 +1,15 @@
 import pytest
 
-from conformly._internal.parsing import FieldSpec
+from conformly._internal.parser import FieldSpec
+from conformly._internal.types import (
+    INT_MAX,
+    INT_MIN,
+    UNSET,
+    FieldKind,
+    LengthRange,
+    Range,
+    ViolationType,
+)
 from conformly.generator.context import GenerationContext
 from conformly.generator.orchestration import (
     generate_field,
@@ -15,18 +24,9 @@ from conformly.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
-from conformly.types import (
-    _UNSET,
-    INT_MAX,
-    INT_MIN,
-    FieldKind,
-    LengthRange,
-    Range,
-    ViolationType,
-)
 
 simple_string_field = ResolvedField(
-    field_spec=FieldSpec(name="name", field_type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="name", field_type=str, default=UNSET, nullable=False),
     path=(0,),
     semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, True),
 )
@@ -49,7 +49,7 @@ optional_string_field = ResolvedField(
 
 bool_field = ResolvedField(
     field_spec=FieldSpec(
-        name="is_admin", field_type=bool, default=_UNSET, nullable=False
+        name="is_admin", field_type=bool, default=UNSET, nullable=False
     ),
     path=(4,),
     semantic=BooleanSemantic(),
@@ -60,14 +60,14 @@ nested_model = ResolvedModel(
     fields=(
         ResolvedField(
             field_spec=FieldSpec(
-                name="address", field_type=str, default=_UNSET, nullable=True
+                name="address", field_type=str, default=UNSET, nullable=True
             ),
             path=(1, 0),
             semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 25), None, True),
         ),
         ResolvedField(
             field_spec=FieldSpec(
-                name="age", field_type=int, default=_UNSET, nullable=False
+                name="age", field_type=int, default=UNSET, nullable=False
             ),
             path=(1, 1),
             semantic=NumericSemantic(
@@ -85,7 +85,7 @@ nested_model = ResolvedModel(
 
 nested_field = ResolvedField(
     field_spec=FieldSpec(
-        name="profile", field_type=object, default=_UNSET, nullable=False
+        name="profile", field_type=object, default=UNSET, nullable=False
     ),
     path=(1,),
     nested_model=nested_model,
@@ -145,7 +145,7 @@ def test_generate_field_invalid_type_mismatch(ctx: GenerationContext) -> None:
 def test_generate_missing_field(ctx: GenerationContext) -> None:
     assert (
         generate_field(ctx, simple_string_field, (ViolationType.MISSING_FIELD,))
-        is _UNSET
+        is UNSET
     )
 
 

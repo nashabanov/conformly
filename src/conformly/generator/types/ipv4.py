@@ -1,5 +1,5 @@
+from ..._internal.types import ViolationType
 from ...resolver.semantics import StringSemantic
-from ...types import ViolationType
 from ..context import GenerationContext
 
 TEST_RANGES = [

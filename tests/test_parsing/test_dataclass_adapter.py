@@ -13,8 +13,8 @@ from conformly._internal.constraints import (
     OneOf,
 )
 from conformly._internal.fields import Email
-from conformly._internal.parsing import FieldSpec, ModelSpec
-from conformly._internal.parsing.adapters.dataclass import (
+from conformly._internal.parser import FieldSpec, ModelSpec
+from conformly._internal.parser.adapters.dataclass import (
     parse,
     parse_defaults,
     parse_field,
@@ -22,7 +22,7 @@ from conformly._internal.parsing.adapters.dataclass import (
     resolve_type,
     supports,
 )
-from conformly.types import _UNSET, ENUMERATED_TYPE
+from conformly._internal.types import ENUMERATED_TYPE, UNSET
 
 
 class NotDataclass:
@@ -155,13 +155,13 @@ def test_parse_default_factory_creates_new() -> None:
 
 def test_parse_default_missing() -> None:
     default = parse_defaults(fields(DummyDataclass)[0])
-    assert default == _UNSET
+    assert default == UNSET
 
 
 def test_parse_default_none() -> None:
     default = parse_defaults(fields(OptionalDataclass)[0])
     assert default is None
-    assert default is not _UNSET
+    assert default is not UNSET
 
 
 def test_parse_default_factory_dict() -> None:
@@ -181,7 +181,7 @@ def test_parse_default_zero() -> None:
 
     default = parse_defaults(fields(ZeroDefault)[0])
     assert default == 0
-    assert default is not _UNSET
+    assert default is not UNSET
 
 
 def test_parse_default_empty_string() -> None:
@@ -191,7 +191,7 @@ def test_parse_default_empty_string() -> None:
 
     default = parse_defaults(fields(EmptyStringDefault)[0])
     assert default == ""
-    assert default is not _UNSET
+    assert default is not UNSET
 
 
 def test_parse_default_factory_returns_callable() -> None:
@@ -306,7 +306,7 @@ def test_parse_fields_mixed() -> None:
     assert len(field_specs) == 4
 
     assert field_specs[0].name == "id"
-    assert field_specs[0].default == _UNSET
+    assert field_specs[0].default == UNSET
     assert field_specs[0].nullable is False
 
     assert field_specs[1].name == "name"
@@ -359,7 +359,7 @@ def test_parse_mixed_model() -> None:
 
     id_field = spec.fields[0]
     assert id_field.name == "id"
-    assert id_field.default == _UNSET
+    assert id_field.default == UNSET
     assert id_field.has_default() is False
 
 

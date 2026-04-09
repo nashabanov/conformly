@@ -1,7 +1,7 @@
 import math
 
+from ..._internal.types import FLOAT_MAX, FLOAT_MIN, ViolationType
 from ...resolver.semantics import NumericSemantic
-from ...types import FLOAT_MAX, FLOAT_MIN, ViolationType
 from ..context import GenerationContext
 
 

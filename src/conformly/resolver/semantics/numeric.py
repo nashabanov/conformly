@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from ...types import FieldKind, Range
+from ..._internal.types import FieldKind, Range
 
 
 @dataclass(frozen=True)

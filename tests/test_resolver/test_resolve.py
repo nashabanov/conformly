@@ -17,7 +17,18 @@ from conformly._internal.constraints import (
     Pattern,
 )
 from conformly._internal.fields import SPECIAL_KINDS, Email
-from conformly._internal.parsing import FieldSpec, ModelSpec
+from conformly._internal.parser import FieldSpec, ModelSpec
+from conformly._internal.types import (
+    ENUMERATED_TYPE,
+    FLOAT_MAX,
+    FLOAT_MIN,
+    INT_MAX,
+    INT_MIN,
+    FieldKind,
+    FieldPath,
+    LengthRange,
+    Range,
+)
 from conformly.resolver import ResolvedModel
 from conformly.resolver.resolve import (
     _build_indexes,
@@ -40,17 +51,6 @@ from conformly.resolver.semantics import (
     StringSemantic,
 )
 from conformly.resolver.semantics.uuid import UUIDSemantic
-from conformly.types import (
-    ENUMERATED_TYPE,
-    FLOAT_MAX,
-    FLOAT_MIN,
-    INT_MAX,
-    INT_MIN,
-    FieldKind,
-    FieldPath,
-    LengthRange,
-    Range,
-)
 
 
 @pytest.fixture

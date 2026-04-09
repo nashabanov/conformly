@@ -23,8 +23,8 @@ from conformly._internal.constraints import (
     Pattern,
 )
 from conformly._internal.fields import Email
-from conformly._internal.parsing import ModelSpec
-from conformly._internal.parsing.adapters.pydantic import (
+from conformly._internal.parser import ModelSpec
+from conformly._internal.parser.adapters.pydantic import (
     _parse_default,
     _parse_fieldinfo_constraints,
     parse,
@@ -32,7 +32,7 @@ from conformly._internal.parsing.adapters.pydantic import (
     parse_fields,
     supports,
 )
-from conformly.types import _UNSET, ENUMERATED_TYPE
+from conformly._internal.types import ENUMERATED_TYPE, UNSET
 
 
 class SimpleModel(BaseModel):
@@ -181,7 +181,7 @@ def test_mixed_sources_preserve_all_constraints() -> None:
         ("str_default", "test"),
         ("none_default", None),
         ("int_default", 42),
-        ("required_str", _UNSET),
+        ("required_str", UNSET),
     ],
 )
 def test_parse_default_valid(field_name: str, expected: Any) -> None:

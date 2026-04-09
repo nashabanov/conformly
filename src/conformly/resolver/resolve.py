@@ -16,8 +16,8 @@ from .._internal.constraints import (
     Pattern,
 )
 from .._internal.fields import SPECIAL_KINDS, SPECIAL_TYPE_TO_KIND, SpecialString
-from .._internal.parsing import FieldSpec, ModelSpec
-from ..types import (
+from .._internal.parser import FieldSpec, ModelSpec
+from .._internal.types import (
     ENUMERATED_TYPE,
     FLOAT_MAX,
     FLOAT_MIN,

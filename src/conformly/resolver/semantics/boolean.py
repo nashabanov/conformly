@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ...types import FieldKind
+from ..._internal.types import FieldKind
 
 
 @dataclass(frozen=True)

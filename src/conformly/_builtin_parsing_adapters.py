@@ -1,10 +1,10 @@
-from ._internal.parsing.adapters import dataclass
-from ._internal.parsing.adapters.registry import register
+from ._internal.parser.adapters import dataclass
+from ._internal.parser.adapters.registry import register
 
 register(dataclass)
 
 try:
-    from ._internal.parsing.adapters import pydantic
+    from ._internal.parser.adapters import pydantic
 
     register(pydantic)
 except ImportError:

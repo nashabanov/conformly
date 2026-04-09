@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
-from ...types import _UNSET
+from ..types import UNSET
 
 if TYPE_CHECKING:
     from ..constraints import Constraint
@@ -14,13 +14,13 @@ class FieldSpec:
     name: str
     field_type: type
     constraints: tuple[Constraint, ...] = ()
-    default: Any = _UNSET
+    default: Any = UNSET
     nullable: bool = False
     nested_model: ModelSpec | None = None
     collection_type: type | None = None
 
     def has_default(self) -> bool:
-        return self.default is not _UNSET
+        return self.default is not UNSET
 
     def is_optional(self) -> bool:
         return self.nullable

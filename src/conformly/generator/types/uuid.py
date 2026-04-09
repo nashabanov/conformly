@@ -1,8 +1,8 @@
 import string
 import uuid
 
+from ..._internal.types import ViolationType
 from ...resolver.semantics import UUIDSemantic
-from ...types import ViolationType
 from ..context import GenerationContext
 
 HEX_CHARS = string.hexdigits.lower()

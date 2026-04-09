@@ -1,6 +1,7 @@
 from typing import Any
 
-from ._internal.parsing import ModelSpec, parse_model
+from ._internal.parser import ModelSpec, parse_model
+from ._internal.types import CasesStrategy, CaseStrategy, ViolationType
 from .generator import (
     GenerationContext,
     create_context,
@@ -9,7 +10,6 @@ from .generator import (
 )
 from .planner import PlannedTask, plan_violation_task, select_paths
 from .resolver import ResolvedModel, resolve_model
-from .types import CasesStrategy, CaseStrategy, ViolationType
 
 
 def _ensure_model_or_spec(

@@ -1,4 +1,4 @@
-from ..types import FieldKind
+from .._internal.types import FieldKind
 from .protocol import TypeGeneratorProtocol
 from .types import (
     boolean,

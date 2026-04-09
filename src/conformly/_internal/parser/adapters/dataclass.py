@@ -5,7 +5,7 @@ from typing import (
     get_type_hints,
 )
 
-from ....types import _UNSET, ENUMERATED_TYPE
+from ...types import ENUMERATED_TYPE, UNSET
 from ..extractors.constraints import (
     is_constraints_consistent,
     parse_annotated_constraints,
@@ -81,4 +81,4 @@ def parse_defaults(field: Field[Any]) -> Any:
     elif field.default_factory is not MISSING:
         return field.default_factory
 
-    return _UNSET
+    return UNSET

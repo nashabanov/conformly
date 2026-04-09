@@ -1,13 +1,6 @@
-from dataclasses import dataclass
 from enum import Enum
-import math
-from typing import Literal
 
 FieldPath = tuple[int, ...]
-
-
-CaseStrategy = Literal["first", "random"] | str
-CasesStrategy = Literal["first", "random", "all", "all_violations"] | str
 
 
 class FieldKind(Enum):
@@ -60,28 +53,3 @@ class ViolationType(Enum):
     # structural
     MISSING_FIELD = "missing_field"
     EXTRA_FIELD = "extra_field"
-
-
-INT_MIN = -(2**63)
-INT_MAX = 2**63 - 1
-FLOAT_MIN = -math.inf
-FLOAT_MAX = math.inf
-
-
-@dataclass(frozen=True)
-class Range:
-    min_value: int | float
-    max_value: int | float
-
-
-@dataclass(frozen=True)
-class LengthRange:
-    min_length: int
-    max_length: int | None
-
-
-ENUMERATED_TYPE = type("EnummeratedType", (), {})
-
-MAX_GENERATION_ATTEMPTS = 20
-
-_UNSET = object()

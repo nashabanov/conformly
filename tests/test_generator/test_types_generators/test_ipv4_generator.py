@@ -1,5 +1,6 @@
 import pytest
 
+from conformly._internal.types import FieldKind, LengthRange, ViolationType
 from conformly.generator.context import GenerationContext
 from conformly.generator.types.ipv4 import (
     INVALID_FORMATS,
@@ -8,7 +9,6 @@ from conformly.generator.types.ipv4 import (
     generate_value,
 )
 from conformly.resolver.semantics import StringSemantic
-from conformly.types import FieldKind, LengthRange, ViolationType
 
 
 def test_generate_valid_ipv4_format(ctx: GenerationContext) -> None:

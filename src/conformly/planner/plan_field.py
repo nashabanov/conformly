@@ -1,4 +1,9 @@
 from .._internal.fields import SPECIAL_KINDS
+from .._internal.types import (
+    FieldKind,
+    FieldPath,
+    ViolationType,
+)
 from ..resolver import ResolvedModel
 from ..resolver.semantics import (
     BooleanSemantic,
@@ -9,11 +14,6 @@ from ..resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
     UUIDSemantic,
-)
-from ..types import (
-    FieldKind,
-    FieldPath,
-    ViolationType,
 )
 from .planned_task import PlannedTask
 

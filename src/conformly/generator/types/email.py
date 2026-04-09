@@ -1,7 +1,7 @@
 import string
 
+from ..._internal.types import MAX_GENERATION_ATTEMPTS, ViolationType
 from ...resolver.semantics import StringSemantic
-from ...types import MAX_GENERATION_ATTEMPTS, ViolationType
 from ..context import GenerationContext
 
 LOCAL_CHARS = string.ascii_lowercase + string.digits + "._%+-"

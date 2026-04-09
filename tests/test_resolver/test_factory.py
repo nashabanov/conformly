@@ -1,7 +1,7 @@
 import pytest
 
+from conformly._internal.types import FieldKind
 from conformly.resolver.semantics.factory import create_minimal_semantic
-from conformly.types import FieldKind
 
 
 @pytest.mark.parametrize("kind", list(FieldKind))

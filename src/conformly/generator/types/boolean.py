@@ -1,7 +1,7 @@
 from typing import no_type_check
 
+from ..._internal.types import ViolationType
 from ...resolver.semantics import FieldSemantics
-from ...types import ViolationType
 from ..context import GenerationContext
 
 

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ...types import FieldKind
+from ..._internal.types import FieldKind
 
 if TYPE_CHECKING:
     from ..model import ResolvedModel

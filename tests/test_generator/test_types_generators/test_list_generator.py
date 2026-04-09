@@ -3,9 +3,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from conformly._internal.types import UNSET, ViolationType
 from conformly.generator.types.list import generate_value
 from conformly.resolver.semantics import ListSemantic
-from conformly.types import _UNSET, ViolationType
 
 if TYPE_CHECKING:
     from conformly.resolver import ResolvedField
@@ -51,7 +51,7 @@ def test_delegates_generation_to_orchestrator(ctx, mock_elem_semantic) -> None:
             _, field, _ = c.args
             assert field.semantic is mock_elem_semantic
             assert field.nullable is False
-            assert field.default is _UNSET
+            assert field.default is UNSET
 
 
 def test_violation_applied_to_single_random_element(ctx, list_sem) -> None:

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..types import FieldPath
+    from .._internal.types import FieldPath
     from .field import ResolvedField
 
 

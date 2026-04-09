@@ -1,8 +1,8 @@
 import re
 import string
 
+from ..._internal.types import MAX_GENERATION_ATTEMPTS, ViolationType
 from ...resolver.semantics.string import StringSemantic
-from ...types import MAX_GENERATION_ATTEMPTS, ViolationType
 from ..context import GenerationContext
 
 DEFAULT_MIN_LENGTH = 5

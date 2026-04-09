@@ -1,7 +1,7 @@
 from typing import Any
 
+from ..._internal.types import ViolationType
 from ...resolver.semantics import EnumSemantic
-from ...types import ViolationType
 from ..context import GenerationContext
 
 _INVALID_ENUM_PREFIX = "__INVALID_ENUM_"

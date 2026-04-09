@@ -9,8 +9,8 @@ from typing import (
     get_origin,
 )
 
-from ....types import ENUMERATED_TYPE
 from ...constraints import Constraint, OneOf
+from ...types import ENUMERATED_TYPE
 
 UNION_TYPES = (Union, UnionType)
 COLLECTION_ORIGINS = (list, list)

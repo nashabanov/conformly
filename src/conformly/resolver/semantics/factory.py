@@ -1,4 +1,4 @@
-from ...types import FieldKind, LengthRange, Range
+from ..._internal.types import FieldKind, LengthRange, Range
 from ..semantics import FieldSemantics
 from .boolean import BooleanSemantic
 from .enum import EnumSemantic

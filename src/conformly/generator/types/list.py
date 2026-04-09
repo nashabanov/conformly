@@ -1,14 +1,14 @@
 from typing import Any
 
+from ..._internal.types import UNSET, ViolationType
 from ...resolver.semantics import ListSemantic
-from ...types import _UNSET, ViolationType
 from ..context import GenerationContext
 
 
 def generate_value(
     ctx: GenerationContext, semantic: ListSemantic, violation: ViolationType | None
 ) -> list[Any]:
-    from ..._internal.parsing import FieldSpec
+    from ..._internal.parser import FieldSpec
     from ...resolver import ResolvedField
     from ..orchestration import generate_field
 
@@ -25,7 +25,7 @@ def generate_value(
             name="__list_item",
             field_type=object,
             constraints=(),
-            default=_UNSET,
+            default=UNSET,
             nullable=False,
         )
 

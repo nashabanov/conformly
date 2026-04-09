@@ -1,9 +1,9 @@
 import pytest
 
+from conformly._internal.types import ViolationType
 from conformly.generator.context import GenerationContext
 from conformly.generator.types.enum import _generate_not_allowed_value, generate_value
 from conformly.resolver.semantics import EnumSemantic
-from conformly.types import ViolationType
 
 # ===== TESTS for generate_value() =====
 

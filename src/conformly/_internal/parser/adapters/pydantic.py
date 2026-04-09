@@ -57,7 +57,7 @@ def parse_fields(
 def parse_field(
     field_info: FieldInfo, field_type: Any, name: str, PydanticUndefined: Any
 ) -> FieldSpec:
-    from ....types import ENUMERATED_TYPE
+    from ...types import ENUMERATED_TYPE
     from ..extractors.constraints import (
         is_constraints_consistent,
     )
@@ -110,7 +110,7 @@ def _resolve_pydantic_special_type(field_type: Any) -> Any:
 
 
 def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
-    from ....types import _UNSET
+    from ...types import UNSET
 
     if field_info.default_factory is not None:
         return field_info.default_factory
@@ -118,7 +118,7 @@ def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
     if field_info.default is not PydanticUndefined:
         return field_info.default
 
-    return _UNSET
+    return UNSET
 
 
 def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...]:

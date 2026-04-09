@@ -6,11 +6,11 @@ import pytest
 
 from conformly._internal.constraints import Constraint, MaxLength, MinLength, OneOf
 from conformly._internal.fields import Email
-from conformly._internal.parsing.extractors.types import (
+from conformly._internal.parser.extractors.types import (
     extract_runtime_type_and_constraints,
     is_nullable,
 )
-from conformly.types import ENUMERATED_TYPE
+from conformly._internal.types import ENUMERATED_TYPE
 
 
 @dataclass

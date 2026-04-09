@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ...types import FieldKind
+from ..types import FieldKind
 from .special_types import Email, IPv4, IPv6, IPvAny, SpecialString
 
 

@@ -1,6 +1,6 @@
+from .._internal.types import CasesStrategy, FieldPath
 from ..generator import GenerationContext
 from ..resolver import ResolvedModel
-from ..types import CasesStrategy, FieldPath
 
 NameIndexMap = tuple[tuple[FieldPath, str], ...]
 

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from .base import Constraint
-    from .types import ConstraintType
+    from .keys import ConstraintType
 
 CONSTRAINT_MAPPING: dict[ConstraintType, Callable[[Any], Constraint]] = {
     "gt": GreaterThan,
