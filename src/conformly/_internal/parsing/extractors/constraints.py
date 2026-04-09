@@ -1,15 +1,15 @@
 from collections.abc import Mapping
 from typing import Annotated, Any, cast, get_args, get_origin
 
-from ....constraints import (
+from ...constraints import (
     ALLOWED_CONSTRAINT_TYPE,
     NUMERIC_CONSTRAINTS,
     STRING_CONSTRAINTS,
     Constraint,
     ConstraintType,
     OneOf,
+    create_constraint,
 )
-from ....constraints.mapping import create_constraint
 
 
 def is_constraints_consistent(constraints: tuple[Constraint, ...]) -> bool:

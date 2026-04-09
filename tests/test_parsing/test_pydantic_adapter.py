@@ -12,16 +12,7 @@ from pydantic.fields import FieldInfo
 from pydantic.types import StringConstraints
 from pydantic_core import PydanticUndefined
 
-from conformly._internal.parsing import ModelSpec
-from conformly._internal.parsing.adapters.pydantic import (
-    _parse_default,
-    _parse_fieldinfo_constraints,
-    parse,
-    parse_field,
-    parse_fields,
-    supports,
-)
-from conformly.constraints import (
+from conformly._internal.constraints import (
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -31,7 +22,16 @@ from conformly.constraints import (
     OneOf,
     Pattern,
 )
-from conformly.fields import Email
+from conformly._internal.fields import Email
+from conformly._internal.parsing import ModelSpec
+from conformly._internal.parsing.adapters.pydantic import (
+    _parse_default,
+    _parse_fieldinfo_constraints,
+    parse,
+    parse_field,
+    parse_fields,
+    supports,
+)
 from conformly.types import _UNSET, ENUMERATED_TYPE
 
 

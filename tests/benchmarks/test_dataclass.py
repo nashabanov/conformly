@@ -4,8 +4,7 @@ from typing import Annotated, Literal
 import pytest
 
 from conformly import case, cases
-from conformly._internal.parsing.adapters.dataclass import parse
-from conformly.constraints import (
+from conformly._internal.constraints import (
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -13,6 +12,7 @@ from conformly.constraints import (
     MinLength,
     Pattern,
 )
+from conformly._internal.parsing.adapters.dataclass import parse
 from conformly.resolver.resolve import resolve_model
 
 

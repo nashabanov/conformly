@@ -1,4 +1,4 @@
-from .special_registry import (
+from .registry import (
     SPECIAL_KINDS,
     SPECIAL_NAME_TO_TYPE,
     SPECIAL_STRINGS,

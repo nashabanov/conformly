@@ -3,8 +3,7 @@ import math
 from typing import Any
 import uuid
 
-from .._internal.parsing import FieldSpec, ModelSpec
-from ..constraints import (
+from .._internal.constraints import (
     Constraint,
     GreaterOrEqual,
     GreaterThan,
@@ -16,8 +15,8 @@ from ..constraints import (
     OneOf,
     Pattern,
 )
-from ..fields import SPECIAL_TYPE_TO_KIND, SpecialString
-from ..fields.special_registry import SPECIAL_KINDS
+from .._internal.fields import SPECIAL_KINDS, SPECIAL_TYPE_TO_KIND, SpecialString
+from .._internal.parsing import FieldSpec, ModelSpec
 from ..types import (
     ENUMERATED_TYPE,
     FLOAT_MAX,

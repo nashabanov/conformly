@@ -1,7 +1,12 @@
 import pytest
 
+from conformly._internal.constraints import (
+    Constraint,
+    GreaterOrEqual,
+    MaxLength,
+    MinLength,
+)
 from conformly._internal.parsing import FieldSpec, ModelSpec
-from conformly.constraints import Constraint, GreaterOrEqual, MaxLength, MinLength
 
 
 @pytest.fixture

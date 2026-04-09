@@ -5,7 +5,7 @@ pytest.importorskip("pydantic", reason="Pydantic adapter requires 'pydantic' pac
 from pydantic import BaseModel, ValidationError
 
 from conformly import case
-from conformly.fields import SPECIAL_STRINGS
+from conformly._internal.fields import SPECIAL_STRINGS
 
 
 def get_pydantic_type(name: str) -> type | None:

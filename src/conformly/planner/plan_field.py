@@ -1,4 +1,4 @@
-from ..fields import SPECIAL_KINDS
+from .._internal.fields import SPECIAL_KINDS
 from ..resolver import ResolvedModel
 from ..resolver.semantics import (
     BooleanSemantic,

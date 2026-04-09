@@ -4,8 +4,7 @@ import uuid
 
 import pytest
 
-from conformly._internal.parsing import FieldSpec, ModelSpec
-from conformly.constraints import (
+from conformly._internal.constraints import (
     Constraint,
     GreaterOrEqual,
     GreaterThan,
@@ -17,8 +16,8 @@ from conformly.constraints import (
     OneOf,
     Pattern,
 )
-from conformly.fields import Email
-from conformly.fields.special_registry import SPECIAL_KINDS
+from conformly._internal.fields import SPECIAL_KINDS, Email
+from conformly._internal.parsing import FieldSpec, ModelSpec
 from conformly.resolver import ResolvedModel
 from conformly.resolver.resolve import (
     _build_indexes,

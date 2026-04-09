@@ -3,16 +3,19 @@ from typing import Annotated
 
 import pytest
 
+from conformly._internal.constraints import (
+    Constraint,
+    GreaterOrEqual,
+    MinLength,
+    OneOf,
+    Pattern,
+)
 from conformly._internal.parsing.extractors.constraints import (
     _metadata_to_constraints,
     is_constraints_consistent,
     parse_annotated_constraints,
     parse_metadata_constraints,
 )
-from conformly.constraints import Constraint
-from conformly.constraints.enum import OneOf
-from conformly.constraints.numeric import GreaterOrEqual
-from conformly.constraints.string import MinLength, Pattern
 
 
 @dataclass

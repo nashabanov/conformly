@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from ...types import _UNSET
 
 if TYPE_CHECKING:
-    from ...constraints import Constraint
+    from ..constraints import Constraint
 
 
 @dataclass(frozen=True)

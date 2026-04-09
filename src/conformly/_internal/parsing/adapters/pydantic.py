@@ -3,11 +3,11 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any, get_args, get_origin
 
-from ....fields import SPECIAL_NAME_TO_TYPE
+from ...fields import SPECIAL_NAME_TO_TYPE
 from ..models import FieldSpec, ModelSpec
 
 if TYPE_CHECKING:
-    from ....constraints import Constraint
+    from ...constraints import Constraint
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo
 
@@ -122,7 +122,7 @@ def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
 
 
 def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...]:
-    from ....constraints import ALLOWED_CONSTRAINT_TYPE, Constraint, create_constraint
+    from ...constraints import ALLOWED_CONSTRAINT_TYPE, Constraint, create_constraint
     from ..extractors.constraints import _validate_constraint_type
 
     constraints: list[Constraint] = []

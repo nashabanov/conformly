@@ -5,6 +5,14 @@ from typing import Annotated, Any, ClassVar, Literal
 
 import pytest
 
+from conformly._internal.constraints import (
+    GreaterOrEqual,
+    LessOrEqual,
+    MaxLength,
+    MinLength,
+    OneOf,
+)
+from conformly._internal.fields import Email
 from conformly._internal.parsing import FieldSpec, ModelSpec
 from conformly._internal.parsing.adapters.dataclass import (
     parse,
@@ -14,14 +22,6 @@ from conformly._internal.parsing.adapters.dataclass import (
     resolve_type,
     supports,
 )
-from conformly.constraints import (
-    GreaterOrEqual,
-    LessOrEqual,
-    MaxLength,
-    MinLength,
-    OneOf,
-)
-from conformly.fields import Email
 from conformly.types import _UNSET, ENUMERATED_TYPE
 
 
