@@ -8,8 +8,8 @@ from ..context import GenerationContext
 def generate_value(
     ctx: GenerationContext, semantic: ListSemantic, violation: ViolationType | None
 ) -> list[Any]:
+    from ..._internal.parsing import FieldSpec
     from ...resolver import ResolvedField
-    from ...specs import FieldSpec
     from ..orchestration import generate_field
 
     length = ctx.rng.randint(1, 3)

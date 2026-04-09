@@ -1,15 +1,14 @@
 from typing import Any
 
+from ._internal.parsing import ModelSpec, parse_model
 from .generator import (
     GenerationContext,
     create_context,
     generate_invalid,
     generate_valid,
 )
-from .parsing import parse_model
 from .planner import PlannedTask, plan_violation_task, select_paths
 from .resolver import ResolvedModel, resolve_model
-from .specs import ModelSpec
 from .types import CasesStrategy, CaseStrategy, ViolationType
 
 

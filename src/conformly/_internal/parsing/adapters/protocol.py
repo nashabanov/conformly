@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from conformly.specs import ModelSpec
+from ..models import ModelSpec
 
 
 class ParcingAdapterProtocol(Protocol):

@@ -1,3 +1,4 @@
+from conformly._internal.parsing import FieldSpec
 from conformly.planner.plan_session import _filter_candidate_paths
 from conformly.resolver.field import ResolvedField
 from conformly.resolver.model import ResolvedModel
@@ -8,7 +9,6 @@ from conformly.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
-from conformly.specs import FieldSpec
 from conformly.types import _UNSET, INT_MAX, INT_MIN, FieldKind, LengthRange, Range
 
 resolved_model = ResolvedModel(

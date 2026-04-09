@@ -4,6 +4,7 @@ import uuid
 
 import pytest
 
+from conformly._internal.parsing import FieldSpec, ModelSpec
 from conformly.constraints import (
     Constraint,
     GreaterOrEqual,
@@ -40,7 +41,6 @@ from conformly.resolver.semantics import (
     StringSemantic,
 )
 from conformly.resolver.semantics.uuid import UUIDSemantic
-from conformly.specs import FieldSpec, ModelSpec
 from conformly.types import (
     ENUMERATED_TYPE,
     FLOAT_MAX,

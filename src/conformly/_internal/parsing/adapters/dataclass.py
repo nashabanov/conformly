@@ -5,14 +5,14 @@ from typing import (
     get_type_hints,
 )
 
-from ...specs import FieldSpec, ModelSpec
-from ...types import _UNSET, ENUMERATED_TYPE
-from ..constraints import (
+from ....types import _UNSET, ENUMERATED_TYPE
+from ..extractors.constraints import (
     is_constraints_consistent,
     parse_annotated_constraints,
     parse_metadata_constraints,
 )
-from ..type_analysis import extract_runtime_type_and_constraints, is_nullable
+from ..extractors.types import extract_runtime_type_and_constraints, is_nullable
+from ..models import FieldSpec, ModelSpec
 
 
 def supports(model: type) -> bool:

@@ -1,5 +1,6 @@
 import pytest
 
+from conformly._internal.parsing import FieldSpec
 from conformly.generator.context import GenerationContext
 from conformly.generator.orchestration import (
     generate_field,
@@ -14,7 +15,6 @@ from conformly.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
-from conformly.specs import FieldSpec
 from conformly.types import (
     _UNSET,
     INT_MAX,

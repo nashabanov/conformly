@@ -4,12 +4,12 @@ from typing import Annotated, Literal, Optional, Union
 
 import pytest
 
-from conformly.constraints import Constraint, MaxLength, MinLength, OneOf
-from conformly.fields import Email
-from conformly.parsing.type_analysis import (
+from conformly._internal.parsing.extractors.types import (
     extract_runtime_type_and_constraints,
     is_nullable,
 )
+from conformly.constraints import Constraint, MaxLength, MinLength, OneOf
+from conformly.fields import Email
 from conformly.types import ENUMERATED_TYPE
 
 

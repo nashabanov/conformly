@@ -9,8 +9,8 @@ from typing import (
     get_origin,
 )
 
-from ..constraints import Constraint, OneOf
-from ..types import ENUMERATED_TYPE
+from ....constraints import Constraint, OneOf
+from ....types import ENUMERATED_TYPE
 
 UNION_TYPES = (Union, UnionType)
 COLLECTION_ORIGINS = (list, list)
@@ -98,7 +98,7 @@ def is_nullable(field_type: Any) -> bool:
 
 def is_special_string_type(t: type) -> bool:
     try:
-        from ..fields import SpecialString
+        from ....fields import SpecialString
 
         return isinstance(t, type) and issubclass(t, SpecialString)
     except ImportError:

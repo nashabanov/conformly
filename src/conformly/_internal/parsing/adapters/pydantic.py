@@ -3,11 +3,11 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any, get_args, get_origin
 
-from ...fields import SPECIAL_NAME_TO_TYPE
-from ...specs import FieldSpec, ModelSpec
+from ....fields import SPECIAL_NAME_TO_TYPE
+from ..models import FieldSpec, ModelSpec
 
 if TYPE_CHECKING:
-    from ...constraints import Constraint
+    from ....constraints import Constraint
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo
 
@@ -57,11 +57,11 @@ def parse_fields(
 def parse_field(
     field_info: FieldInfo, field_type: Any, name: str, PydanticUndefined: Any
 ) -> FieldSpec:
-    from ...types import ENUMERATED_TYPE
-    from ..constraints import (
+    from ....types import ENUMERATED_TYPE
+    from ..extractors.constraints import (
         is_constraints_consistent,
     )
-    from ..type_analysis import extract_runtime_type_and_constraints, is_nullable
+    from ..extractors.types import extract_runtime_type_and_constraints, is_nullable
 
     runtime_type, intrinsic_constraints, collection_type = (
         extract_runtime_type_and_constraints(field_type, name)
@@ -110,7 +110,7 @@ def _resolve_pydantic_special_type(field_type: Any) -> Any:
 
 
 def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
-    from ...types import _UNSET
+    from ....types import _UNSET
 
     if field_info.default_factory is not None:
         return field_info.default_factory
@@ -122,8 +122,8 @@ def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
 
 
 def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...]:
-    from ...constraints import ALLOWED_CONSTRAINT_TYPE, Constraint, create_constraint
-    from ..constraints import _validate_constraint_type
+    from ....constraints import ALLOWED_CONSTRAINT_TYPE, Constraint, create_constraint
+    from ..extractors.constraints import _validate_constraint_type
 
     constraints: list[Constraint] = []
 

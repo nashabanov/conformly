@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from ..specs import FieldSpec
+    from .._internal.parsing import FieldSpec
     from ..types import FieldPath
     from .model import ResolvedModel
     from .semantics import FieldSemantics

@@ -2,6 +2,7 @@ from typing import cast
 
 import pytest
 
+from conformly._internal.parsing import FieldSpec
 from conformly.planner.plan_field import (
     _VIOLATION_PRIORITY,
     _define_allowed_violation_types,
@@ -23,7 +24,6 @@ from conformly.resolver.semantics import (
     StringSemantic,
 )
 from conformly.resolver.semantics.uuid import UUIDSemantic
-from conformly.specs import FieldSpec
 from conformly.types import (
     _UNSET,
     FLOAT_MAX,
