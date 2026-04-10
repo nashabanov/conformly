@@ -3,10 +3,10 @@ import ipaddress
 
 import pytest
 
-from conformly.generator.context import GenerationContext
-from conformly.generator.types.ipvany import generate_value
-from conformly.resolver.semantics import StringSemantic
-from conformly.types import FieldKind, LengthRange, ViolationType
+from conformly._internal.generator.context import GenerationContext
+from conformly._internal.generator.types.ipvany import generate_value
+from conformly._internal.resolver.semantics import StringSemantic
+from conformly._internal.types import FieldKind, LengthRange, ViolationType
 
 
 def test_generate_ipvany_mixed_types(ctx: GenerationContext) -> None:

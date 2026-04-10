@@ -2,8 +2,8 @@ import ipaddress
 
 import pytest
 
-from conformly.generator.context import GenerationContext
-from conformly.generator.types.ipv6 import (
+from conformly._internal.generator.context import GenerationContext
+from conformly._internal.generator.types.ipv6 import (
     INVALID_FORMATS,
     TEST_PREFIXES,
     _compress_ipv6,
@@ -11,8 +11,8 @@ from conformly.generator.types.ipv6 import (
     _generate_valid_ipv6,
     generate_value,
 )
-from conformly.resolver.semantics import StringSemantic
-from conformly.types import FieldKind, LengthRange, ViolationType
+from conformly._internal.resolver.semantics import StringSemantic
+from conformly._internal.types import FieldKind, LengthRange, ViolationType
 
 
 def test_generate_valid_ipv6_format(ctx: GenerationContext) -> None:

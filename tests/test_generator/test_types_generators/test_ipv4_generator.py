@@ -1,14 +1,14 @@
 import pytest
 
-from conformly.generator.context import GenerationContext
-from conformly.generator.types.ipv4 import (
+from conformly._internal.generator.context import GenerationContext
+from conformly._internal.generator.types.ipv4 import (
     INVALID_FORMATS,
     _generate_invalid_ipv4,
     _generate_valid_ipv4,
     generate_value,
 )
-from conformly.resolver.semantics import StringSemantic
-from conformly.types import FieldKind, LengthRange, ViolationType
+from conformly._internal.resolver.semantics import StringSemantic
+from conformly._internal.types import FieldKind, LengthRange, ViolationType
 
 
 def test_generate_valid_ipv4_format(ctx: GenerationContext) -> None:

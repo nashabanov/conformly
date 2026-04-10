@@ -66,8 +66,8 @@ pip install conformly[pydantic]
 ```python
 from dataclasses import dataclass
 from typing import Annotated
-from conformly import case
-from conformly.constraints import MinLength, Pattern, GreaterOrEqual, LessOrEqual
+from conformly import case, MinLength, Pattern, GreaterOrEqual, LessOrEqual
+
 
 @dataclass
 class User:
@@ -220,8 +220,7 @@ sku: str = field(metadata={"pattern": r"^[A-Z0-9]{8}$"})
 
 ```python
 from typing import Annotated
-from conformly.fields import Email
-from conformly.constraints import MinLength
+from conformly import Email, MinLength
 
 # Basic usage
 contact: Email
@@ -312,7 +311,7 @@ can be used for both valid and invalid data generation.
 from dataclasses import dataclass
 from typing import Annotated
 
-from conformly.constraints import MinLength, GreaterOrEqual, Pattern
+from conformly import MinLength, GreaterOrEqual, Pattern
 
 @dataclass
 class Profile:
@@ -365,8 +364,7 @@ print(invalid_data_by_field)
 ```python
 from dataclasses import dataclass
 from typing import Annotated
-from conformly import case
-from conformly.constraints import MinLength
+from conformly import case, MinLength
 
 @dataclass
 class Product:

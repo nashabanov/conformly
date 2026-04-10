@@ -1,6 +1,6 @@
 import pytest
 
-from conformly.generator.context import GenerationContext, create_context
+from conformly._internal.generator import GenerationContext, create_context
 
 
 @pytest.fixture

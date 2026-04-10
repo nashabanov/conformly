@@ -12,7 +12,7 @@ from pydantic.fields import FieldInfo
 from pydantic.types import StringConstraints
 from pydantic_core import PydanticUndefined
 
-from conformly.constraints import (
+from conformly._internal.constraints import (
     GreaterOrEqual,
     GreaterThan,
     LessOrEqual,
@@ -22,8 +22,9 @@ from conformly.constraints import (
     OneOf,
     Pattern,
 )
-from conformly.fields import Email
-from conformly.parsing.adapters.pydantic import (
+from conformly._internal.fields import Email
+from conformly._internal.parser import ModelSpec
+from conformly._internal.parser.adapters.pydantic import (
     _parse_default,
     _parse_fieldinfo_constraints,
     parse,
@@ -31,8 +32,7 @@ from conformly.parsing.adapters.pydantic import (
     parse_fields,
     supports,
 )
-from conformly.specs import ModelSpec
-from conformly.types import _UNSET, ENUMERATED_TYPE
+from conformly._internal.types import ENUMERATED_TYPE, UNSET
 
 
 class SimpleModel(BaseModel):
@@ -181,7 +181,7 @@ def test_mixed_sources_preserve_all_constraints() -> None:
         ("str_default", "test"),
         ("none_default", None),
         ("int_default", 42),
-        ("required_str", _UNSET),
+        ("required_str", UNSET),
     ],
 )
 def test_parse_default_valid(field_name: str, expected: Any) -> None:

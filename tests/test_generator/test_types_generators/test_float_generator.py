@@ -2,13 +2,19 @@ import math
 
 import pytest
 
-from conformly.generator.context import GenerationContext
-from conformly.generator.types.float import (
+from conformly._internal.generator.context import GenerationContext
+from conformly._internal.generator.types.float import (
     _generate_invalid_float,
     generate_value,
 )
-from conformly.resolver.semantics import NumericSemantic
-from conformly.types import FLOAT_MAX, FLOAT_MIN, FieldKind, Range, ViolationType
+from conformly._internal.resolver.semantics import NumericSemantic
+from conformly._internal.types import (
+    FLOAT_MAX,
+    FLOAT_MIN,
+    FieldKind,
+    Range,
+    ViolationType,
+)
 
 valid_range_10_20 = Range(10.0, 20.0)
 

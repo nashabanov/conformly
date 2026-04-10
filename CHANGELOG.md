@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **StringSemantic extensibility**. `StringSemantic.kind` now accepts extended `FieldKind` values (`EMAIL`) for specialized generator dispatch.
 - **New module `fields`**. Contains special string markers and registry for type mapping with `pydantic` types and field_kinds.
 - **Collection-aware parsing**. New `collection_type` field in `FieldSpec` cleanly separates container types from leaf types, unifying type extraction across adapters.
+- **BREAKING**: public API was made flatten (constraints, fields and core functions now imports from `conformly` main module)
+- **Hide internal logic** in `_internal` module.
 
 
 ## [0.3.9] - 2025.03.21

@@ -1,15 +1,21 @@
-from conformly.planner.plan_session import _filter_candidate_paths
-from conformly.resolver.field import ResolvedField
-from conformly.resolver.model import ResolvedModel
-from conformly.resolver.resolve import _build_indexes
-from conformly.resolver.semantics import (
+from conformly._internal.parser import FieldSpec
+from conformly._internal.planner.session import _filter_candidate_paths
+from conformly._internal.resolver.models import ResolvedField, ResolvedModel
+from conformly._internal.resolver.resolve import _build_indexes
+from conformly._internal.resolver.semantics import (
     BooleanSemantic,
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
 )
-from conformly.specs import FieldSpec
-from conformly.types import _UNSET, INT_MAX, INT_MIN, FieldKind, LengthRange, Range
+from conformly._internal.types import (
+    INT_MAX,
+    INT_MIN,
+    UNSET,
+    FieldKind,
+    LengthRange,
+    Range,
+)
 
 resolved_model = ResolvedModel(
     name="User",
@@ -18,7 +24,7 @@ resolved_model = ResolvedModel(
             field_spec=FieldSpec(
                 name="name",
                 field_type=str,
-                default=_UNSET,
+                default=UNSET,
                 nullable=False,
             ),
             path=(0,),
@@ -33,7 +39,7 @@ resolved_model = ResolvedModel(
             field_spec=FieldSpec(
                 name="age",
                 field_type=int,
-                default=_UNSET,
+                default=UNSET,
                 nullable=False,
             ),
             path=(1,),
@@ -58,7 +64,7 @@ resolved_model = ResolvedModel(
             field_spec=FieldSpec(
                 name="profile",
                 field_type=object,
-                default=_UNSET,
+                default=UNSET,
                 nullable=False,
             ),
             path=(3,),

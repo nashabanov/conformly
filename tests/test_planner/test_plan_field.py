@@ -2,7 +2,9 @@ from typing import cast
 
 import pytest
 
-from conformly.planner.plan_field import (
+from conformly._internal.parser import FieldSpec
+from conformly._internal.planner import PlannedTask
+from conformly._internal.planner.field import (
     _VIOLATION_PRIORITY,
     _define_allowed_violation_types,
     _define_numeric_violations,
@@ -10,10 +12,9 @@ from conformly.planner.plan_field import (
     _is_extra_field,
     plan_violation_task,
 )
-from conformly.planner.planned_task import PlannedTask
-from conformly.resolver import ResolvedField, ResolvedModel
-from conformly.resolver.resolve import _build_indexes
-from conformly.resolver.semantics import (
+from conformly._internal.resolver import ResolvedField, ResolvedModel
+from conformly._internal.resolver.resolve import _build_indexes
+from conformly._internal.resolver.semantics import (
     BooleanSemantic,
     EnumSemantic,
     FieldSemantics,
@@ -21,15 +22,14 @@ from conformly.resolver.semantics import (
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
+    UUIDSemantic,
 )
-from conformly.resolver.semantics.uuid import UUIDSemantic
-from conformly.specs import FieldSpec
-from conformly.types import (
-    _UNSET,
+from conformly._internal.types import (
     FLOAT_MAX,
     FLOAT_MIN,
     INT_MAX,
     INT_MIN,
+    UNSET,
     FieldKind,
     FieldPath,
     LengthRange,
@@ -632,61 +632,76 @@ def test_list_with_unviolatable_element_returns_empty() -> None:
 
 
 city_field = ResolvedField(
-    field_spec=FieldSpec(name="city", field_type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="city", field_type=str, default=UNSET, nullable=False),
     path=(2, 0, 0),
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, None), None, False),
+    semantic=StringSemantic(
+        kind=FieldKind.STRING, length_range=LengthRange(0, None), pattern=None
+    ),
 )
 
 zip_field = ResolvedField(
-    field_spec=FieldSpec(name="zip", field_type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="zip", field_type=str, default=UNSET, nullable=False),
     path=(2, 0, 1),
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 120), None, True),
+    semantic=StringSemantic(
+        kind=FieldKind.STRING,
+        length_range=LengthRange(0, 120),
+        pattern=None,
+        has_constraints=True,
+    ),
 )
 
 second_nested = ResolvedModel("Address", (city_field, zip_field))
 
 address_field = ResolvedField(
     field_spec=FieldSpec(
-        name="address", field_type=object, default=_UNSET, nullable=False
+        name="address", field_type=object, default=UNSET, nullable=False
     ),
     path=(2, 0),
-    semantic=ObjectSemantic(False),
+    semantic=ObjectSemantic(),
     nested_model=second_nested,
 )
 
 phone_field = ResolvedField(
-    field_spec=FieldSpec(name="phone", field_type=str, default=_UNSET, nullable=True),
+    field_spec=FieldSpec(name="phone", field_type=str, default=UNSET, nullable=True),
     path=(2, 1),
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, False),
+    semantic=StringSemantic(
+        kind=FieldKind.STRING,
+        length_range=LengthRange(0, 15),
+        pattern=None,
+        has_constraints=False,
+    ),
 )
 
 first_nested = ResolvedModel("Profile", (address_field, phone_field))
 
 name_field = ResolvedField(
-    field_spec=FieldSpec(name="name", field_type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="name", field_type=str, default=UNSET, nullable=False),
     path=(0,),
     semantic=StringSemantic(
-        FieldKind.STRING, LengthRange(0, None), pattern=None, has_constraints=True
+        kind=FieldKind.STRING,
+        length_range=LengthRange(0, None),
+        pattern=None,
+        has_constraints=True,
     ),
 )
 
 age_field = ResolvedField(
-    field_spec=FieldSpec(name="age", field_type=int, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="age", field_type=int, default=UNSET, nullable=False),
     path=(1,),
     semantic=NumericSemantic(
-        FieldKind.INTEGER,
-        Range(18, 120),
-        (Range(INT_MIN, 17), Range(121, INT_MAX)),
-        True,
+        kind=FieldKind.INTEGER,
+        valid_range=Range(18, 120),
+        invalid_ranges=(Range(INT_MIN, 17), Range(121, INT_MAX)),
+        has_constraints=True,
     ),
 )
 
 profile_field = ResolvedField(
     field_spec=FieldSpec(
-        name="profile", field_type=object, default=_UNSET, nullable=False
+        name="profile", field_type=object, default=UNSET, nullable=False
     ),
     path=(2,),
-    semantic=ObjectSemantic(False),
+    semantic=ObjectSemantic(),
     nested_model=first_nested,
 )
 

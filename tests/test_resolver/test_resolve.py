@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from conformly.constraints import (
+from conformly._internal.constraints import (
     Constraint,
     GreaterOrEqual,
     GreaterThan,
@@ -16,10 +16,10 @@ from conformly.constraints import (
     OneOf,
     Pattern,
 )
-from conformly.fields import Email
-from conformly.fields.special_registry import SPECIAL_KINDS
-from conformly.resolver import ResolvedModel
-from conformly.resolver.resolve import (
+from conformly._internal.fields import SPECIAL_KINDS, Email
+from conformly._internal.parser import FieldSpec, ModelSpec
+from conformly._internal.resolver import ResolvedModel
+from conformly._internal.resolver.resolve import (
     _build_indexes,
     _extract_numeric_multiple_of,
     calculate_invalid_numeric_ranges,
@@ -31,7 +31,7 @@ from conformly.resolver.resolve import (
     resolve_field,
     resolve_model,
 )
-from conformly.resolver.semantics import (
+from conformly._internal.resolver.semantics import (
     BooleanSemantic,
     EnumSemantic,
     ListSemantic,
@@ -39,9 +39,8 @@ from conformly.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
-from conformly.resolver.semantics.uuid import UUIDSemantic
-from conformly.specs import FieldSpec, ModelSpec
-from conformly.types import (
+from conformly._internal.resolver.semantics.uuid import UUIDSemantic
+from conformly._internal.types import (
     ENUMERATED_TYPE,
     FLOAT_MAX,
     FLOAT_MIN,

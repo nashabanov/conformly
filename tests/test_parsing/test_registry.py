@@ -1,7 +1,7 @@
 import pytest
 
-from conformly.parsing import get_adapter, parse_model, register
-from conformly.specs import ModelSpec
+from conformly._internal.parser import ModelSpec, parse_model
+from conformly._internal.parser.adapters.registry import get_adapter, register
 
 
 class DummyAdapter:
@@ -9,12 +9,12 @@ class DummyAdapter:
         return model is str
 
     def parse(self, model):
-        return ModelSpec(name=f"{model}", type="dataclass", fields=[])
+        return ModelSpec(name=f"{model}", type="dataclass", fields=())
 
 
 @pytest.fixture(autouse=True)
 def clean_registry():
-    from conformly.parsing.registry import _adapters
+    from conformly._internal.parser.adapters.registry import _adapters
 
     _adapters.clear()
     yield

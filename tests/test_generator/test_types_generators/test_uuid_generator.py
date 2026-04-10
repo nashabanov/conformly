@@ -3,10 +3,10 @@ import uuid
 
 import pytest
 
-from conformly.generator.context import GenerationContext
-from conformly.generator.types.uuid import generate_value
-from conformly.resolver.semantics import UUIDSemantic
-from conformly.types import ViolationType
+from conformly._internal.generator.context import GenerationContext
+from conformly._internal.generator.types.uuid import generate_value
+from conformly._internal.resolver.semantics import UUIDSemantic
+from conformly._internal.types import ViolationType
 
 UUID_CANONICAL_PATTERN = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"

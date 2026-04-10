@@ -1,24 +1,24 @@
 import pytest
 
-from conformly.generator.context import GenerationContext
-from conformly.generator.orchestration import (
+from conformly._internal.generator.context import GenerationContext
+from conformly._internal.generator.orchestration import (
     generate_field,
     generate_invalid,
     generate_valid,
 )
-from conformly.planner import PlannedTask
-from conformly.resolver import ResolvedField, ResolvedModel
-from conformly.resolver.semantics import (
+from conformly._internal.parser import FieldSpec
+from conformly._internal.planner import PlannedTask
+from conformly._internal.resolver import ResolvedField, ResolvedModel
+from conformly._internal.resolver.semantics import (
     BooleanSemantic,
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
 )
-from conformly.specs import FieldSpec
-from conformly.types import (
-    _UNSET,
+from conformly._internal.types import (
     INT_MAX,
     INT_MIN,
+    UNSET,
     FieldKind,
     LengthRange,
     Range,
@@ -26,9 +26,14 @@ from conformly.types import (
 )
 
 simple_string_field = ResolvedField(
-    field_spec=FieldSpec(name="name", field_type=str, default=_UNSET, nullable=False),
+    field_spec=FieldSpec(name="name", field_type=str, default=UNSET, nullable=False),
     path=(0,),
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, True),
+    semantic=StringSemantic(
+        kind=FieldKind.STRING,
+        length_range=LengthRange(0, 15),
+        pattern=None,
+        has_constraints=True,
+    ),
 )
 
 default_string_field = ResolvedField(
@@ -36,7 +41,12 @@ default_string_field = ResolvedField(
         name="city", field_type=str, default="Palo Alto", nullable=False
     ),
     path=(0, 1),
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 40), None, True),
+    semantic=StringSemantic(
+        kind=FieldKind.STRING,
+        length_range=LengthRange(5, 40),
+        pattern=None,
+        has_constraints=True,
+    ),
 )
 
 optional_string_field = ResolvedField(
@@ -44,12 +54,17 @@ optional_string_field = ResolvedField(
         name="description", field_type=str, default="simple description", nullable=True
     ),
     path=(3,),
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 60), None, True),
+    semantic=StringSemantic(
+        kind=FieldKind.STRING,
+        length_range=LengthRange(0, 60),
+        pattern=None,
+        has_constraints=True,
+    ),
 )
 
 bool_field = ResolvedField(
     field_spec=FieldSpec(
-        name="is_admin", field_type=bool, default=_UNSET, nullable=False
+        name="is_admin", field_type=bool, default=UNSET, nullable=False
     ),
     path=(4,),
     semantic=BooleanSemantic(),
@@ -60,14 +75,19 @@ nested_model = ResolvedModel(
     fields=(
         ResolvedField(
             field_spec=FieldSpec(
-                name="address", field_type=str, default=_UNSET, nullable=True
+                name="address", field_type=str, default=UNSET, nullable=True
             ),
             path=(1, 0),
-            semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 25), None, True),
+            semantic=StringSemantic(
+                kind=FieldKind.STRING,
+                length_range=LengthRange(5, 25),
+                pattern=None,
+                has_constraints=True,
+            ),
         ),
         ResolvedField(
             field_spec=FieldSpec(
-                name="age", field_type=int, default=_UNSET, nullable=False
+                name="age", field_type=int, default=UNSET, nullable=False
             ),
             path=(1, 1),
             semantic=NumericSemantic(
@@ -85,7 +105,7 @@ nested_model = ResolvedModel(
 
 nested_field = ResolvedField(
     field_spec=FieldSpec(
-        name="profile", field_type=object, default=_UNSET, nullable=False
+        name="profile", field_type=object, default=UNSET, nullable=False
     ),
     path=(1,),
     nested_model=nested_model,
@@ -145,7 +165,7 @@ def test_generate_field_invalid_type_mismatch(ctx: GenerationContext) -> None:
 def test_generate_missing_field(ctx: GenerationContext) -> None:
     assert (
         generate_field(ctx, simple_string_field, (ViolationType.MISSING_FIELD,))
-        is _UNSET
+        is UNSET
     )
 
 
