@@ -14,7 +14,7 @@ from conformly import (
     cases,
 )
 from conformly._internal.parser.adapters.dataclass import parse
-from conformly.resolver.resolve import resolve_model
+from conformly._internal.resolver.resolve import resolve_model
 
 
 @dataclass

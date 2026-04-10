@@ -2,8 +2,8 @@ import math
 
 from ..context import GenerationContext
 
+from conformly._internal.resolver.semantics import NumericSemantic
 from conformly._internal.types import FLOAT_MAX, FLOAT_MIN, ViolationType
-from conformly.resolver.semantics import NumericSemantic
 
 
 def generate_value(

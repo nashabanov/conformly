@@ -8,6 +8,13 @@ from conformly._internal.generator.orchestration import (
 )
 from conformly._internal.parser import FieldSpec
 from conformly._internal.planner import PlannedTask
+from conformly._internal.resolver import ResolvedField, ResolvedModel
+from conformly._internal.resolver.semantics import (
+    BooleanSemantic,
+    NumericSemantic,
+    ObjectSemantic,
+    StringSemantic,
+)
 from conformly._internal.types import (
     INT_MAX,
     INT_MIN,
@@ -16,13 +23,6 @@ from conformly._internal.types import (
     LengthRange,
     Range,
     ViolationType,
-)
-from conformly.resolver import ResolvedField, ResolvedModel
-from conformly.resolver.semantics import (
-    BooleanSemantic,
-    NumericSemantic,
-    ObjectSemantic,
-    StringSemantic,
 )
 
 simple_string_field = ResolvedField(

@@ -1,7 +1,7 @@
 from conformly._internal.generator.context import GenerationContext
 from conformly._internal.generator.types.email import INVALID_FORMATS, generate_value
+from conformly._internal.resolver.semantics.string import LengthRange, StringSemantic
 from conformly._internal.types import FieldKind, ViolationType
-from conformly.resolver.semantics.string import LengthRange, StringSemantic
 
 
 def test_generate_valid_email_no_constraints(ctx: GenerationContext) -> None:

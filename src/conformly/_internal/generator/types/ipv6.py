@@ -1,7 +1,7 @@
 from ..context import GenerationContext
 
+from conformly._internal.resolver.semantics import StringSemantic
 from conformly._internal.types import ViolationType
-from conformly.resolver.semantics import StringSemantic
 
 TEST_PREFIXES = [
     "2001:db8::",

@@ -3,8 +3,8 @@ import uuid
 
 from ..context import GenerationContext
 
+from conformly._internal.resolver.semantics import UUIDSemantic
 from conformly._internal.types import ViolationType
-from conformly.resolver.semantics import UUIDSemantic
 
 HEX_CHARS = string.hexdigits.lower()
 INVALID_CHARS = "!@#$%^&*()ghijklmnopqrstuvwxyz"

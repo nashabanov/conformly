@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ..._internal.types import FieldKind
+from conformly._internal.types import FieldKind
 
 if TYPE_CHECKING:
-    from ..model import ResolvedModel
+    from ..models import ResolvedModel
     from . import FieldSemantics
 
 

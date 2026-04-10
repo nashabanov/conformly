@@ -2,8 +2,8 @@ from typing import Any
 
 from ..context import GenerationContext
 
+from conformly._internal.resolver.semantics import ListSemantic
 from conformly._internal.types import UNSET, ViolationType
-from conformly.resolver.semantics import ListSemantic
 
 
 def generate_value(
@@ -12,7 +12,7 @@ def generate_value(
     from ..orchestration import generate_field
 
     from conformly._internal.parser import FieldSpec
-    from conformly.resolver import ResolvedField
+    from conformly._internal.resolver import ResolvedField
 
     length = ctx.rng.randint(1, 3)
     violate_idx = ctx.rng.randint(0, length - 1) if violation else None

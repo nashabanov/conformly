@@ -2,8 +2,8 @@ import string
 
 from ..context import GenerationContext
 
+from conformly._internal.resolver.semantics import StringSemantic
 from conformly._internal.types import MAX_GENERATION_ATTEMPTS, ViolationType
-from conformly.resolver.semantics import StringSemantic
 
 LOCAL_CHARS = string.ascii_lowercase + string.digits + "._%+-"
 

@@ -11,8 +11,8 @@ from conformly._internal.generator.types.string import (
     _random_string_with_length,
     generate_value,
 )
+from conformly._internal.resolver.semantics import StringSemantic
 from conformly._internal.types import FieldKind, LengthRange, ViolationType
-from conformly.resolver.semantics import StringSemantic
 
 
 def test_random_string_min_only(ctx: GenerationContext) -> None:

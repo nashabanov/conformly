@@ -4,11 +4,11 @@ from unittest.mock import Mock, patch
 import pytest
 
 from conformly._internal.generator.types.list import generate_value
+from conformly._internal.resolver.semantics import ListSemantic
 from conformly._internal.types import UNSET, ViolationType
-from conformly.resolver.semantics import ListSemantic
 
 if TYPE_CHECKING:
-    from conformly.resolver import ResolvedField
+    from conformly._internal.resolver import ResolvedField
 
 
 @pytest.fixture

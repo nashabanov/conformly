@@ -8,8 +8,8 @@ from ._internal.generator import (
 )
 from ._internal.parser import ModelSpec, parse_model
 from ._internal.planner import PlannedTask, plan_violation_task, select_paths
+from ._internal.resolver import ResolvedModel, resolve_model
 from ._internal.types import CasesStrategy, CaseStrategy, ViolationType
-from .resolver import ResolvedModel, resolve_model
 
 
 def _ensure_model_or_spec(

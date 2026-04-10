@@ -3,7 +3,19 @@ import math
 from typing import Any
 import uuid
 
-from .._internal.constraints import (
+from .models import ResolvedField, ResolvedModel
+from .semantics import (
+    BooleanSemantic,
+    EnumSemantic,
+    FieldSemantics,
+    ListSemantic,
+    NumericSemantic,
+    ObjectSemantic,
+    StringSemantic,
+    UUIDSemantic,
+)
+
+from conformly._internal.constraints import (
     Constraint,
     GreaterOrEqual,
     GreaterThan,
@@ -15,9 +27,13 @@ from .._internal.constraints import (
     OneOf,
     Pattern,
 )
-from .._internal.fields import SPECIAL_KINDS, SPECIAL_TYPE_TO_KIND, SpecialString
-from .._internal.parser import FieldSpec, ModelSpec
-from .._internal.types import (
+from conformly._internal.fields import (
+    SPECIAL_KINDS,
+    SPECIAL_TYPE_TO_KIND,
+    SpecialString,
+)
+from conformly._internal.parser import FieldSpec, ModelSpec
+from conformly._internal.types import (
     ENUMERATED_TYPE,
     FLOAT_MAX,
     FLOAT_MIN,
@@ -27,18 +43,6 @@ from .._internal.types import (
     FieldPath,
     LengthRange,
     Range,
-)
-from .field import ResolvedField
-from .model import ResolvedModel
-from .semantics import (
-    BooleanSemantic,
-    EnumSemantic,
-    FieldSemantics,
-    ListSemantic,
-    NumericSemantic,
-    ObjectSemantic,
-    StringSemantic,
-    UUIDSemantic,
 )
 
 

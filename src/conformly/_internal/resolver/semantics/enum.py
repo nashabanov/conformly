@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ..._internal.types import FieldKind
+from conformly._internal.types import FieldKind
 
 
 @dataclass(frozen=True)

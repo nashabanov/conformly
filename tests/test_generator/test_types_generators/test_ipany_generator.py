@@ -5,8 +5,8 @@ import pytest
 
 from conformly._internal.generator.context import GenerationContext
 from conformly._internal.generator.types.ipvany import generate_value
+from conformly._internal.resolver.semantics import StringSemantic
 from conformly._internal.types import FieldKind, LengthRange, ViolationType
-from conformly.resolver.semantics import StringSemantic
 
 
 def test_generate_ipvany_mixed_types(ctx: GenerationContext) -> None:

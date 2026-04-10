@@ -12,6 +12,18 @@ from conformly._internal.planner.field import (
     _is_extra_field,
     plan_violation_task,
 )
+from conformly._internal.resolver import ResolvedField, ResolvedModel
+from conformly._internal.resolver.resolve import _build_indexes
+from conformly._internal.resolver.semantics import (
+    BooleanSemantic,
+    EnumSemantic,
+    FieldSemantics,
+    ListSemantic,
+    NumericSemantic,
+    ObjectSemantic,
+    StringSemantic,
+    UUIDSemantic,
+)
 from conformly._internal.types import (
     FLOAT_MAX,
     FLOAT_MIN,
@@ -24,18 +36,6 @@ from conformly._internal.types import (
     Range,
     ViolationType,
 )
-from conformly.resolver import ResolvedField, ResolvedModel
-from conformly.resolver.resolve import _build_indexes
-from conformly.resolver.semantics import (
-    BooleanSemantic,
-    EnumSemantic,
-    FieldSemantics,
-    ListSemantic,
-    NumericSemantic,
-    ObjectSemantic,
-    StringSemantic,
-)
-from conformly.resolver.semantics.uuid import UUIDSemantic
 
 # ===== TESTS for define_string_violations() =====
 

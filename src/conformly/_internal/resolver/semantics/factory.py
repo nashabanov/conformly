@@ -1,5 +1,4 @@
-from ..._internal.types import FieldKind, LengthRange, Range
-from ..semantics import FieldSemantics
+from . import FieldSemantics
 from .boolean import BooleanSemantic
 from .enum import EnumSemantic
 from .list import ListSemantic
@@ -7,6 +6,8 @@ from .numeric import NumericSemantic
 from .object import ObjectSemantic
 from .string import StringSemantic
 from .uuid import UUIDSemantic
+
+from conformly._internal.types import FieldKind, LengthRange, Range
 
 
 def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:

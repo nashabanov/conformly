@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ..._internal.types import FieldKind, LengthRange
+from conformly._internal.types import FieldKind, LengthRange
 
 
 @dataclass(frozen=True)

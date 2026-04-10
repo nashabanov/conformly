@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 
-from ..._internal.types import FieldKind
+from conformly._internal.types import FieldKind
 
 
 @dataclass(frozen=True)
-class BooleanSemantic:
+class ObjectSemantic:
     has_constraints: bool = False
 
     @property
     def kind(self) -> FieldKind:
-        return FieldKind.BOOLEAN
+        return FieldKind.OBJECT

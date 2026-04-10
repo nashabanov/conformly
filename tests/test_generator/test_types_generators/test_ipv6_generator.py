@@ -11,8 +11,8 @@ from conformly._internal.generator.types.ipv6 import (
     _generate_valid_ipv6,
     generate_value,
 )
+from conformly._internal.resolver.semantics import StringSemantic
 from conformly._internal.types import FieldKind, LengthRange, ViolationType
-from conformly.resolver.semantics import StringSemantic
 
 
 def test_generate_valid_ipv6_format(ctx: GenerationContext) -> None:

@@ -7,6 +7,7 @@ from conformly._internal.generator.types.float import (
     _generate_invalid_float,
     generate_value,
 )
+from conformly._internal.resolver.semantics import NumericSemantic
 from conformly._internal.types import (
     FLOAT_MAX,
     FLOAT_MIN,
@@ -14,7 +15,6 @@ from conformly._internal.types import (
     Range,
     ViolationType,
 )
-from conformly.resolver.semantics import NumericSemantic
 
 valid_range_10_20 = Range(10.0, 20.0)
 

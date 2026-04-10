@@ -1,6 +1,6 @@
 from conformly._internal.generator import GenerationContext
+from conformly._internal.resolver import ResolvedModel
 from conformly._internal.types import CasesStrategy, FieldPath
-from conformly.resolver import ResolvedModel
 
 NameIndexMap = tuple[tuple[FieldPath, str], ...]
 

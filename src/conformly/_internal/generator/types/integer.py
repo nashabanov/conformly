@@ -1,7 +1,7 @@
 from ..context import GenerationContext
 
+from conformly._internal.resolver.semantics import NumericSemantic
 from conformly._internal.types import ViolationType
-from conformly.resolver.semantics import NumericSemantic
 
 
 def generate_value(

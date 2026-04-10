@@ -5,8 +5,8 @@ from conformly._internal.generator.types.enum import (
     _generate_not_allowed_value,
     generate_value,
 )
+from conformly._internal.resolver.semantics import EnumSemantic
 from conformly._internal.types import ViolationType
-from conformly.resolver.semantics import EnumSemantic
 
 # ===== TESTS for generate_value() =====
 

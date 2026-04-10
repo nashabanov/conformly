@@ -1,5 +1,13 @@
 from conformly._internal.parser import FieldSpec
 from conformly._internal.planner.session import _filter_candidate_paths
+from conformly._internal.resolver.models import ResolvedField, ResolvedModel
+from conformly._internal.resolver.resolve import _build_indexes
+from conformly._internal.resolver.semantics import (
+    BooleanSemantic,
+    NumericSemantic,
+    ObjectSemantic,
+    StringSemantic,
+)
 from conformly._internal.types import (
     INT_MAX,
     INT_MIN,
@@ -7,15 +15,6 @@ from conformly._internal.types import (
     FieldKind,
     LengthRange,
     Range,
-)
-from conformly.resolver.field import ResolvedField
-from conformly.resolver.model import ResolvedModel
-from conformly.resolver.resolve import _build_indexes
-from conformly.resolver.semantics import (
-    BooleanSemantic,
-    NumericSemantic,
-    ObjectSemantic,
-    StringSemantic,
 )
 
 resolved_model = ResolvedModel(
