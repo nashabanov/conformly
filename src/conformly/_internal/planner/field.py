@@ -1,11 +1,13 @@
-from .._internal.fields import SPECIAL_KINDS
-from .._internal.types import (
+from .model import PlannedTask
+
+from conformly._internal.fields import SPECIAL_KINDS
+from conformly._internal.types import (
     FieldKind,
     FieldPath,
     ViolationType,
 )
-from ..resolver import ResolvedModel
-from ..resolver.semantics import (
+from conformly.resolver import ResolvedModel
+from conformly.resolver.semantics import (
     BooleanSemantic,
     EnumSemantic,
     FieldSemantics,
@@ -15,7 +17,6 @@ from ..resolver.semantics import (
     StringSemantic,
     UUIDSemantic,
 )
-from .planned_task import PlannedTask
 
 _VIOLATION_PRIORITY: tuple[ViolationType, ...] = (
     # Structural

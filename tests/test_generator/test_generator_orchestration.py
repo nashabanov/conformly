@@ -1,6 +1,7 @@
 import pytest
 
 from conformly._internal.parser import FieldSpec
+from conformly._internal.planner import PlannedTask
 from conformly._internal.types import (
     INT_MAX,
     INT_MIN,
@@ -16,7 +17,6 @@ from conformly.generator.orchestration import (
     generate_invalid,
     generate_valid,
 )
-from conformly.planner import PlannedTask
 from conformly.resolver import ResolvedField, ResolvedModel
 from conformly.resolver.semantics import (
     BooleanSemantic,

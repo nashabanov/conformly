@@ -3,6 +3,15 @@ from typing import cast
 import pytest
 
 from conformly._internal.parser import FieldSpec
+from conformly._internal.planner import PlannedTask
+from conformly._internal.planner.field import (
+    _VIOLATION_PRIORITY,
+    _define_allowed_violation_types,
+    _define_numeric_violations,
+    _define_string_violations,
+    _is_extra_field,
+    plan_violation_task,
+)
 from conformly._internal.types import (
     FLOAT_MAX,
     FLOAT_MIN,
@@ -15,15 +24,6 @@ from conformly._internal.types import (
     Range,
     ViolationType,
 )
-from conformly.planner.plan_field import (
-    _VIOLATION_PRIORITY,
-    _define_allowed_violation_types,
-    _define_numeric_violations,
-    _define_string_violations,
-    _is_extra_field,
-    plan_violation_task,
-)
-from conformly.planner.planned_task import PlannedTask
 from conformly.resolver import ResolvedField, ResolvedModel
 from conformly.resolver.resolve import _build_indexes
 from conformly.resolver.semantics import (

@@ -1,7 +1,7 @@
 from typing import Any
 
+from .._internal.planner import PlannedTask
 from .._internal.types import UNSET, FieldKind, FieldPath, ViolationType
-from ..planner import PlannedTask
 from ..resolver import ResolvedField, ResolvedModel, create_minimal_semantic
 from ..resolver.semantics import ListSemantic
 from .context import GenerationContext

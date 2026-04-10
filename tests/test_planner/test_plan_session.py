@@ -1,4 +1,5 @@
 from conformly._internal.parser import FieldSpec
+from conformly._internal.planner.session import _filter_candidate_paths
 from conformly._internal.types import (
     INT_MAX,
     INT_MIN,
@@ -7,7 +8,6 @@ from conformly._internal.types import (
     LengthRange,
     Range,
 )
-from conformly.planner.plan_session import _filter_candidate_paths
 from conformly.resolver.field import ResolvedField
 from conformly.resolver.model import ResolvedModel
 from conformly.resolver.resolve import _build_indexes

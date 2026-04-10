@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .._internal.types import FieldPath, ViolationType
+from conformly._internal.types import FieldPath, ViolationType
 
 
 @dataclass(frozen=True)
