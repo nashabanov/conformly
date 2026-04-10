@@ -43,6 +43,7 @@ class ViolationType(Enum):
 
     # url
     WRONG_URL_FORMAT = "wrong_url_format"
+    WRONG_URL_SCHEME = "wrong_url_scheme"
 
     # uuid
     WRONG_UUID_FORMAT = "wrong_uuid_format"
