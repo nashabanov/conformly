@@ -1,4 +1,5 @@
 from ._builtin_parsing_adapters import *  # noqa: F403
+from ._internal.api import case, cases
 from ._internal.constraints import (
     GreaterOrEqual,
     GreaterThan,
@@ -11,7 +12,6 @@ from ._internal.constraints import (
     Pattern,
 )
 from ._internal.fields import Email, IPv4, IPv6, IPvAny
-from .core import case, cases
 
 __all__ = [
     "Email",
