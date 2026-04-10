@@ -1,13 +1,14 @@
 from dataclasses import dataclass
 from typing import Any
 
+from .base import BaseSemantic
+
 from conformly._internal.types import FieldKind
 
 
-@dataclass(frozen=True)
-class EnumSemantic:
-    values: tuple[Any, ...]
-    has_constraints: bool
+@dataclass(frozen=True, slots=True)
+class EnumSemantic(BaseSemantic):
+    values: tuple[Any, ...] = ()
 
     @property
     def kind(self) -> FieldKind:

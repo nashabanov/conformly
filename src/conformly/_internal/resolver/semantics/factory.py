@@ -19,27 +19,34 @@ def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
             | FieldKind.IPv6
             | FieldKind.IPvAny
         ):
-            return StringSemantic(kind, LengthRange(0, None), None, False)
+            return StringSemantic(
+                kind=kind, length_range=LengthRange(0, None), pattern=None
+            )
         case FieldKind.BOOLEAN:
             return BooleanSemantic()
         case FieldKind.INTEGER:
             return NumericSemantic(
-                kind, Range(0, 100), (Range(-10, 0), Range(100, 200)), False
+                kind=kind,
+                valid_range=Range(0, 100),
+                invalid_ranges=(Range(-10, 0), Range(100, 200)),
             )
         case FieldKind.FLOAT:
             return NumericSemantic(
-                kind, Range(0.0, 100.0), (Range(-10.0, 0), Range(100.0, 200.0)), False
+                kind=kind,
+                valid_range=Range(0.0, 100.0),
+                invalid_ranges=(Range(-10.0, 0), Range(100.0, 200.0)),
             )
         case FieldKind.ENUM:
-            return EnumSemantic(("__type_mismatch__",), False)
+            return EnumSemantic(values=("__type_mismatch__",))
         case FieldKind.OBJECT:
             return ObjectSemantic()
         case FieldKind.LIST:
             return ListSemantic(
                 element_semantic=StringSemantic(
-                    FieldKind.STRING, LengthRange(0, None), None, False
+                    kind=FieldKind.STRING,
+                    length_range=LengthRange(0, None),
+                    pattern=None,
                 ),
-                has_constraints=False,
             )
         case FieldKind.UUID:
             return UUIDSemantic()

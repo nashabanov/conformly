@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from .base import BaseSemantic
+
 from conformly._internal.types import FieldKind
 
 if TYPE_CHECKING:
@@ -8,11 +10,10 @@ if TYPE_CHECKING:
     from . import FieldSemantics
 
 
-@dataclass(frozen=True)
-class ListSemantic:
+@dataclass(frozen=True, slots=True)
+class ListSemantic(BaseSemantic):
     element_semantic: "FieldSemantics"
     element_nested_model: "ResolvedModel | None" = None
-    has_constraints: bool = False
 
     @property
     def kind(self) -> FieldKind:

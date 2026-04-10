@@ -28,7 +28,12 @@ from conformly._internal.types import (
 simple_string_field = ResolvedField(
     field_spec=FieldSpec(name="name", field_type=str, default=UNSET, nullable=False),
     path=(0,),
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 15), None, True),
+    semantic=StringSemantic(
+        kind=FieldKind.STRING,
+        length_range=LengthRange(0, 15),
+        pattern=None,
+        has_constraints=True,
+    ),
 )
 
 default_string_field = ResolvedField(
@@ -36,7 +41,12 @@ default_string_field = ResolvedField(
         name="city", field_type=str, default="Palo Alto", nullable=False
     ),
     path=(0, 1),
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 40), None, True),
+    semantic=StringSemantic(
+        kind=FieldKind.STRING,
+        length_range=LengthRange(5, 40),
+        pattern=None,
+        has_constraints=True,
+    ),
 )
 
 optional_string_field = ResolvedField(
@@ -44,7 +54,12 @@ optional_string_field = ResolvedField(
         name="description", field_type=str, default="simple description", nullable=True
     ),
     path=(3,),
-    semantic=StringSemantic(FieldKind.STRING, LengthRange(0, 60), None, True),
+    semantic=StringSemantic(
+        kind=FieldKind.STRING,
+        length_range=LengthRange(0, 60),
+        pattern=None,
+        has_constraints=True,
+    ),
 )
 
 bool_field = ResolvedField(
@@ -63,7 +78,12 @@ nested_model = ResolvedModel(
                 name="address", field_type=str, default=UNSET, nullable=True
             ),
             path=(1, 0),
-            semantic=StringSemantic(FieldKind.STRING, LengthRange(5, 25), None, True),
+            semantic=StringSemantic(
+                kind=FieldKind.STRING,
+                length_range=LengthRange(5, 25),
+                pattern=None,
+                has_constraints=True,
+            ),
         ),
         ResolvedField(
             field_spec=FieldSpec(

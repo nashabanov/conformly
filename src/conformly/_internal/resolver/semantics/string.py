@@ -1,25 +1,16 @@
 from dataclasses import dataclass
 
+from ._validators import validate_string_kind
+from .base import BaseSemantic
+
 from conformly._internal.types import FieldKind, LengthRange
 
 
-@dataclass(frozen=True)
-class StringSemantic:
+@dataclass(frozen=True, slots=True, kw_only=True)
+class StringSemantic(BaseSemantic):
     kind: FieldKind
     length_range: LengthRange
     pattern: str | None
-    has_constraints: bool
 
     def __post_init__(self) -> None:
-        _ALLOWED_KINDS = {
-            FieldKind.STRING,
-            FieldKind.EMAIL,
-            FieldKind.IPv6,
-            FieldKind.IPvAny,
-            FieldKind.IPv4,
-        }
-        if self.kind not in _ALLOWED_KINDS:
-            raise ValueError(
-                f"StringSemantic does not support kind: {self.kind}. "
-                f"Allowed: {_ALLOWED_KINDS}"
-            )
+        validate_string_kind(self.kind)

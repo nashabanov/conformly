@@ -163,15 +163,15 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
         return create_string_semantic(c)
 
     elif field_spec.nested_model is not None:
-        return ObjectSemantic(field_spec.has_constraints())
+        return ObjectSemantic(has_constraints=field_spec.has_constraints())
 
     elif t is bool:
-        return BooleanSemantic(field_spec.has_constraints())
+        return BooleanSemantic(has_constraints=field_spec.has_constraints())
 
     elif t is ENUMERATED_TYPE:
         return EnumSemantic(
-            extract_enum_included_values(c),
-            field_spec.has_constraints(),
+            values=extract_enum_included_values(c),
+            has_constraints=field_spec.has_constraints(),
         )
 
     else:
