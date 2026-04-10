@@ -1,4 +1,8 @@
-from ._builtin_parsing_adapters import *  # noqa: F403
+from ._internal.parser.adapters.bootstrap import register_builtin_adapters
+
+register_builtin_adapters()
+
+# ruff: noqa: E402
 from ._internal.api import case, cases
 from ._internal.constraints import (
     GreaterOrEqual,
