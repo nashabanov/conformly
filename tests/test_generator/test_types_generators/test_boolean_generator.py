@@ -1,6 +1,6 @@
+from conformly._internal.generator import GenerationContext
+from conformly._internal.generator.types.boolean import generate_value
 from conformly._internal.types import FieldKind
-from conformly.generator.context import GenerationContext
-from conformly.generator.types.boolean import generate_value
 
 
 def test_generate(ctx: GenerationContext) -> None:

@@ -1,11 +1,11 @@
 import pytest
 
-from conformly._internal.types import INT_MAX, INT_MIN, FieldKind, Range, ViolationType
-from conformly.generator.context import GenerationContext
-from conformly.generator.types.integer import (
+from conformly._internal.generator.context import GenerationContext
+from conformly._internal.generator.types.integer import (
     _generate_invalid_integer,
     generate_value,
 )
+from conformly._internal.types import INT_MAX, INT_MIN, FieldKind, Range, ViolationType
 from conformly.resolver.semantics.numeric import NumericSemantic
 
 int_semantic_10_20 = NumericSemantic(

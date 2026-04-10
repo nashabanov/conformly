@@ -1,7 +1,8 @@
 from typing import Any, Protocol
 
-from .._internal.types import ViolationType
 from .context import GenerationContext
+
+from conformly._internal.types import ViolationType
 
 
 class TypeGeneratorProtocol(Protocol):

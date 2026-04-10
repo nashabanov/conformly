@@ -1,6 +1,7 @@
-from ..._internal.types import ViolationType
-from ...resolver.semantics import StringSemantic
 from ..context import GenerationContext
+
+from conformly._internal.types import ViolationType
+from conformly.resolver.semantics import StringSemantic
 
 TEST_RANGES = [
     ("192.0.2", 1, 254),

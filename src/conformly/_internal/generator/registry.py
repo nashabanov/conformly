@@ -1,4 +1,3 @@
-from .._internal.types import FieldKind
 from .protocol import TypeGeneratorProtocol
 from .types import (
     boolean,
@@ -13,6 +12,8 @@ from .types import (
     string,
     uuid,
 )
+
+from conformly._internal.types import FieldKind
 
 _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
     FieldKind.STRING: string,

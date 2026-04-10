@@ -1,11 +1,12 @@
 from typing import Any
 
-from .._internal.planner import PlannedTask
-from .._internal.types import UNSET, FieldKind, FieldPath, ViolationType
-from ..resolver import ResolvedField, ResolvedModel, create_minimal_semantic
-from ..resolver.semantics import ListSemantic
 from .context import GenerationContext
 from .registry import choose_mismatch_kind, get_generator
+
+from conformly._internal.planner import PlannedTask
+from conformly._internal.types import UNSET, FieldKind, FieldPath, ViolationType
+from conformly.resolver import ResolvedField, ResolvedModel, create_minimal_semantic
+from conformly.resolver.semantics import ListSemantic
 
 
 def generate_valid(ctx: GenerationContext, model: ResolvedModel) -> dict[str, Any]:

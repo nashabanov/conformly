@@ -1,8 +1,9 @@
 from typing import no_type_check
 
-from ..._internal.types import ViolationType
-from ...resolver.semantics import FieldSemantics
 from ..context import GenerationContext
+
+from conformly._internal.types import ViolationType
+from conformly.resolver.semantics import FieldSemantics
 
 
 @no_type_check

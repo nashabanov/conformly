@@ -1,9 +1,10 @@
 import re
 import string
 
-from ..._internal.types import MAX_GENERATION_ATTEMPTS, ViolationType
-from ...resolver.semantics.string import StringSemantic
 from ..context import GenerationContext
+
+from conformly._internal.types import MAX_GENERATION_ATTEMPTS, ViolationType
+from conformly.resolver.semantics.string import StringSemantic
 
 DEFAULT_MIN_LENGTH = 5
 DEFAULT_MAX_LENGTH = 15

@@ -2,9 +2,8 @@ import re
 
 import pytest
 
-from conformly._internal.types import FieldKind, LengthRange, ViolationType
-from conformly.generator.context import GenerationContext
-from conformly.generator.types.string import (
+from conformly._internal.generator.context import GenerationContext
+from conformly._internal.generator.types.string import (
     _generate_invalid_string,
     _generate_valid_string,
     _invert_pattern_string,
@@ -12,6 +11,7 @@ from conformly.generator.types.string import (
     _random_string_with_length,
     generate_value,
 )
+from conformly._internal.types import FieldKind, LengthRange, ViolationType
 from conformly.resolver.semantics import StringSemantic
 
 

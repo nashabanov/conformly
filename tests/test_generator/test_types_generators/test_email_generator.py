@@ -1,6 +1,6 @@
+from conformly._internal.generator.context import GenerationContext
+from conformly._internal.generator.types.email import INVALID_FORMATS, generate_value
 from conformly._internal.types import FieldKind, ViolationType
-from conformly.generator.context import GenerationContext
-from conformly.generator.types.email import INVALID_FORMATS, generate_value
 from conformly.resolver.semantics.string import LengthRange, StringSemantic
 
 

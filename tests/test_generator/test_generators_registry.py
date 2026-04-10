@@ -1,12 +1,12 @@
 import pytest
 
-from conformly._internal.types import FieldKind
-from conformly.generator.protocol import TypeGeneratorProtocol
-from conformly.generator.registry import (
+from conformly._internal.generator.protocol import TypeGeneratorProtocol
+from conformly._internal.generator.registry import (
     choose_mismatch_kind,
     get_generator,
 )
-from conformly.generator.types import boolean, enum, float, integer, string
+from conformly._internal.generator.types import boolean, enum, float, integer, string
+from conformly._internal.types import FieldKind
 
 # ===== TESTS for get_generator() =====
 

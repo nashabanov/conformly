@@ -3,9 +3,9 @@ import uuid
 
 import pytest
 
+from conformly._internal.generator.context import GenerationContext
+from conformly._internal.generator.types.uuid import generate_value
 from conformly._internal.types import ViolationType
-from conformly.generator.context import GenerationContext
-from conformly.generator.types.uuid import generate_value
 from conformly.resolver.semantics import UUIDSemantic
 
 UUID_CANONICAL_PATTERN = re.compile(

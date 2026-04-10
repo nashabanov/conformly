@@ -1,7 +1,8 @@
-from ..._internal.types import ViolationType
-from ...resolver.semantics import StringSemantic
 from ..context import GenerationContext
 from . import ipv4, ipv6
+
+from conformly._internal.types import ViolationType
+from conformly.resolver.semantics import StringSemantic
 
 
 def generate_value(

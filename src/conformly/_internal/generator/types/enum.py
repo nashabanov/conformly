@@ -1,8 +1,9 @@
 from typing import Any
 
-from ..._internal.types import ViolationType
-from ...resolver.semantics import EnumSemantic
 from ..context import GenerationContext
+
+from conformly._internal.types import ViolationType
+from conformly.resolver.semantics import EnumSemantic
 
 _INVALID_ENUM_PREFIX = "__INVALID_ENUM_"
 
