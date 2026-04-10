@@ -18,6 +18,8 @@ def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
             | FieldKind.IPv4
             | FieldKind.IPv6
             | FieldKind.IPvAny
+            | FieldKind.URL
+            | FieldKind.HTTPURL
         ):
             return StringSemantic(
                 kind=kind, length_range=LengthRange(0, None), pattern=None

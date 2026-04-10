@@ -18,3 +18,11 @@ class IPv6(SpecialString):
 
 class IPvAny(SpecialString):
     pass
+
+
+class HttpUrl(SpecialString):
+    pass
+
+
+class Url(SpecialString):
+    pass

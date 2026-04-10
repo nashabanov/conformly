@@ -1,8 +1,9 @@
 from enum import Enum
 from types import UnionType
-from typing import (
+from typing import (  # noqa: UP035
     Annotated,
     Any,
+    List,
     Literal,
     Union,
     get_args,
@@ -13,7 +14,7 @@ from ...constraints import Constraint, OneOf
 from ...types import ENUMERATED_TYPE
 
 UNION_TYPES = (Union, UnionType)
-COLLECTION_ORIGINS = (list, list)
+COLLECTION_ORIGINS = (list, List)  # noqa: UP006
 
 
 def extract_runtime_type_and_constraints(

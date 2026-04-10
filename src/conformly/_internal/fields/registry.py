@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from ..types import FieldKind
-from .special_types import Email, IPv4, IPv6, IPvAny, SpecialString
+from .special_types import Email, HttpUrl, IPv4, IPv6, IPvAny, SpecialString, Url
 
 
 @dataclass(frozen=True)
@@ -16,6 +16,8 @@ SPECIAL_STRINGS: tuple[SpecialStringSpec, ...] = (
     SpecialStringSpec(FieldKind.IPv4, IPv4, "IPv4Address"),
     SpecialStringSpec(FieldKind.IPv6, IPv6, "IPv6Address"),
     SpecialStringSpec(FieldKind.IPvAny, IPvAny, "IPvAnyAddress"),
+    SpecialStringSpec(FieldKind.URL, Url, "AnyUrl"),
+    SpecialStringSpec(FieldKind.HTTPURL, HttpUrl, "HttpUrl"),
 )
 
 

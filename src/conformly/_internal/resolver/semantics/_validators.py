@@ -6,6 +6,8 @@ _ALLOWED_STRING_KINDS = {
     FieldKind.IPv4,
     FieldKind.IPv6,
     FieldKind.IPvAny,
+    FieldKind.URL,
+    FieldKind.HTTPURL,
 }
 
 

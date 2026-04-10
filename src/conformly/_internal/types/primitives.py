@@ -17,6 +17,8 @@ class FieldKind(Enum):
     IPv4 = "ipv4"
     IPv6 = "ipv6"
     IPvAny = "ipvany"
+    URL = "url"
+    HTTPURL = "httpurl"
 
     # collections
     LIST = "list"
@@ -38,6 +40,9 @@ class ViolationType(Enum):
 
     # ip
     WRONG_IP_FORMAT = "wrong_ip_format"
+
+    # url
+    WRONG_URL_FORMAT = "wrong_url_format"
 
     # uuid
     WRONG_UUID_FORMAT = "wrong_uuid_format"

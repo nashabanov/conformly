@@ -31,6 +31,7 @@ _VIOLATION_PRIORITY: tuple[ViolationType, ...] = (
     ViolationType.NOT_MULTIPLE,
     ViolationType.WRONG_EMAIL_FORMAT,
     ViolationType.WRONG_IP_FORMAT,
+    ViolationType.WRONG_URL_FORMAT,
     ViolationType.WRONG_UUID_FORMAT,
     ViolationType.WRONG_UUID_CHARACTER,
     ViolationType.TOO_SHORT,
@@ -176,6 +177,9 @@ def _define_string_violations(
 
     if semantic.kind in (FieldKind.IPv4, FieldKind.IPv6, FieldKind.IPvAny):
         result.append(ViolationType.WRONG_IP_FORMAT)
+
+    if semantic.kind in (FieldKind.HTTPURL, FieldKind.URL):
+        result.append(ViolationType.WRONG_URL_FORMAT)
 
     if semantic.length_range.min_length > 0:
         result.append(ViolationType.TOO_SHORT)
