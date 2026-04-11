@@ -214,6 +214,8 @@ sku: str = field(metadata={"pattern": r"^[A-Z0-9]{8}$"})
 | `IPv4` | RFC 791-compliant IPv4 address (dotted-quad notation) | `IPv4Address` | `192.0.2.1` | - |
 | `IPv6` | RFC 4291-compliant IPv6 address (hex groups with :: compression) | `IPv6Address` | `2001:db8::1` | - |
 | `IPvAny` | Either IPv4 or IPv6 address (randomly selected at generation time) | `IPvAnyAddress` | `fe80::1` or `10.0.0.1` | - |
+| `Url` | Generic URL with any RFC 3986-compliant scheme | `https://example.com/path` | `MinLength`, `MaxLength` |
+| `HttpUrl` | URL with scheme restricted to http or https only | `https://example.com/path` | `MinLength`, `MaxLength` |
 
 
 #### Usage
