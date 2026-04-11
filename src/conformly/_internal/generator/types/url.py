@@ -1,36 +1,23 @@
+import string
+
 from ..context import GenerationContext
 
 from conformly._internal.resolver.semantics import StringSemantic
 from conformly._internal.types import FieldKind, ViolationType
 
 HTTP_SCHEMES = ["http", "https"]
-NON_HTTP_SCHEMES = ["ftp", "ftps", "ws", "wss", "file"]
-VALID_SCHEMES = HTTP_SCHEMES + NON_HTTP_SCHEMES
+ALL_SCHEMES = [*HTTP_SCHEMES, "ftp", "ftps", "ws", "wss", "file"]
 
-VALID_DOMAINS = [
+DOMAINS = [
     "example.com",
     "test.org",
     "my-site.net",
-    "sub.domain.io",
+    "api.example.com",
 ]
 
-VALID_PATHS = [
-    "",
-    "/",
-    "/api",
-    "/api/v1/resource",
-    "/users/123",
-]
+PATH_CHARS = string.ascii_lowercase + string.digits + "/._-~?&=#%"
 
-INVALID_URLS = [
-    "http:///example.com",
-    "://example.com",
-    "http://",
-    "example.com",
-    "http://exa mple.com",
-    "http://.com",
-    "http://?query",
-]
+INVALID_SCHEMES = ["custom", "invalid", "foo", "bar"]
 
 
 def generate_value(
@@ -38,35 +25,86 @@ def generate_value(
     semantic: StringSemantic,
     violation: ViolationType | None = None,
 ) -> str:
-    return (
-        _generate_valid_url(ctx, semantic.kind)
-        if violation is None
-        else _generate_invalid_url(ctx, violation)
-    )
+    if violation is None:
+        return _generate_valid_url(ctx, semantic)
+
+    return _generate_invalid_url(ctx, semantic, violation)
 
 
-def _generate_valid_url(ctx: GenerationContext, kind: FieldKind) -> str:
-    if kind == FieldKind.HTTPURL:
-        scheme = ctx.rng.choice(HTTP_SCHEMES)
-    else:
-        scheme = ctx.rng.choice(VALID_SCHEMES)
+def _generate_valid_url(ctx: GenerationContext, semantic: StringSemantic) -> str:
+    min_len = semantic.length_range.min_length
+    max_len = semantic.length_range.max_length
 
-    domain = ctx.rng.choice(VALID_DOMAINS)
-    path = ctx.rng.choice(VALID_PATHS)
+    schemes = HTTP_SCHEMES if semantic.kind == FieldKind.HTTPURL else ALL_SCHEMES
 
-    return f"{scheme}://{domain}{path}"
+    for _ in range(50):
+        scheme = ctx.rng.choice(schemes)
+        domain = ctx.rng.choice(DOMAINS)
+
+        base = f"{scheme}://{domain}"
+        base_len = len(base)
+
+        min_path = max(0, min_len - base_len)
+
+        max_path = 2048 if max_len is None else max(0, max_len - base_len)
+
+        if min_path > max_path:
+            continue
+
+        path_len = ctx.rng.randint(min_path, max_path)
+        path = _gen_path(ctx, path_len)
+
+        return base + path
+
+    scheme = schemes[0]
+    domain = DOMAINS[0]
+    return f"{scheme}://{domain}"
 
 
-def _generate_invalid_url(ctx: GenerationContext, violation: ViolationType) -> str:
-    match violation:
-        case ViolationType.WRONG_URL_FORMAT:
-            scheme = ctx.rng.choice(NON_HTTP_SCHEMES)
-            domain = ctx.rng.choice(VALID_DOMAINS)
-            path = ctx.rng.choice(VALID_PATHS)
-            return f"{scheme}://{domain}{path}"
+def _gen_path(ctx: GenerationContext, length: int) -> str:
+    if length <= 0:
+        return ""
+    if length == 1:
+        return "/"
 
-        case ViolationType.WRONG_URL_SCHEME:
-            return ctx.rng.choice(INVALID_URLS)
+    chars = ["/"]
+    while len(chars) < length:
+        chars.append(ctx.rng.choice(PATH_CHARS))
 
-        case _:
-            return "not-a-url"
+    return "".join(chars[:length])
+
+
+def _generate_invalid_url(
+    ctx: GenerationContext,
+    semantic: StringSemantic,
+    violation: ViolationType,
+) -> str:
+    min_len = semantic.length_range.min_length
+    max_len = semantic.length_range.max_length
+
+    if violation == ViolationType.TOO_SHORT:
+        if min_len <= 1:
+            return ""
+        return "x" * (min_len - 1)
+
+    if violation == ViolationType.TOO_LONG:
+        target = (max_len or 2048) + 10
+        return "http://example.com/" + "a" * target
+
+    if violation == ViolationType.WRONG_URL_FORMAT:
+        return ctx.rng.choice(
+            [
+                "",
+                "   ",
+                "not-a-url",
+                "http:/broken",
+                "http:// bad.com",
+                "://missing.scheme.com",
+            ]
+        )
+
+    if violation == ViolationType.WRONG_URL_SCHEME:
+        scheme = ctx.rng.choice(INVALID_SCHEMES)
+        return f"{scheme}://example.com"
+
+    return "not-a-url"
