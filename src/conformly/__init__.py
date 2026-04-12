@@ -16,8 +16,10 @@ from ._internal.constraints import (
     Pattern,
 )
 from ._internal.fields import Email, IPv4, IPv6, IPvAny
+from .exceptions import ConformlyError
 
 __all__ = [
+    "ConformlyError",
     "Email",
     "GreaterOrEqual",
     "GreaterThan",
