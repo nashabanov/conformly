@@ -11,6 +11,12 @@ from .planner import PlannedTask, plan_violation_task, select_paths
 from .resolver import ResolvedModel, resolve_model
 from .types import CasesStrategy, CaseStrategy, ViolationType
 
+from conformly.exceptions import GenerationError
+
+
+def _api_error(message: str, *, code: str, **context: Any) -> GenerationError:
+    return GenerationError(message, context={"code": code, **context})
+
 
 def _ensure_model_or_spec(
     model_or_spec: ModelSpec | ResolvedModel | type,
@@ -32,9 +38,11 @@ def _parse_strategy_input(strategy: str) -> tuple[str, ViolationType | None]:
             return field_part, v_type
         except ValueError:
             available = [v.value for v in ViolationType]
-            raise ValueError(
-                f"Unknown violation type '{violation_part}'. "
-                f"Available types: {', '.join(available)}"
+            raise _api_error(
+                f"Unknown violation type '{violation_part}'",
+                code="invalid_violation_type",
+                requested=violation_part,
+                available=available,
             )
     return strategy, None
 
@@ -142,15 +150,27 @@ def case(
 
     if valid:
         if allow_type_mismatch:
-            raise ValueError("Type mismatching availiable inly for invald generation")
+            raise _api_error(
+                "Type mismatch is only available for invalid generation",
+                code="invalid_flag_for_valid",
+                flag="allow_type_mismatch",
+            )
 
         if strategy != "first":
-            raise ValueError("Strategy is only applicable when valid=False")
+            raise _api_error(
+                "Strategy selection is only applicable when valid=False",
+                code="invalid_strategy_for_valid",
+                strategy=strategy,
+            )
+
         return generate_valid(ctx, model)
 
     if strategy == "all":
-        raise ValueError(
-            "'all' strategy is not supported in 'case()' — use 'cases()' instead"
+        raise _api_error(
+            "The 'all' strategy is not supported in 'case()' — use 'cases()' instead",
+            code="unsupported_strategy",
+            function="case",
+            strategy=strategy,
         )
 
     task = _plan_tasks(
@@ -238,7 +258,11 @@ def cases(
         A list of dictionaries.
     """
     if count < 1:
-        raise ValueError("count must be >= 1")
+        raise _api_error(
+            "Count must be >= 1",
+            code="invalid_count",
+            count=count,
+        )
 
     model = _ensure_model_or_spec(model_or_spec)
 
@@ -246,15 +270,25 @@ def cases(
 
     if valid:
         if allow_type_mismatch:
-            raise ValueError("Type mismatching availiable only for invalid generation")
+            raise _api_error(
+                "Type mismatch is only available for invalid generation",
+                code="invalid_flag_for_valid",
+                flag="allow_type_mismatch",
+            )
 
         if allow_structural_violations:
-            raise ValueError(
-                "Structural violations availiable only for invalid generation"
+            raise _api_error(
+                "Structural violations are only available for invalid generation",
+                code="invalid_flag_for_valid",
+                flag="allow_structural_violations",
             )
 
         if strategy != "first":
-            raise ValueError("Strategy is only applicable when valid=False")
+            raise _api_error(
+                "Strategy selection is only applicable when valid=False",
+                code="invalid_strategy_for_valid",
+                strategy=strategy,
+            )
 
         return [generate_valid(ctx, model) for _ in range(count)]
 
@@ -263,10 +297,11 @@ def cases(
         and strategy not in ("all", "all_violations")
         and "::" not in strategy
     ):
-        raise ValueError(
-            "Structural violations (MISSING_FIELD, EXTRA_FIELD) are only supported "
-            f"with strategy='all'|'all_violations' or explicit '::' syntax, "
-            f"got strategy='{strategy}'"
+        raise _api_error(
+            "Structural violations require strategy='all', 'all_violations', "
+            "or explicit '::' syntax",
+            code="invalid_strategy_for_structural",
+            strategy=strategy,
         )
 
     if strategy == "all":

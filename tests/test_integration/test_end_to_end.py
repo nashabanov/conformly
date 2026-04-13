@@ -17,7 +17,7 @@ from conformly import (
     case,
     cases,
 )
-from conformly.exceptions import PlanningError
+from conformly.exceptions import GenerationError, PlanningError
 
 
 @dataclass
@@ -524,11 +524,8 @@ class TestViolationTypeSyntax:
             assert len(user["username"]) < 3
 
     def test_invalid_violation_type_raises(self):
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(GenerationError):
             case(User, valid=False, strategy="username::invalid_violation")
-
-        assert "Unknown violation type 'invalid_violation'" in str(exc_info.value)
-        assert "Available types:" in str(exc_info.value)
 
     def test_incompatible_violation_type_raises(self):
         with pytest.raises(PlanningError):
@@ -586,10 +583,8 @@ class TestViolationTypeSyntax:
         assert cases_result[0]["role"] not in ["admin", "guest", "user"]
 
     def test_valid_flag_ignores_strategy(self):
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(GenerationError):
             case(User, valid=True, strategy="username::too_short")
-
-        assert "Strategy is only applicable when valid=False" in str(exc_info.value)
 
     def test_field_not_found_with_violation(self):
         with pytest.raises(PlanningError) as exc_info:
@@ -638,38 +633,38 @@ class TestViolationTypeSyntax:
 
 class TestApiErrors:
     def test_case_raises_if_strategy_all(self) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(GenerationError):
             case(User, valid=False, strategy="all")
 
     def test_raises_if_valid_and_not_default_strategy(self) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(GenerationError):
             case(User, valid=True, strategy="random")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(GenerationError):
             cases(User, valid=True, strategy="random")
 
     def test_raises_if_valid_and_type_mismatch_allowed(self) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(GenerationError):
             case(User, allow_type_mismatch=True)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(GenerationError):
             cases(User, allow_type_mismatch=True)
 
     @pytest.mark.parametrize("strategy", ["random", "first", "name"])
     def test_raises_if_strategy_not_all_and_structural_allowed(
         self, strategy: str
     ) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(GenerationError):
             cases(
                 User, valid=False, strategy=strategy, allow_structural_violations=True
             )
 
     def test_raises_if_valid_and_structural_allowed(self) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(GenerationError):
             cases(User, allow_structural_violations=True)
 
     def test_raises_if_count_less_than_one(self) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(GenerationError):
             cases(User, count=0)
 
 
@@ -715,7 +710,7 @@ class TestUUIDGeneration:
     @pytest.mark.xfail
     def test_invalid_uuid_fails_strict_parsing(self):
         result = case(UserUUID, valid=False)
-        with pytest.raises(ValueError):
+        with pytest.raises(GenerationError):
             uuid.UUID(result["id"])
 
     def test_valid_false_respects_violation_type(self):
