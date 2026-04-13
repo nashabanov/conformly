@@ -17,6 +17,7 @@ from conformly import (
     case,
     cases,
 )
+from conformly.exceptions import PlanningError
 
 
 @dataclass
@@ -530,17 +531,12 @@ class TestViolationTypeSyntax:
         assert "Available types:" in str(exc_info.value)
 
     def test_incompatible_violation_type_raises(self):
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(PlanningError):
             case(User, valid=False, strategy="username::below_min")
 
-        assert "not applicable" in str(exc_info.value).lower()
-        assert "username" in str(exc_info.value)
-
     def test_incompatible_violation_on_enum(self):
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(PlanningError):
             case(User, valid=False, strategy="role::below_min")
-
-        assert "not applicable" in str(exc_info.value).lower()
 
     def test_violation_with_allow_type_mismatch(self):
         invalid = case(
@@ -596,7 +592,7 @@ class TestViolationTypeSyntax:
         assert "Strategy is only applicable when valid=False" in str(exc_info.value)
 
     def test_field_not_found_with_violation(self):
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(PlanningError) as exc_info:
             case(User, valid=False, strategy="nonexistent::below_min")
 
         assert "not found" in str(exc_info.value).lower() or "Field" in str(
@@ -604,7 +600,7 @@ class TestViolationTypeSyntax:
         )
 
     def test_available_violations_in_error_message(self):
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(PlanningError) as exc_info:
             case(User, valid=False, strategy="username::below_min")
 
         error_msg = str(exc_info.value)

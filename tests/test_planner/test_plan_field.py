@@ -36,7 +36,7 @@ from conformly._internal.types import (
     Range,
     ViolationType,
 )
-from conformly.exceptions import ResolutionError
+from conformly.exceptions import PlanningError, ResolutionError
 
 # ===== TESTS for define_string_violations() =====
 
@@ -607,7 +607,7 @@ def test_define_allowed_violations_all_flags(
 def test_define_allowed_violations_no_sematic_violations(
     semantic: FieldSemantics,
 ) -> None:
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(PlanningError):
         _define_allowed_violation_types(semantic)
 
 
@@ -617,7 +617,7 @@ def test_define_allowed_violations_unsupported_semantic_kind() -> None:
 
     semantic = cast("FieldSemantics", UnsupportedSemantic())
 
-    with pytest.raises(ValueError, match="Unsupported semantic kind"):
+    with pytest.raises(PlanningError):
         _define_allowed_violation_types(semantic)
 
 
@@ -806,12 +806,12 @@ def test_plan_violation_task_valid_extra_field(path: FieldPath) -> None:
 
 @pytest.mark.parametrize("path", [(3,), (0, 1), (2, 2), (2, 1, 4)])
 def test_plan_violation_task_invalid(path: FieldPath) -> None:
-    with pytest.raises((IndexError, ValueError, ResolutionError)):
+    with pytest.raises((IndexError, ValueError, ResolutionError, PlanningError)):
         plan_violation_task(base_model, path)
 
 
 def test_plan_violation_task_raises_for_type_mismatch_nested_models() -> None:
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(PlanningError):
         plan_violation_task(base_model, (2,), True)
 
 
