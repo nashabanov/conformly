@@ -1,4 +1,5 @@
 from conformly._internal.types import FieldKind
+from conformly.exceptions import ResolutionError
 
 _ALLOWED_STRING_KINDS = {
     FieldKind.STRING,
@@ -13,7 +14,11 @@ _ALLOWED_STRING_KINDS = {
 
 def validate_string_kind(kind: FieldKind) -> None:
     if kind not in _ALLOWED_STRING_KINDS:
-        raise ValueError(
-            f"StringSemantic does not support kind: {kind}. "
-            f"Allowed: {_ALLOWED_STRING_KINDS}"
+        raise ResolutionError(
+            f"StringSemantic does not support kind: {kind}",
+            context={
+                "code": "unsupported_string_kind",
+                "kind": kind.value,
+                "allowed": [k.value for k in _ALLOWED_STRING_KINDS],
+            },
         )

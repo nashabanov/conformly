@@ -36,6 +36,7 @@ from conformly._internal.types import (
     Range,
     ViolationType,
 )
+from conformly.exceptions import ResolutionError
 
 # ===== TESTS for define_string_violations() =====
 
@@ -805,7 +806,7 @@ def test_plan_violation_task_valid_extra_field(path: FieldPath) -> None:
 
 @pytest.mark.parametrize("path", [(3,), (0, 1), (2, 2), (2, 1, 4)])
 def test_plan_violation_task_invalid(path: FieldPath) -> None:
-    with pytest.raises((IndexError, ValueError)):
+    with pytest.raises((IndexError, ValueError, ResolutionError)):
         plan_violation_task(base_model, path)
 
 
@@ -816,7 +817,7 @@ def test_plan_violation_task_raises_for_type_mismatch_nested_models() -> None:
 
 @pytest.mark.parametrize("path", [(5,), (2, 5), (2, 0, 4)])
 def test_plan_violation_task_invalid_extra_field(path: FieldPath) -> None:
-    with pytest.raises((IndexError, ValueError)):
+    with pytest.raises((IndexError, ValueError, ResolutionError)):
         plan_violation_task(base_model, path, False, True)
 
 

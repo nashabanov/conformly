@@ -44,6 +44,7 @@ from conformly._internal.types import (
     LengthRange,
     Range,
 )
+from conformly.exceptions import ResolutionError, SchemaError
 
 
 @lru_cache(maxsize=128)
@@ -126,8 +127,12 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
     if isinstance(t, type) and issubclass(t, SpecialString):
         kind = SPECIAL_TYPE_TO_KIND.get(t)
         if kind is None:
-            raise NotImplementedError(
-                f"No FieldKind mapped for SpecialStr subclass: {t.__name__}"
+            raise ResolutionError(
+                f"No FieldKind mapped for SpecialStr type: {t.__name__}",
+                context={
+                    "code": "missing_special_string_mapping",
+                    "field_type": t.__name__,
+                },
             )
 
         return create_string_semantic(c, kind)
@@ -175,9 +180,12 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
         )
 
     else:
-        raise NotImplementedError(
-            f"No semantics for field with type: {t} "
-            f"Track progress in https://github.com/nashabanov/conformly/issues"
+        raise ResolutionError(
+            f"No semantics for field type {t}",
+            context={
+                "code": "unsupported_field_type",
+                "field_type": repr(t),
+            },
         )
 
 
@@ -220,7 +228,13 @@ def calculate_invalid_numeric_ranges(
 
         return tuple(result)
 
-    raise TypeError(f"Field type must be int or float, got: {field_type}")
+    raise ResolutionError(
+        f"Invalid field type for numeric range calculation: {field_type}",
+        context={
+            "code": "invalid_numeric_range_type",
+            "field_type": repr(field_type),
+        },
+    )
 
 
 def calculate_max_offset(min_value: int, max_value: int) -> int:
@@ -238,7 +252,13 @@ def calculate_numeric_bounds(
     if field_type is float:
         return _calculate_float_bounds(constraints)
 
-    raise TypeError(f"Unsupported numeric type: {field_type}")
+    raise ResolutionError(
+        f"Unsupported numeric type: {field_type}",
+        context={
+            "code": "unsupported_numeric_type",
+            "field_type": repr(field_type),
+        },
+    )
 
 
 def _calculate_int_bounds(constraints: tuple[Constraint, ...]) -> Range:
@@ -249,9 +269,16 @@ def _calculate_int_bounds(constraints: tuple[Constraint, ...]) -> Range:
         if not isinstance(c, (GreaterThan, GreaterOrEqual, LessThan, LessOrEqual)):
             continue
 
-        v = int(c.value)
         if isinstance(c.value, float) and math.isnan(c.value):
-            raise ValueError("Constraint value cannot be NaN")
+            raise SchemaError(
+                "Constraint value cannot be NaN",
+                context={
+                    "code": "nan_constraint_value",
+                    "constraint": type(c).__name__,
+                },
+            )
+
+        v = int(c.value)
 
         match c:
             case GreaterThan():
@@ -264,7 +291,14 @@ def _calculate_int_bounds(constraints: tuple[Constraint, ...]) -> Range:
                 high = min(high, v)
 
     if low > high:
-        raise ValueError(f"Invalid numeric bounds: min {low} > max {high}")
+        raise SchemaError(
+            "Invalid numeric bounds",
+            context={
+                "code": "invalid_numeric_bounds",
+                "min": low,
+                "max": high,
+            },
+        )
     return Range(min_value=low, max_value=high)
 
 
@@ -278,7 +312,13 @@ def _calculate_float_bounds(constraints: tuple[Constraint, ...]) -> Range:
 
         v = float(c.value)
         if math.isnan(v):
-            raise ValueError("Constraint value cannot be NaN")
+            raise SchemaError(
+                "Constraint value cannot be NaN",
+                context={
+                    "code": "nan_constraint_value",
+                    "constraint": type(c).__name__,
+                },
+            )
 
         match c:
             case GreaterThan():
@@ -291,7 +331,14 @@ def _calculate_float_bounds(constraints: tuple[Constraint, ...]) -> Range:
                 high = min(high, v)
 
     if low > high:
-        raise ValueError(f"Invalid numeric bounds: min {low} > max {high}")
+        raise SchemaError(
+            "Invalid numeric bounds",
+            context={
+                "code": "invalid_numeric_bounds",
+                "min": low,
+                "max": high,
+            },
+        )
     return Range(min_value=low, max_value=high)
 
 
@@ -323,33 +370,58 @@ def create_string_semantic(
         match c:
             case MinLength(v):
                 if field_kind in (FieldKind.IPv4, FieldKind.IPv6, FieldKind.IPvAny):
-                    raise ValueError(
-                        f"Pattern constraint cannot be combined "
-                        f"with {field_kind.value} type."
+                    raise SchemaError(
+                        f"MinLength constraint cannot "
+                        f"be combined with {field_kind.value}",
+                        context={
+                            "code": "invalid_constraint_combination",
+                            "constraint": "min_length",
+                            "field_kind": field_kind.value,
+                        },
                     )
                 if min_length == 0 or v > min_length:
                     min_length = v
             case MaxLength(v):
                 if field_kind in (FieldKind.IPv4, FieldKind.IPv6, FieldKind.IPvAny):
-                    raise ValueError(
-                        f"Pattern constraint cannot be combined "
-                        f"with {field_kind.value} type."
+                    raise SchemaError(
+                        f"MaxLength constraint cannot "
+                        f"be combined with {field_kind.value}",
+                        context={
+                            "code": "invalid_constraint_combination",
+                            "constraint": "max_length",
+                            "field_kind": field_kind.value,
+                        },
                     )
                 if max_length is None or v < int(max_length):
                     max_length = v
             case Pattern(r):
                 if field_kind != FieldKind.STRING:
-                    raise ValueError(
-                        f"Pattern constraint cannot be combined "
-                        f"with {field_kind.value} type."
+                    raise SchemaError(
+                        f"Pattern constraint cannot "
+                        f"be combined with {field_kind.value}",
+                        context={
+                            "code": "invalid_constraint_combination",
+                            "constraint": "pattern",
+                            "field_kind": field_kind.value,
+                        },
                     )
                 if pattern is not None:
-                    raise ValueError("Multiple Pattern constraints are not supported")
+                    raise SchemaError(
+                        "Multiple Pattern constraints are not supported",
+                        context={
+                            "code": "multiple_pattern_constraints",
+                        },
+                    )
                 pattern = r
 
     if max_length and min_length > max_length:
-        raise ValueError(
-            f"Invalid string length range: min {min_length} > max {max_length}"
+        raise SchemaError(
+            "Invalid string length range",
+            context={
+                "code": "invalid_length_range",
+                "min_length": min_length,
+                "max_length": max_length,
+            },
         )
 
     return StringSemantic(
@@ -367,9 +439,12 @@ def extract_enum_included_values(
     constraints: tuple[Constraint, ...],
 ) -> tuple[Any, ...]:
     if len(constraints) != 1:
-        raise TypeError(
-            f"Enum or Literal field must have exactly OneOf constraint, "
-            f"but got {len(constraints)} constraints"
+        raise SchemaError(
+            "Enum/Literal must have exactly one OneOf constraint",
+            context={
+                "code": "invalid_enum_constraints",
+                "constraints_count": len(constraints),
+            },
         )
 
     match constraints[0]:
@@ -377,7 +452,10 @@ def extract_enum_included_values(
             return values
 
         case _:
-            raise TypeError(
-                f"Enum or Literal field could have only OneOf constraint, "
-                f"but got: {constraints[0]}"
+            raise SchemaError(
+                "Enum/Literal must have exactly one OneOf constraint",
+                context={
+                    "code": "invalid_enum_constraints",
+                    "constraints_got": repr(constraints[0]),
+                },
             )

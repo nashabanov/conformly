@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from conformly.exceptions import ResolutionError
+
 if TYPE_CHECKING:
     from .semantics import FieldSemantics
 
@@ -47,15 +49,20 @@ class ResolvedModel:
     def get_field(self, path: FieldPath) -> ResolvedField:
         if path not in self.field_map:
             if not path:
-                raise IndexError("Empty path")
+                raise ValueError("Empty path")
 
             parent_path = path[:-1]
             if parent_path and parent_path not in self.field_map:
                 raise IndexError(f"Parent path {parent_path} not found")
 
-            raise IndexError(
-                f"Path {path} is an extra field (not in field_map). "
-                f"Model '{self.name}' has {len(self.fields)} fields."
+            raise ResolutionError(
+                f"Path {path} refers to an extra field",
+                context={
+                    "code": "extra_field_path",
+                    "path": path,
+                    "model": self.name,
+                    "field_count": len(self.fields),
+                },
             )
 
         return self.field_map[path]
