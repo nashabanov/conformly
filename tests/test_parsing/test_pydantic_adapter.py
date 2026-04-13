@@ -33,6 +33,7 @@ from conformly._internal.parser.adapters.pydantic import (
     supports,
 )
 from conformly._internal.types import ENUMERATED_TYPE, UNSET
+from conformly.exceptions import ResolutionError, SchemaError
 
 
 class SimpleModel(BaseModel):
@@ -236,7 +237,7 @@ def test_parse_field_non_consistent_constraints() -> None:
         color: Annotated[Colors, MinLength(8)]
 
     field_info = _get_field_info(Model, "color")
-    with pytest.raises(TypeError):
+    with pytest.raises(SchemaError):
         parse_field(field_info, Colors, "color", PydanticUndefined)
 
 
@@ -296,7 +297,7 @@ def test_parse_non_pydantic() -> None:
     class SimpleDataclass:
         name: str
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ResolutionError):
         parse(SimpleDataclass)
 
 

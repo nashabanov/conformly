@@ -1,3 +1,4 @@
+from ._errors import planning_error
 from .model import PlannedTask
 
 from conformly._internal.fields import SPECIAL_KINDS
@@ -17,6 +18,7 @@ from conformly._internal.types import (
     FieldPath,
     ViolationType,
 )
+from conformly.exceptions import PlanningError
 
 _VIOLATION_PRIORITY: tuple[ViolationType, ...] = (
     # Structural
@@ -57,11 +59,15 @@ def plan_violation_task(
 
     if _is_extra_field(model, path):
         if not allow_structural_violations:
-            raise ValueError("EXTRA_FIELD requires allow_structural_violations=True")
+            raise planning_error(
+                "EXTRA_FIELD requires allow_structural_violations=True",
+                code="structural_violtions_not_allowed",
+            )
         if forced_violation and forced_violation != ViolationType.EXTRA_FIELD:
-            raise ValueError(
-                f"Extra field only supports EXTRA_FIELD violation, "
-                f"got {forced_violation.value}"
+            raise planning_error(
+                "Extra field only supports EXTRA_FIELD violation",
+                code="invalid_forced_violation",
+                violation=forced_violation.value,
             )
 
         return PlannedTask(path, (ViolationType.EXTRA_FIELD,))
@@ -76,10 +82,12 @@ def plan_violation_task(
 
     if forced_violation is not None:
         if forced_violation not in allowed_violations:
-            raise ValueError(
-                f"Violation type '{forced_violation.value}' is not applicable "
-                f"to field '{field.name}' (kind: {field.semantic.kind.value}). "
-                f"Available for this field: {[v.value for v in allowed_violations]}"
+            raise planning_error(
+                "Forced violation is not applicable",
+                code="invalid_forced_violation",
+                violation=forced_violation.value,
+                allowed=[v.value for v in allowed_violations],
+                field=field.name,
             )
         return PlannedTask(path, (forced_violation,))
 
@@ -110,7 +118,7 @@ def _define_allowed_violation_types(
                 violations = list(
                     _define_allowed_violation_types(elem_sem, False, False)
                 )
-            except NotImplementedError:
+            except PlanningError:
                 violations = []
 
         case EnumSemantic(kind=FieldKind.ENUM):
@@ -127,15 +135,22 @@ def _define_allowed_violation_types(
             | BooleanSemantic(kind=FieldKind.BOOLEAN)
         ):
             if not (allow_type_mismatch or allow_structural_violations):
-                raise NotImplementedError(
-                    f"No violations available for {semantic.kind.value} "
-                    f"(try enabling allow_type_mismatch or allow_structural_violations)"
+                raise planning_error(
+                    f"No violations available for {semantic.kind.value}",
+                    code="no_violations_availiable",
+                    kind=semantic.kind.value,
+                    allow_type_mismatch=allow_type_mismatch,
+                    allow_structural_violations=allow_structural_violations,
                 )
 
             violations = []
 
         case _:
-            raise ValueError(f"Unsupported semantic kind: {semantic.kind}")
+            raise planning_error(
+                f"Unsupported semantic kind: {semantic.kind.value}",
+                code="unsupported_semantic_kind",
+                kind=semantic.kind,
+            )
 
     if allow_type_mismatch:
         violations.append(ViolationType.TYPE_MISMATCH)

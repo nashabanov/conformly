@@ -23,6 +23,7 @@ from conformly._internal.parser.adapters.dataclass import (
     supports,
 )
 from conformly._internal.types import ENUMERATED_TYPE, UNSET
+from conformly.exceptions import ResolutionError
 
 
 class NotDataclass:
@@ -440,7 +441,7 @@ def test_dataclass_with_private_fields() -> None:
 
 
 def test_parse_not_dataclass_raises() -> None:
-    with pytest.raises(TypeError):
+    with pytest.raises(ResolutionError):
         parse(NotDataclass)
 
 

@@ -1,5 +1,6 @@
 from typing import Any
 
+from ._errors import generation_error
 from .context import GenerationContext
 from .registry import choose_mismatch_kind, get_generator
 
@@ -43,9 +44,12 @@ def _built_dict_with_violations(
     total_fields = len(model.fields)
 
     if target_index < 0 or target_index > total_fields:
-        raise IndexError(
-            f"Path index {target_index} out of range for model "
-            f"'{model.name}' with {total_fields} fields"
+        raise generation_error(
+            "Path index out of bounds for model",
+            code="invalid_path_index",
+            model=model.name,
+            total_fields=total_fields,
+            target_index=target_index,
         )
 
     for i in range(0, target_index):
@@ -57,7 +61,11 @@ def _built_dict_with_violations(
 
         if is_leaf:
             if len(violations) == 0:
-                raise ValueError(f"Field '{field.name}' has no constraints to violate")
+                raise generation_error(
+                    "Cannot generate violation: field has no constraints",
+                    code="no_violation_to_generate",
+                    field=field.name,
+                )
 
             value = generate_field(ctx, field, violations)
             if value is not UNSET:
@@ -65,7 +73,11 @@ def _built_dict_with_violations(
 
         else:
             if field.nested_model is None:
-                raise ValueError(f"Field '{field.name}' is not nested model")
+                raise generation_error(
+                    "Field is not nested model",
+                    code="expected_nested_model",
+                    field=field.name,
+                )
 
             result[field.name] = _built_dict_with_violations(
                 ctx=ctx,

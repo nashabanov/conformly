@@ -1,3 +1,5 @@
+from ._errors import planning_error
+
 from conformly._internal.generator import GenerationContext
 from conformly._internal.resolver import ResolvedModel
 from conformly._internal.types import CasesStrategy, FieldPath
@@ -22,7 +24,13 @@ def select_paths(
     )
 
     if not candidates:
-        raise ValueError("Cannot generate invalid case(s): no fields have constraints")
+        raise planning_error(
+            "No fields available for violation",
+            code="no_violation_candidate",
+            model=model.name,
+            allow_type_mismatch=allow_type_mismatch,
+            allow_structural_violations=allow_structural_violations,
+        )
 
     return _select_violation_fields(
         ctx, strategy, allow_all, candidates, count, model.name_to_path
@@ -62,38 +70,51 @@ def _select_violation_fields(
 ) -> tuple[FieldPath, ...]:
     if strategy not in ("all", "random", "first"):
         if strategy not in name_to_path:
-            raise ValueError(
-                f"Field '{strategy}' not found or has no constraints. "
-                f"Available constrained fields: {list(name_to_path.keys())}"
+            raise planning_error(
+                f"Field '{strategy}' not found",
+                code="field_not_found",
+                field=strategy,
+                available=list(name_to_path.keys()),
             )
 
         path = name_to_path[strategy]
         if path not in candidates:
-            raise ValueError(f"Field '{strategy}' has no constraints to violate")
+            raise planning_error(
+                f"Field '{strategy} has no constraints'",
+                code="no_constraints_field",
+                field=strategy,
+            )
 
         return (path,)
 
     if strategy == "all":
         if not allow_all:
-            raise ValueError(
-                "'all' strategy is only allowed in 'cases()', not 'case()'"
+            raise planning_error(
+                "'all' strategy is only allowed in 'cases()', not 'case()'",
+                code="all_strategy_not_allowed",
             )
         return candidates
 
     if strategy == "first":
         if count > len(candidates):
-            raise ValueError(
-                f"Requested {count} cases, but only "
-                f"{len(candidates)} constrained fields available"
+            raise planning_error(
+                "Requested more fields than available",
+                code="too_many_requested",
+                requested=count,
+                available=len(candidates),
             )
         return tuple(candidates[:count])
 
     if strategy == "random":
         if count > len(candidates):
-            raise ValueError(
-                f"Cannot select {count} random fields from "
-                f"{len(candidates)} constrained fields"
+            raise planning_error(
+                "Requested more fields than available",
+                code="too_many_requested",
+                requested=count,
+                available=len(candidates),
             )
         return tuple(ctx.rng.sample(candidates, k=count))
 
-    raise AssertionError(f"Unhandled strategy: {strategy!r}")
+    raise planning_error(
+        "Unhandled strategy", code="unhandled_strategy", strategy=strategy
+    )

@@ -1,5 +1,6 @@
 import math
 
+from .._errors import generation_error
 from ..context import GenerationContext
 
 from conformly._internal.resolver.semantics import NumericSemantic
@@ -18,9 +19,11 @@ def generate_value(
             last_multiple = math.floor(high / multiple_of) * multiple_of
 
             if first_multiple > last_multiple:
-                raise ValueError(
-                    f"Cannot generate valid float: no multiples of {multiple_of} "
-                    f"in range [{low}, {high}]"
+                raise generation_error(
+                    "Cannot generate valid float: no multiples of in valid range",
+                    code="no_multiples_of",
+                    multiple_of=multiple_of,
+                    valid_range=[low, high],
                 )
 
             count = round((last_multiple - first_multiple) / multiple_of) + 1
@@ -78,4 +81,9 @@ def _generate_invalid_float(
             else:
                 return 1e308
 
-    raise ValueError(f"No invalid ranges available for violation: {violation}")
+    raise generation_error(
+        "Cannot generate invalid value: no invalid ranges available",
+        code="no_invalid_ranges",
+        violation=violation.value,
+        valid_range=[semantic.valid_range.min_value, semantic.valid_range.max_value],
+    )

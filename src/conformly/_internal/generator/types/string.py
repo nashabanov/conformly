@@ -1,6 +1,7 @@
 import re
 import string
 
+from .._errors import generation_error
 from ..context import GenerationContext
 
 from conformly._internal.resolver.semantics.string import StringSemantic
@@ -72,7 +73,11 @@ def _random_string_with_length(
 
 def _random_string_fixed_length(ctx: GenerationContext, length: int) -> str:
     if length < 0:
-        raise ValueError("Length must be non-negative")
+        raise generation_error(
+            "String length must be non-negative",
+            code="invalid_string_length",
+            length=length,
+        )
     if length == 0:
         return ""
     return ctx.rstr.rstr(DEFAULT_CHARSET + string.digits, length)
@@ -82,13 +87,22 @@ def _random_pattern_with_length(
     ctx: GenerationContext, pattern: str, min_len: int, max_len: int | None
 ) -> str:
     if max_len is not None and min_len > max_len:
-        raise ValueError("min_len cannot be greater than max_len")
+        raise generation_error(
+            "min_len cannot be greater than max_len",
+            code="invalid_length_constraints",
+            min_len=min_len,
+            max_len=max_len,
+        )
 
     compiled = None
     try:
         compiled = re.compile(pattern)
     except re.error as e:
-        raise ValueError(f"Invalid or unsupported regex pattern: {pattern!r}") from e
+        raise generation_error(
+            "Invalid or unsupported regex pattern",
+            code="invalid_regex_pattern",
+            pattern=pattern,
+        ) from e
 
     if min_len == 0 and compiled.fullmatch(""):
         return ""
@@ -98,15 +112,20 @@ def _random_pattern_with_length(
         if empty_ok:
             return ""
         else:
-            raise RuntimeError(
-                f"Pattern {pattern!r} does not allow empty string, "
-                "but min_len=max_len=0"
+            raise generation_error(
+                "Pattern doesn`t allow empty string, but length constraints require it",
+                code="pattern_empty_string_conflict",
+                pattern=pattern,
             )
     for _ in range(MAX_GENERATION_ATTEMPTS):
         try:
             candidate = ctx.rstr.xeger(pattern)
         except Exception as e:
-            raise ValueError(f"Invalid or unsupported regex pattern: {pattern}") from e
+            raise generation_error(
+                "Failed to generate string from regex pattern",
+                code="regex_generation_failed",
+                pattern=pattern,
+            ) from e
 
         if len(candidate) > MAX_CANDIDATE_LENGTH:
             continue
@@ -119,11 +138,14 @@ def _random_pattern_with_length(
 
         return candidate
 
-    msg = f"Could not generate a string matching pattern {pattern!r}"
-    if max_len is not None:
-        msg += f" with length constraints min={min_len}, max={max_len}"
-    msg += " after 20 attempts."
-    raise RuntimeError(msg)
+    raise generation_error(
+        "Could not generate a string matching pattern within length constraints",
+        code="pattern_generation_timeout",
+        pattern=pattern,
+        min_len=min_len,
+        max_len=max_len,
+        attempts=MAX_GENERATION_ATTEMPTS,
+    )
 
 
 def _invert_pattern_string(valid_example: str, pattern: str) -> str:

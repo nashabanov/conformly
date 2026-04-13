@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Annotated, Any, get_args, get_origin
 from ...fields import SPECIAL_NAME_TO_TYPE
 from ..models import FieldSpec, ModelSpec
 
+from conformly.exceptions import ResolutionError, SchemaError
+
 if TYPE_CHECKING:
     from ...constraints import Constraint
     from pydantic import BaseModel
@@ -28,8 +30,13 @@ def parse(model: type) -> ModelSpec:
         ) from None
 
     if not issubclass(model, BaseModel):
-        raise TypeError(
-            f"Unsupported model type: {model}. Expected Pydantic BaseModel."
+        raise ResolutionError(
+            f"Unsupported model type: {model}",
+            context={
+                "code": "unsupported_model_type",
+                "model": repr(model),
+                "expected": "pydantic.BaseModel",
+            },
         )
 
     return ModelSpec(
@@ -75,10 +82,14 @@ def parse_field(
     )
 
     if not is_constraints_consistent(all_constraints):
-        raise TypeError(
-            f"Field '{name}': closed set (Literal/Enum) defines a fixed "
-            f"set of values and cannot be combined with other constraints. "
-            f"Conflicting constraints: {[type(c).__name__ for c in all_constraints]}"
+        raise SchemaError(
+            f"Field '{name}': incompatible constraints",
+            context={
+                "code": "inconsistent_constraints",
+                "field_name": name,
+                "constraints": [type(c).__name__ for c in all_constraints],
+                "reason": "closed set cannot be combined with other constraints",
+            },
         )
 
     nested_model = (

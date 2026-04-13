@@ -7,6 +7,7 @@ from conformly._internal.generator.types.enum import (
 )
 from conformly._internal.resolver.semantics import EnumSemantic
 from conformly._internal.types import ViolationType
+from conformly.exceptions import GenerationError
 
 # ===== TESTS for generate_value() =====
 
@@ -32,10 +33,10 @@ def test_generate_value_invalid(ctx: GenerationContext) -> None:
 def test_generate_value_unsupported_violations(ctx: GenerationContext) -> None:
     semantic = EnumSemantic(values=(1, 2, 3), has_constraints=True)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(GenerationError):
         generate_value(ctx, semantic, ViolationType.PATTERN_MISMATCH)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(GenerationError):
         generate_value(ctx, semantic, ViolationType.TYPE_MISMATCH)
 
 

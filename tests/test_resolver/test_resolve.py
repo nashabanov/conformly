@@ -51,6 +51,7 @@ from conformly._internal.types import (
     LengthRange,
     Range,
 )
+from conformly.exceptions import ResolutionError, SchemaError
 
 
 @pytest.fixture
@@ -230,16 +231,16 @@ def test_create_email_kind_string_semantic() -> None:
 
 @pytest.mark.parametrize("kind", SPECIAL_KINDS)
 def test_special_string_kind_raises_with_pattern(kind: FieldKind) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(SchemaError):
         create_string_semantic(constraints=(Pattern(r"\d+"),), field_kind=kind)
 
 
 @pytest.mark.parametrize("kind", [FieldKind.IPv4, FieldKind.IPv6, FieldKind.IPvAny])
 def test_ip_string_kind_raises_with_lengths(kind: FieldKind) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(SchemaError):
         create_string_semantic(constraints=(MinLength(1),), field_kind=kind)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(SchemaError):
         create_string_semantic(constraints=(MaxLength(25),), field_kind=kind)
 
 
@@ -253,12 +254,12 @@ def test_create_string_semantic_ignore_other_constraints() -> None:
 
 
 def test_create_string_semantic_invalid_bounds() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(SchemaError):
         create_string_semantic((MinLength(10), MaxLength(3)))
 
 
 def test_create_string_semantic_double_patten() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(SchemaError):
         create_string_semantic((Pattern(r"\d+"), Pattern(r"[0-9]{3}")))
 
 
@@ -316,13 +317,13 @@ def test_calculate_numeric_bounds_valid(field_type, constraints, expected_range)
 def test_calculate_numeric_bounds_invalid_raises(
     field_type: type, constraints: tuple[Constraint, ...]
 ):
-    with pytest.raises(ValueError):
+    with pytest.raises(SchemaError):
         calculate_numeric_bounds(field_type, constraints)
 
 
 @pytest.mark.parametrize("field_type", [int, float])
 def test_calculate_numeric_bounds_raises_on_nan(field_type: type) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(SchemaError):
         calculate_numeric_bounds(field_type, (GreaterOrEqual(math.nan),))
 
 
@@ -406,7 +407,7 @@ def test_calculate_invalid_numeric_ranges(field_type, bounds, expected_ranges):
 
 
 def test_unsupported_field_type():
-    with pytest.raises(TypeError, match="Field type must be int or float"):
+    with pytest.raises(ResolutionError):
         calculate_invalid_numeric_ranges(str, Range(0, 1))
 
 
@@ -449,7 +450,7 @@ def test_create_field_semantic_dispatch(
 
 def test_create_field_semantic_unsupported_type() -> None:
     field_spec = FieldSpec("x", bytes)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ResolutionError):
         create_field_semantic(field_spec)
 
 
@@ -471,12 +472,12 @@ def test_extract_enum_included_values_valid(
 
 
 def test_extract_enum_included_values_more_than_one_constraints() -> None:
-    with pytest.raises(TypeError):
+    with pytest.raises(SchemaError):
         extract_enum_included_values((OneOf((1, 2)), MaxLength(1)))
 
 
 def test_extract_enum_included_values_not_one_of() -> None:
-    with pytest.raises(TypeError):
+    with pytest.raises(SchemaError):
         extract_enum_included_values((MaxLength(1),))
 
 

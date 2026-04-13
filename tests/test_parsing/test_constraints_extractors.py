@@ -16,6 +16,7 @@ from conformly._internal.parser.extractors.constraints import (
     parse_annotated_constraints,
     parse_metadata_constraints,
 )
+from conformly.exceptions import SchemaError
 
 
 @dataclass
@@ -66,7 +67,7 @@ def test_parse_annotated_constraints_dict_format_valid():
 
 
 def test_parse_annotated_constraints_dict_format_invalid_key():
-    with pytest.raises(ValueError, match="Unknown constraint type 'unknown'"):
+    with pytest.raises(SchemaError):
         parse_annotated_constraints(Annotated[str, {"type": "unknown", "value": "x"}])
 
 
@@ -93,7 +94,7 @@ def test_parse_metadata_constraints_custom_keys():
         value: int = field(metadata={"custom_key": "custom_value"})
 
     f = fields(CustomMetadata)[0]
-    with pytest.raises(ValueError):
+    with pytest.raises(SchemaError):
         parse_metadata_constraints(f.metadata)
 
 
@@ -114,7 +115,7 @@ def test_parse_metadata_constraints_invalid_constraint_type():
         x: int = field(metadata={"invalid_key": 42})
 
     f = fields(BadMeta)[0]
-    with pytest.raises(ValueError, match="Unknown constraint type"):
+    with pytest.raises(SchemaError):
         parse_metadata_constraints(f.metadata)
 
 
