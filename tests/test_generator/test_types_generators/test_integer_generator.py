@@ -7,6 +7,7 @@ from conformly._internal.generator.types.integer import (
 )
 from conformly._internal.resolver.semantics.numeric import NumericSemantic
 from conformly._internal.types import INT_MAX, INT_MIN, FieldKind, Range, ViolationType
+from conformly.exceptions import GenerationError
 
 int_semantic_10_20 = NumericSemantic(
     kind=FieldKind.INTEGER,
@@ -83,7 +84,7 @@ def test_generate_invalid_integer_no_matching_range_raises(
         has_constraints=True,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(GenerationError):
         _generate_invalid_integer(ctx, semantic, ViolationType.BELOW_MIN)
 
 
@@ -131,5 +132,5 @@ def test_generate_value_raises_on_ranges_conflict_with_multiple(
         has_constraints=True,
         multiple_of=21,
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(GenerationError):
         generate_value(ctx, semantic, None)

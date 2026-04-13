@@ -1,3 +1,4 @@
+from .._errors import generation_error
 from ..context import GenerationContext
 
 from conformly._internal.resolver.semantics import NumericSemantic
@@ -18,9 +19,11 @@ def generate_value(
             first_multiple = ((min_val + multiple_of - 1) // multiple_of) * multiple_of
 
             if first_multiple > max_val:
-                raise ValueError(
-                    f"Cannot generate valid integer: no multiples of {multiple_of} "
-                    f"in range [{min_val}, {max_val}]"
+                raise generation_error(
+                    "Cannot generate valid float: no multiples of in valid range",
+                    code="no_multiples_of",
+                    multiple_of=multiple_of,
+                    valid_range=[min_val, max_val],
                 )
 
             count = (max_val - first_multiple) // multiple_of + 1
@@ -58,4 +61,9 @@ def _generate_invalid_integer(
         ):
             return ctx.rng.randint(int(r.min_value), int(r.max_value))
 
-    raise ValueError("Cannot generate invalid integer: no bounds specified")
+    raise generation_error(
+        "Cannot generate invalid value: no invalid ranges available",
+        code="no_invalid_ranges",
+        violation=violation.value,
+        valid_range=[semantic.valid_range.min_value, semantic.valid_range.max_value],
+    )

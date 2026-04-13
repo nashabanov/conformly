@@ -1,5 +1,6 @@
 from typing import Any
 
+from .._errors import generation_error
 from ..context import GenerationContext
 
 from conformly._internal.resolver.semantics import EnumSemantic
@@ -17,9 +18,12 @@ def generate_value(
     if violation is ViolationType.NOT_ALLOWED_VALUE:
         return _generate_not_allowed_value(ctx, semantic)
 
-    raise ValueError(
-        f"For enum semantic allowed only NONE_FOR_NOT_OPTIONAL violation, "
-        f"but got {violation}"
+    raise generation_error(
+        "Unsupported violation type",
+        code="unsupported_violation_type",
+        field_type="enum",
+        allowed_violations="NOT_ALLOWED_VALUE",
+        actual_violation={violation},
     )
 
 

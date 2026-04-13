@@ -15,6 +15,7 @@ from conformly._internal.types import (
     Range,
     ViolationType,
 )
+from conformly.exceptions import GenerationError
 
 valid_range_10_20 = Range(10.0, 20.0)
 
@@ -70,7 +71,7 @@ def test_generate_invalid_float_no_matching_range_raises(
         has_constraints=True,
     )
 
-    with pytest.raises(ValueError, match="No invalid ranges available for violation"):
+    with pytest.raises(GenerationError):
         _generate_invalid_float(ctx, semantic_no_below, ViolationType.BELOW_MIN)
 
 
@@ -143,7 +144,7 @@ def test_generate_value_respects_valid_flag(
 
 
 def test_generate_value_invalid_on_unbounded_raises(ctx: GenerationContext) -> None:
-    with pytest.raises(ValueError, match="No invalid ranges available"):
+    with pytest.raises(GenerationError):
         generate_value(ctx, unbounded_semantic, ViolationType.BELOW_MIN)
 
 

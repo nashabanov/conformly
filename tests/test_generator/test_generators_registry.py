@@ -7,6 +7,7 @@ from conformly._internal.generator.registry import (
 )
 from conformly._internal.generator.types import boolean, enum, float, integer, string
 from conformly._internal.types import FieldKind
+from conformly.exceptions import GenerationError
 
 # ===== TESTS for get_generator() =====
 
@@ -28,7 +29,7 @@ def test_get_generator_returns_correct_implementation(
 
 
 def test_get_generator_raises_on_unknown_kind() -> None:
-    with pytest.raises(TypeError):
+    with pytest.raises(GenerationError):
         get_generator(FieldKind.OBJECT)
 
 

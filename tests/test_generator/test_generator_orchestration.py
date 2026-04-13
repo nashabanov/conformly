@@ -24,6 +24,7 @@ from conformly._internal.types import (
     Range,
     ViolationType,
 )
+from conformly.exceptions import GenerationError
 
 simple_string_field = ResolvedField(
     field_spec=FieldSpec(name="name", field_type=str, default=UNSET, nullable=False),
@@ -187,7 +188,7 @@ def test_generate_invalid_empty_violations(ctx: GenerationContext) -> None:
     model = ResolvedModel(name="User", fields=(simple_string_field, bool_field))
     task = PlannedTask(path=(0,), allowed_violations=())
 
-    with pytest.raises(ValueError):
+    with pytest.raises(GenerationError):
         generate_invalid(ctx, model, task)
 
 
@@ -212,7 +213,7 @@ def test_generate_invalid_path_into_non_nested_field(ctx: GenerationContext) -> 
     model = ResolvedModel(name="User", fields=(simple_string_field,))
     task = PlannedTask((0, 1), (ViolationType.BELOW_MIN,))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(GenerationError):
         generate_invalid(ctx, model, task)
 
 
@@ -220,7 +221,7 @@ def test_generate_invalid_ureacheble_index(ctx: GenerationContext) -> None:
     model = ResolvedModel(name="User", fields=(simple_string_field,))
     task = PlannedTask((2,), (ViolationType.ABOVE_MAX,))
 
-    with pytest.raises(IndexError):
+    with pytest.raises(GenerationError):
         generate_invalid(ctx, model, task)
 
 
@@ -231,7 +232,7 @@ def test_generate_invalid_ureacheble_index_nested(ctx: GenerationContext) -> Non
         allowed_violations=(ViolationType.BELOW_MIN, ViolationType.ABOVE_MAX),
     )
 
-    with pytest.raises(IndexError):
+    with pytest.raises(GenerationError):
         generate_invalid(ctx, model, task)
 
 

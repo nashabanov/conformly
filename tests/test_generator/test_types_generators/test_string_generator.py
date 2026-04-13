@@ -13,6 +13,7 @@ from conformly._internal.generator.types.string import (
 )
 from conformly._internal.resolver.semantics import StringSemantic
 from conformly._internal.types import FieldKind, LengthRange, ViolationType
+from conformly.exceptions import GenerationError
 
 
 def test_random_string_min_only(ctx: GenerationContext) -> None:
@@ -63,22 +64,22 @@ def test_fixed_length_within_bounds(ctx: GenerationContext) -> None:
 
 
 def test_pattern_always_too_long(ctx: GenerationContext) -> None:
-    with pytest.raises(RuntimeError, match="Could not generate"):
+    with pytest.raises(GenerationError):
         _random_pattern_with_length(ctx, r"a{10}", 0, max_len=5)
 
 
 def test_pattern_always_too_short(ctx: GenerationContext) -> None:
-    with pytest.raises(RuntimeError, match="Could not generate"):
+    with pytest.raises(GenerationError):
         _random_pattern_with_length(ctx, r"X", min_len=5, max_len=None)
 
 
 def test_invalid_regex(ctx: GenerationContext) -> None:
-    with pytest.raises(ValueError, match="Invalid or unsupported regex"):
+    with pytest.raises(GenerationError):
         _random_pattern_with_length(ctx, r"[", 0, None)
 
 
 def test_min_greater_than_max(ctx: GenerationContext) -> None:
-    with pytest.raises(ValueError, match="min_len cannot be greater"):
+    with pytest.raises(GenerationError):
         _random_pattern_with_length(ctx, r".*", min_len=10, max_len=5)
 
 
@@ -104,7 +105,7 @@ def test_pattern_with_anchors(ctx: GenerationContext) -> None:
 
 
 def test_pattern_max_length_zero(ctx: GenerationContext) -> None:
-    with pytest.raises(RuntimeError):
+    with pytest.raises(GenerationError):
         _random_pattern_with_length(ctx, r"[a-z]+", 0, max_len=0)
 
 
@@ -337,5 +338,5 @@ def test_generate_random_string_invalid(ctx: GenerationContext) -> None:
 
 @pytest.mark.xfail
 def test_pattern_with_catastrophic_backtracking_safe(ctx: GenerationContext) -> None:
-    with pytest.raises((RuntimeError, ValueError)):
+    with pytest.raises(GenerationError):
         _random_pattern_with_length(ctx, r"(a+)+", 0, 10)

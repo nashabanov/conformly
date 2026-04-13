@@ -1,3 +1,4 @@
+from ._errors import generation_error
 from .protocol import TypeGeneratorProtocol
 from .types import (
     boolean,
@@ -54,7 +55,11 @@ def get_generator(kind: FieldKind) -> TypeGeneratorProtocol:
     try:
         return _GENERATORS[kind]
     except KeyError:
-        raise TypeError(f"No generators found for {kind}")
+        raise generation_error(
+            f"No generators registred for '{kind.value}'",
+            code="missing_generator",
+            kind=kind.value,
+        )
 
 
 def choose_mismatch_kind(kind: FieldKind) -> FieldKind:
