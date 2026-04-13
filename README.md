@@ -25,6 +25,7 @@ No factories, no hardcoded fixtures, no drift when schema changes.
   - [With dataclasses](#with-dataclasses)
   - [With Pydantic](#with-pydantic)
 - [API Reference](#api-reference)
+- [Error Handling](#error-handling)
 - [Invalid Generation Contract](#invalid-generation-contract)
 - [Optional Fields and Defaults](#optional-fields-and-defaults)
 - [Constraints](#constraints)
@@ -123,6 +124,27 @@ cases(
 - `"all"` - (for `cases`) produce all minimal invalid variations for the model
 - `"first"` - violate the first constrained field (for `case`) or take the first N constrained fields (for `cases`)
 - `"all_violations"` - generate one invalid case per every available violations including constraints, structural and type violations (ignores count)
+
+## Error Handling
+
+All `conformly` errors inherit from `ConformlyError`, providing consistent interface for debugging and programmatic handling.
+
+### Structured context
+Every exception includes:
+- `message: str` — human-readable description
+- `context: dict` — diagnostic data with stable `code` for programmatic checks
+
+```python
+from conformly import case
+from conformly.exceptions import GenerationError
+
+try:
+    case(User, valid=False, strategy="email::invalid_type")
+except GenerationError as e:
+    print(e.message)           # "Unknown violation type 'invalid_type'"
+    print(e.context["code"])   # "invalid_violation_type"
+    print(e.context["available"])  # ["too_short", "too_long", "pattern_mismatch", ...]
+```
 
 ## Invalid Generation Contract
 

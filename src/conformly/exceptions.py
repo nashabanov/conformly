@@ -2,9 +2,7 @@ from typing import Any
 
 
 class ConformlyError(Exception):
-    """
-    Base exception for all library errors.
-    """
+    """Base exception for all `conformly` library errors."""
 
     def __init__(self, message: str, *, context: dict[str, Any] | None = None) -> None:
         super().__init__(message)
@@ -18,20 +16,31 @@ class ConformlyError(Exception):
 
 
 class SchemaError(ConformlyError):
+    """
+    Raised when a schema is invalid, malformed, or contains unsupported constructs.
+    """
+
     pass
 
 
 class ResolutionError(ConformlyError):
+    """
+    Raised when the library fails to resolve schema references
+    or map types to internal semantics.
+    """
+
     pass
 
 
 class PlanningError(ConformlyError):
-    pass
+    """
+    Raised when a test case cannot be planned due to invalid configuration.
+    """
 
 
 class GenerationError(ConformlyError):
-    pass
+    """
+    Raised when synthetic data generation fails or violates internal constraints.
+    """
 
-
-class ViolationError(ConformlyError):
     pass

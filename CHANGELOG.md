@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.4.0] - Planned
+
+### Added
+- **Unified exception hierarchy** — all library errors now inherit from `ConformlyError`, providing consistent interface for error handling and logging.
+- **Specialized exception classes**:
+  - `SchemaError` — invalid or malformed schema definitions.
+  - `ResolutionError` — failures during schema reference resolution or type mapping.
+  - `PlanningError` — invalid task configuration or impossible violation combinations.
+  - `GenerationError` — runtime failures during synthetic data generation.
+- **Structured error context** — every exception includes:
+  - `message: str` — human-readable description.
+  - `context: dict[str, Any]` — machine-readable diagnostic data (e.g., `code`, `field`, `constraint`, `strategy`).
+
+### Changed
+- **Public API error handling** — functions `case()`, `cases()`, and low-level pipeline stages now raise `GenerationError` or `PlanningError` instead of built-in exceptions. This enables precise `except` clauses and structured logging.
+
+
 ## [0.3.10] - 2025.04.11
 
 ### Added
