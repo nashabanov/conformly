@@ -13,6 +13,8 @@ from typing import (  # noqa: UP035
 from ...constraints import Constraint, OneOf
 from ...types import ENUMERATED_TYPE
 
+from conformly.exceptions import SchemaError
+
 UNION_TYPES = (Union, UnionType)
 COLLECTION_ORIGINS = (list, List)  # noqa: UP006
 
@@ -31,7 +33,14 @@ def extract_runtime_type_and_constraints(
     if origin in COLLECTION_ORIGINS:
         args = get_args(t)
         if not args:
-            raise TypeError(f"Field '{field_name}': empty collection {field_type!r}")
+            raise SchemaError(
+                f"Field '{field_name}': empty collection",
+                context={
+                    "code": "empty_collection",
+                    "field_name": field_name,
+                    "field_type": repr(field_type),
+                },
+            )
 
         element_annotation = args[0]
 
@@ -50,26 +59,39 @@ def extract_runtime_type_and_constraints(
         if len(non_none) == 1 and len(args) >= 2:
             t = args[0]
         else:
-            raise TypeError(
-                f"Field '{field_name}': unsupported union type {field_type!r}. "
-                "Only Optional[T] (Union[T, None]) is allowed."
+            raise SchemaError(
+                f"Field '{field_name}': unsupported union type",
+                context={
+                    "code": "unsupported_union",
+                    "field_name": field_name,
+                    "field_type": repr(field_type),
+                    "allowed": "Optional[T], Union[T, None]",
+                },
             )
 
     if get_origin(t) is Literal:
         values = get_args(t)
         if not values:
-            raise TypeError(
-                f"Field '{field_name}': empty Literal[] is not allowed. "
-                "Must specify at least one value."
+            raise SchemaError(
+                f"Field '{field_name}': empty Literal",
+                context={
+                    "code": "empty_literal",
+                    "field_name": field_name,
+                    "field_type": repr(field_type),
+                },
             )
         return ENUMERATED_TYPE, (OneOf(values),), None
 
     if isinstance(t, type) and issubclass(t, Enum):
         members = list(t)
         if not members:
-            raise TypeError(
-                f"Field '{field_name}': empty Enum {t.__name__} is not allowed. "
-                "Must define at least one member."
+            raise SchemaError(
+                f"Field '{field_name}': empty Enum",
+                context={
+                    "code": "empty_enum",
+                    "field_name": field_name,
+                    "field_type": t.__name__,
+                },
             )
         values = tuple(member.value for member in members)
         return ENUMERATED_TYPE, (OneOf(values),), None
@@ -80,7 +102,14 @@ def extract_runtime_type_and_constraints(
 
         return t, outer_constraints, None
 
-    raise TypeError(f"Field '{field_name}': unsupported type annotation {field_type!r}")
+    raise SchemaError(
+        f"Field '{field_name}': unsupported type annotation",
+        context={
+            "code": "unsupported_type",
+            "field_name": field_name,
+            "field_type": repr(field_type),
+        },
+    )
 
 
 def is_nullable(field_type: Any) -> bool:

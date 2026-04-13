@@ -11,6 +11,8 @@ from ...constraints import (
     create_constraint,
 )
 
+from conformly.exceptions import SchemaError
+
 
 def is_constraints_consistent(constraints: tuple[Constraint, ...]) -> bool:
     has_one_of = any(isinstance(c, OneOf) for c in constraints)
@@ -62,8 +64,25 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
             try:
                 return int(s)
             except ValueError as e:
-                raise ValueError(f"Constraint {k!r} expects int, got {v!r}") from e
-        raise ValueError(f"Constraint {k!r} expects int, got {type(v).__name__}")
+                raise SchemaError(
+                    f"Constraint '{k}' expects integer value",
+                    context={
+                        "code": "invalid_constraint_value",
+                        "constraint_type": k,
+                        "value": v,
+                        "expected": int,
+                    },
+                ) from e
+        raise SchemaError(
+            f"Constraint '{k}' expects integer value",
+            context={
+                "code": "invalid_constraint_value",
+                "constraint_type": k,
+                "value": v,
+                "expected": int,
+                "actual": type(v).__name__,
+            },
+        )
 
     if k in NUMERIC_CONSTRAINTS:
         if isinstance(v, (int, float)):
@@ -75,8 +94,25 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
                     return int(s)
                 return float(s)
             except ValueError as e:
-                raise ValueError(f"Constraint {k!r} expects number, got {v!r}") from e
-        raise ValueError(f"Constraint {k!r} expects number, got {type(v).__name__}")
+                raise SchemaError(
+                    f"Constraint '{k}' expects numetic value",
+                    context={
+                        "code": "invalid_constraint_value",
+                        "constraint_type": k,
+                        "value": v,
+                        "expected": "number",
+                    },
+                ) from e
+        raise SchemaError(
+            f"Constraint '{k}' expects numetic value",
+            context={
+                "code": "invalid_constraint_value",
+                "constraint_type": k,
+                "value": v,
+                "expected": "number",
+                "actual": type(v).__name__,
+            },
+        )
 
 
 def _metadata_to_constraints(metadata_item: Any) -> Constraint | None:
@@ -101,5 +137,12 @@ def _metadata_to_constraints(metadata_item: Any) -> Constraint | None:
 
 def _validate_constraint_type(k: str) -> ConstraintType:
     if k not in ALLOWED_CONSTRAINT_TYPE:
-        raise ValueError(f"Unknown constraint type {k!r}")
+        raise SchemaError(
+            f"Unknown constraint type {k}",
+            context={
+                "code": "unknown_constraint_type",
+                "constraint_type": k,
+                "allowed": sorted(ALLOWED_CONSTRAINT_TYPE),
+            },
+        )
     return cast("ConstraintType", k)

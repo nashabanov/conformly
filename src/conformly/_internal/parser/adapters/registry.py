@@ -1,5 +1,7 @@
 from .protocol import ParcingAdapterProtocol
 
+from conformly.exceptions import ResolutionError
+
 _adapters: list[ParcingAdapterProtocol] = []
 
 
@@ -11,4 +13,11 @@ def get_adapter(model: type) -> ParcingAdapterProtocol:
     for adapter in _adapters:
         if adapter.supports(model):
             return adapter
-    raise TypeError(f"No adapters found for {model!r}")
+    raise ResolutionError(
+        f"No adapters found for {model!r}",
+        context={
+            "code": "adapter_not_found",
+            "model": repr(model),
+            "registred_adapters": [type(a).__name__ for a in _adapters],
+        },
+    )

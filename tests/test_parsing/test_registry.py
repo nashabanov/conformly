@@ -2,6 +2,7 @@ import pytest
 
 from conformly._internal.parser import ModelSpec, parse_model
 from conformly._internal.parser.adapters.registry import get_adapter, register
+from conformly.exceptions import ResolutionError
 
 
 class DummyAdapter:
@@ -34,10 +35,10 @@ def test_register_adapter_and_parse_model():
 
 
 def test_adapter_not_found():
-    with pytest.raises(TypeError):
+    with pytest.raises(ResolutionError):
         get_adapter(int)
 
 
 def test_adapter_not_found_on_parse_model_call():
-    with pytest.raises(TypeError):
+    with pytest.raises(ResolutionError):
         parse_model(int)

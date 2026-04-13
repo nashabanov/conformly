@@ -1,11 +1,20 @@
+from typing import Any
+
+
 class ConformlyError(Exception):
     """
     Base exception for all library errors.
-
-    Provides structured context for debugging and future serialization.
     """
 
-    pass
+    def __init__(self, message: str, *, context: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.message = message
+        self.context = context or {}
+
+    def __str__(self) -> str:
+        if not self.context:
+            return self.message
+        return f"{self.message} | context={self.context}"
 
 
 class SchemaError(ConformlyError):
@@ -25,8 +34,4 @@ class GenerationError(ConformlyError):
 
 
 class ViolationError(ConformlyError):
-    pass
-
-
-class InternalError(ConformlyError):
     pass

@@ -11,6 +11,7 @@ from conformly._internal.parser.extractors.types import (
     is_nullable,
 )
 from conformly._internal.types import ENUMERATED_TYPE
+from conformly.exceptions import SchemaError
 
 
 @dataclass
@@ -95,10 +96,10 @@ def test_extract_runtime_type_annotated_optional() -> None:
 
 
 def test_extract_runtime_type_invalid_union() -> None:
-    with pytest.raises(TypeError, match="unsupported union type"):
+    with pytest.raises(SchemaError):
         extract_runtime_type_and_constraints(int | str, "field")
 
-    with pytest.raises(TypeError, match="unsupported union type"):
+    with pytest.raises(SchemaError):
         extract_runtime_type_and_constraints(int | DummyDataclass | None, "field")
 
 
@@ -156,7 +157,7 @@ def test_extract_runtime_type_empty_enum() -> None:
     class EmptyEnum(Enum):
         pass
 
-    with pytest.raises(TypeError, match="empty Enum"):
+    with pytest.raises(SchemaError):
         extract_runtime_type_and_constraints(EmptyEnum, "field")
 
 
@@ -174,12 +175,12 @@ def test_extract_runtime_type_heterogeneous_enum() -> None:
 
 
 def test_extract_runtime_type_only_none() -> None:
-    with pytest.raises(TypeError, match="unsupported type annotation"):
+    with pytest.raises(SchemaError):
         extract_runtime_type_and_constraints(None, "field")
 
 
 def test_extract_runtime_type_unsupported_annotation() -> None:
-    with pytest.raises(TypeError, match="unsupported type annotation"):
+    with pytest.raises(SchemaError):
         extract_runtime_type_and_constraints(dict[str, int], "field")
 
 

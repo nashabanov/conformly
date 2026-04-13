@@ -14,6 +14,8 @@ from ..extractors.constraints import (
 from ..extractors.types import extract_runtime_type_and_constraints, is_nullable
 from ..models import FieldSpec, ModelSpec
 
+from conformly.exceptions import ResolutionError, SchemaError
+
 
 def supports(model: type) -> bool:
     return is_dataclass(model)
@@ -22,7 +24,14 @@ def supports(model: type) -> bool:
 @lru_cache(maxsize=128)
 def parse(model: type) -> ModelSpec:
     if not supports(model):
-        raise TypeError(f"Unsupported model type: {model}. Expected dataclass.")
+        raise ResolutionError(
+            f"Unsupported model type: {model}",
+            context={
+                "code": "unsupported_model_type",
+                "model": repr(model),
+                "expected": "dataclass",
+            },
+        )
 
     return ModelSpec(name=model.__name__, type="dataclass", fields=parse_fields(model))
 
@@ -51,10 +60,14 @@ def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
 
     all_constraints = (*intrinsic_constraints, *external_constraints)
     if not is_constraints_consistent(all_constraints):
-        raise TypeError(
-            f"Field '{field.name}': closed set (Literal/Enum) defines a fixed "
-            f"set of values and cannot be combined with other constraints. "
-            f"Conflicting constraints: {[type(c).__name__ for c in all_constraints]}"
+        raise SchemaError(
+            f"Field '{field.name}': incompatible constraints",
+            context={
+                "code": "inconsistent_constraints",
+                "field_name": field.name,
+                "constraints": [type(c).__name__ for c in all_constraints],
+                "reason": "closed set cannot be combined with other constraints",
+            },
         )
 
     nested_model = (
