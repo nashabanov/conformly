@@ -76,13 +76,30 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
     if k == "pattern":
         return str(v)
 
-    if k in STRING_CONSTRAINTS:
-        if isinstance(v, int):
+    if k == "unique_items":
+        if isinstance(v, bool):
             return v
         if isinstance(v, str):
-            s = v.strip()
+            return v.strip().lower() in ("true", "1", "yes")
+        if isinstance(v, (int, float)):
+            return bool(v)
+        raise SchemaError(
+            f"Constraint '{k}' expects boolean value",
+            context={
+                "code": "invalid_constraint_value",
+                "constraint_type": k,
+                "value": v,
+                "expected": bool,
+                "actual": type(v).__name__,
+            },
+        )
+
+    if k in STRING_CONSTRAINTS:
+        if isinstance(v, int) and not isinstance(v, bool):
+            return v
+        if isinstance(v, str):
             try:
-                return int(s)
+                return int(v.strip())
             except ValueError as e:
                 raise SchemaError(
                     f"Constraint '{k}' expects integer value",
@@ -105,17 +122,17 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
         )
 
     if k in NUMERIC_CONSTRAINTS:
-        if isinstance(v, (int, float)):
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
             return v
         if isinstance(v, str):
             s = v.strip()
             try:
-                if all(ch.isdigit() for ch in s.lstrip("+-")):
-                    return int(s)
-                return float(s)
+                return (
+                    int(s) if all(ch.isdigit() for ch in s.lstrip("+-")) else float(s)
+                )
             except ValueError as e:
                 raise SchemaError(
-                    f"Constraint '{k}' expects numetic value",
+                    f"Constraint '{k}' expects numeric value",
                     context={
                         "code": "invalid_constraint_value",
                         "constraint_type": k,
@@ -124,7 +141,7 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
                     },
                 ) from e
         raise SchemaError(
-            f"Constraint '{k}' expects numetic value",
+            f"Constraint '{k}' expects numeric value",
             context={
                 "code": "invalid_constraint_value",
                 "constraint_type": k,
@@ -143,7 +160,7 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
                     return int(v.strip())
                 except ValueError as e:
                     raise SchemaError(
-                        f"Constraint '{k}' expects numetic value",
+                        f"Constraint '{k}' expects numeric value",
                         context={
                             "code": "invalid_constraint_value",
                             "constraint_type": k,
@@ -152,30 +169,12 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
                         },
                     ) from e
         raise SchemaError(
-            f"Constraint '{k}' expects numetic value",
+            f"Constraint '{k}' expects numeric value",
             context={
                 "code": "invalid_constraint_value",
                 "constraint_type": k,
                 "value": v,
                 "expected": "number",
-                "actual": type(v).__name__,
-            },
-        )
-
-    if k == "unique_items":
-        if isinstance(v, bool):
-            return v
-        if isinstance(v, str):
-            return v.strip().lower() in ("true", "1", "yes")
-        if isinstance(v, (float, int)):
-            return bool(v)
-        raise SchemaError(
-            f"Constraint '{k}' expects boolean value",
-            context={
-                "code": "invalid_constraint_value",
-                "constraint_type": k,
-                "value": v,
-                "expected": bool,
                 "actual": type(v).__name__,
             },
         )
