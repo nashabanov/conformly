@@ -1,22 +1,20 @@
 from enum import Enum
 from types import UnionType
-from typing import (  # noqa: UP035
+from typing import (
     Annotated,
     Any,
-    List,
     Literal,
     Union,
     get_args,
     get_origin,
 )
 
-from ...constraints import Constraint, OneOf
-from ...types import ENUMERATED_TYPE
-
+from conformly._internal.constraints import Constraint, OneOf, UniqueItems
+from conformly._internal.types import ENUMERATED_TYPE
 from conformly.exceptions import SchemaError
 
 UNION_TYPES = (Union, UnionType)
-COLLECTION_ORIGINS = (list, List)  # noqa: UP006
+COLLECTION_ORIGINS = (list, set, frozenset)
 
 
 def extract_runtime_type_and_constraints(
@@ -50,6 +48,9 @@ def extract_runtime_type_and_constraints(
         else:
             element_type = element_annotation
             element_constraints = ()
+
+        if origin in (set, frozenset):
+            return element_type, (UniqueItems(True),), origin
 
         return element_type, element_constraints or outer_constraints, origin
 

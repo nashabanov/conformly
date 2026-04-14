@@ -28,6 +28,9 @@ _VIOLATION_PRIORITY: tuple[ViolationType, ...] = (
     ViolationType.TYPE_MISMATCH,
     ViolationType.NONE_FOR_NOT_OPTIONAL,
     # Semantic
+    ViolationType.DUPLICATE,
+    ViolationType.TOO_LESS_ITEMS,
+    ViolationType.TOO_MANY_ITEMS,
     ViolationType.BELOW_MIN,
     ViolationType.ABOVE_MAX,
     ViolationType.NOT_MULTIPLE,

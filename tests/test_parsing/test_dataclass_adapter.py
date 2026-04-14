@@ -12,6 +12,7 @@ from conformly._internal.constraints import (
     MinLength,
     OneOf,
 )
+from conformly._internal.constraints.collections import MaxItems, MinItems, UniqueItems
 from conformly._internal.fields import Email
 from conformly._internal.parser import FieldSpec, ModelSpec
 from conformly._internal.parser.adapters.dataclass import (
@@ -79,8 +80,11 @@ class MixedDataclass:
 class ListFieldDataclass:
     text: str
     emails: list[Email]
-    names: list[Annotated[str, MinLength(5), MaxLength(15)]]
+    names: Annotated[
+        list[Annotated[str, MinLength(5), MaxLength(15)]], MinItems(2), MaxItems(10)
+    ]
     model_list: list[DefaultDataclass]
+    unique_list: set[str]
 
 
 class BaseEnum(Enum):
@@ -387,12 +391,13 @@ def test_parse_ignores_initvar_and_classvar() -> None:
 def test_parse_dataclass_with_list_fields() -> None:
     spec = parse(ListFieldDataclass)
 
-    assert len(spec.fields) == 4
+    assert len(spec.fields) == 5
 
     text = spec.fields[0]
     emails = spec.fields[1]
     names = spec.fields[2]
     model_list = spec.fields[3]
+    unique_items = spec.fields[4]
 
     assert text.collection_type is None
     assert emails.field_type is Email
@@ -401,9 +406,13 @@ def test_parse_dataclass_with_list_fields() -> None:
     assert names.field_type is str
     assert names.collection_type is list
     assert len(names.constraints) == 2
+    assert len(names.collection_constraints) == 2
     assert model_list.field_type is DefaultDataclass
     assert model_list.nested_model is not None
     assert model_list.collection_type is list
+    assert unique_items.field_type is str
+    assert unique_items.collection_type is set
+    assert unique_items.collection_constraints == (UniqueItems(True),)
 
 
 # ====== EDGE CASES ======

@@ -73,7 +73,9 @@ class ConstrainedModel(BaseModel):
 
 class ListFieldModel(BaseModel):
     emails: list[EmailStr]
-    names: list[Annotated[str, MinLength(5), MaxLength(15)]]
+    names: list[Annotated[str, MinLength(5), MaxLength(15)]] = Field(
+        max_length=10, min_length=1
+    )
     model_list: list[ConstrainedModel]
 
 
@@ -355,6 +357,7 @@ def test_parse_dataclass_with_list_fields() -> None:
     assert names.field_type is str
     assert names.collection_type is list
     assert len(names.constraints) == 2
+    assert len(names.collection_constraints) == 2
     assert model_list.field_type is ConstrainedModel
     assert model_list.nested_model is not None
     assert model_list.collection_type is list

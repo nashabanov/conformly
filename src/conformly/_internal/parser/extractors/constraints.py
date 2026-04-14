@@ -1,22 +1,42 @@
 from collections.abc import Mapping
 from typing import Annotated, Any, cast, get_args, get_origin
 
-from ...constraints import (
+from conformly._internal.constraints import (
     ALLOWED_CONSTRAINT_TYPE,
+    COLLECTION_CONSTRAINTS,
     NUMERIC_CONSTRAINTS,
     STRING_CONSTRAINTS,
     Constraint,
     ConstraintType,
+    MaxItems,
+    MinItems,
     OneOf,
+    UniqueItems,
     create_constraint,
 )
-
 from conformly.exceptions import SchemaError
+
+_COLLECTION_CONTRAINTS_TYPE = (MinItems, MaxItems, UniqueItems)
 
 
 def is_constraints_consistent(constraints: tuple[Constraint, ...]) -> bool:
     has_one_of = any(isinstance(c, OneOf) for c in constraints)
     return not has_one_of or len(constraints) == 1
+
+
+def split_collection_constraints(
+    constraints: tuple[Constraint, ...],
+) -> tuple[tuple[Constraint, ...], tuple[Constraint, ...]]:
+    collection_constraints = []
+    element_constraints = []
+
+    for c in constraints:
+        if isinstance(c, _COLLECTION_CONTRAINTS_TYPE):
+            collection_constraints.append(c)
+        else:
+            element_constraints.append(c)
+
+    return tuple(element_constraints), tuple(collection_constraints)
 
 
 def parse_annotated_constraints(field_type: Any) -> tuple[Constraint, ...]:
@@ -110,6 +130,52 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
                 "constraint_type": k,
                 "value": v,
                 "expected": "number",
+                "actual": type(v).__name__,
+            },
+        )
+
+    if k in COLLECTION_CONSTRAINTS:
+        if k in ("min_items", "max_items"):
+            if isinstance(v, int) and not isinstance(v, bool):
+                return v
+            if isinstance(v, str):
+                try:
+                    return int(v.strip())
+                except ValueError as e:
+                    raise SchemaError(
+                        f"Constraint '{k}' expects numetic value",
+                        context={
+                            "code": "invalid_constraint_value",
+                            "constraint_type": k,
+                            "value": v,
+                            "expected": "number",
+                        },
+                    ) from e
+        raise SchemaError(
+            f"Constraint '{k}' expects numetic value",
+            context={
+                "code": "invalid_constraint_value",
+                "constraint_type": k,
+                "value": v,
+                "expected": "number",
+                "actual": type(v).__name__,
+            },
+        )
+
+    if k == "unique_items":
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            return v.strip().lower() in ("true", "1", "yes")
+        if isinstance(v, (float, int)):
+            return bool(v)
+        raise SchemaError(
+            f"Constraint '{k}' expects boolean value",
+            context={
+                "code": "invalid_constraint_value",
+                "constraint_type": k,
+                "value": v,
+                "expected": bool,
                 "actual": type(v).__name__,
             },
         )
