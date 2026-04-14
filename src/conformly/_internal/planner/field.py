@@ -116,13 +116,8 @@ def _define_allowed_violation_types(
         case NumericSemantic(kind=(FieldKind.INTEGER | FieldKind.FLOAT)):
             violations = _define_numeric_violations(semantic)
 
-        case ListSemantic(element_semantic=elem_sem):
-            try:
-                violations = list(
-                    _define_allowed_violation_types(elem_sem, False, False)
-                )
-            except PlanningError:
-                violations = []
+        case ListSemantic(kind=FieldKind.LIST):
+            violations = _define_list_violations(semantic)
 
         case EnumSemantic(kind=FieldKind.ENUM):
             violations = [ViolationType.NOT_ALLOWED_VALUE]
@@ -213,3 +208,26 @@ def _define_string_violations(
         result.append(ViolationType.PATTERN_MISMATCH)
 
     return result
+
+
+def _define_list_violations(semantic: ListSemantic) -> list[ViolationType]:
+    collection_violations: list[ViolationType] = []
+
+    try:
+        type_violations = list(
+            _define_allowed_violation_types(semantic.element_semantic, False, False)
+        )
+    except PlanningError:
+        type_violations = []
+
+    if semantic.is_unique_items is True:
+        collection_violations.append(ViolationType.DUPLICATE)
+
+    if semantic.length_range is not None:
+        if semantic.length_range.min_length > 0:
+            collection_violations.append(ViolationType.TOO_LESS_ITEMS)
+
+        if semantic.length_range.max_length is not None:
+            collection_violations.append(ViolationType.TOO_MANY_ITEMS)
+
+    return [*collection_violations, *type_violations]
