@@ -10,11 +10,14 @@ from conformly._internal.constraints import (
     GreaterThan,
     LessOrEqual,
     LessThan,
+    MaxItems,
     MaxLength,
+    MinItems,
     MinLength,
     MultipleOf,
     OneOf,
     Pattern,
+    UniqueItems,
 )
 from conformly._internal.fields import SPECIAL_KINDS, Email
 from conformly._internal.parser import FieldSpec, ModelSpec
@@ -588,6 +591,43 @@ def test_resolve_list_with_nested_model(simple_model_spec) -> None:
     assert isinstance(resolved.semantic, ListSemantic)
     assert isinstance(resolved.semantic.element_nested_model, ResolvedModel)
     assert isinstance(resolved.semantic.element_semantic, ObjectSemantic)
+
+
+def test_resolve_constrained_list_type() -> None:
+    field_spec = FieldSpec(
+        name="names",
+        field_type=str,
+        constraints=(MinLength(1), MaxLength(10)),
+        collection_type=list,
+        collection_constraints=(MinItems(10), MaxItems(15), UniqueItems(True)),
+    )
+    path: FieldPath = (1, 2)
+
+    resolved = resolve_field(field_spec, path)
+    semantic = resolved.semantic
+
+    assert isinstance(semantic, ListSemantic)
+    assert isinstance(semantic.element_semantic, StringSemantic)
+    assert semantic.has_constraints is True
+    assert semantic.is_unique_items is True
+    assert semantic.length_range is not None
+    assert semantic.length_range.min_length == 10
+    assert semantic.length_range.max_length == 15
+    assert semantic.element_semantic.length_range.min_length == 1
+    assert semantic.element_semantic.length_range.max_length == 10
+    assert semantic.element_semantic.has_constraints is True
+
+
+def test_resolve_list_invalid_range_raises() -> None:
+    field_spec = FieldSpec(
+        name="names",
+        field_type=str,
+        collection_type=list,
+        collection_constraints=(MinItems(20), MaxItems(15), UniqueItems(True)),
+    )
+
+    with pytest.raises(SchemaError):
+        resolve_field(field_spec, (1,))
 
 
 # ===== TESTS for resolve_model() =====

@@ -21,11 +21,14 @@ from conformly._internal.constraints import (
     GreaterThan,
     LessOrEqual,
     LessThan,
+    MaxItems,
     MaxLength,
+    MinItems,
     MinLength,
     MultipleOf,
     OneOf,
     Pattern,
+    UniqueItems,
 )
 from conformly._internal.fields import (
     SPECIAL_KINDS,
@@ -68,7 +71,8 @@ def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
     list_semantic = None
 
     if field_spec.collection_type is list:
-        list_semantic = ListSemantic(
+        list_semantic = create_list_semantics(
+            constraints=field_spec.collection_constraints,
             element_semantic=create_field_semantic(field_spec),
             element_nested_model=resolved_nested,
         )
@@ -459,3 +463,48 @@ def extract_enum_included_values(
                     "constraints_got": repr(constraints[0]),
                 },
             )
+
+
+def create_list_semantics(
+    constraints: tuple[Constraint, ...],
+    element_semantic: FieldSemantics,
+    element_nested_model: ResolvedModel | None,
+) -> ListSemantic:
+    has_constraints = len(constraints) > 0
+    min_length = 0
+    max_length = None
+    is_unique_items = False
+
+    for c in constraints:
+        if not isinstance(c, (MinItems, MaxItems, UniqueItems)):
+            continue
+
+        match c:
+            case MinItems(v):
+                if min_length == 0 or v > min_length:
+                    min_length = v
+
+            case MaxItems(v):
+                if max_length is None or v < int(max_length):
+                    max_length = v
+
+            case UniqueItems(v):
+                is_unique_items = v
+
+    if max_length and min_length > max_length:
+        raise SchemaError(
+            "Invalid collection length range",
+            context={
+                "code": "invalid_length_range",
+                "min_length": min_length,
+                "max_length": max_length,
+            },
+        )
+
+    return ListSemantic(
+        element_semantic=element_semantic,
+        element_nested_model=element_nested_model,
+        length_range=LengthRange(min_length, max_length),
+        is_unique_items=is_unique_items,
+        has_constraints=has_constraints,
+    )
