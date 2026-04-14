@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from .collections import MaxItems, MinItems, UniqueItems
 from .numeric import GreaterOrEqual, GreaterThan, LessOrEqual, LessThan, MultipleOf
 from .string import MaxLength, MinLength, Pattern
 
@@ -22,6 +23,9 @@ CONSTRAINT_MAPPING: dict[ConstraintType, Callable[[Any], Constraint]] = {
     "min_length": MinLength,
     "pattern": Pattern,
     "multiple_of": MultipleOf,
+    "min_items": MinItems,
+    "max_items": MaxItems,
+    "unique_items": UniqueItems,
 }
 
 
