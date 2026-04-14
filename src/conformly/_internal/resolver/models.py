@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from conformly._internal.types import FieldPath
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ResolvedField:
     field_spec: FieldSpec
     path: FieldPath
@@ -36,7 +36,7 @@ class ResolvedField:
         return self.field_spec.nullable
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ResolvedModel:
     name: str
     fields: tuple[ResolvedField, ...]

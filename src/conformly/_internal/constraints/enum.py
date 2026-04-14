@@ -4,6 +4,6 @@ from typing import Any
 from .base import Constraint
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class OneOf(Constraint):
     values: tuple[Any, ...]

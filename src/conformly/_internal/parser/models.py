@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from ..constraints import Constraint
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class FieldSpec:
     name: str
     field_type: type
@@ -49,7 +49,7 @@ class FieldSpec:
 ModelType = Literal["dataclass", "pydantic"]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ModelSpec:
     name: str
     type: ModelType

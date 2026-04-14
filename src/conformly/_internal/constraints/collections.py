@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from .base import Constraint
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class MinItems(Constraint):
     value: int
 
@@ -11,7 +11,7 @@ class MinItems(Constraint):
         return f"MinItems(value={self.value})"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class MaxItems(Constraint):
     value: int
 
@@ -19,7 +19,7 @@ class MaxItems(Constraint):
         return f"MaxItems(value={self.value})"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class UniqueItems(Constraint):
     is_unique: bool
 

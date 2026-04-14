@@ -5,7 +5,7 @@ from .base import Constraint
 TNum = int | float
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class GreaterThan(Constraint):
     value: TNum
 
@@ -13,7 +13,7 @@ class GreaterThan(Constraint):
         return f"GreaterThan(value={self.value})"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class GreaterOrEqual(Constraint):
     value: TNum
 
@@ -21,7 +21,7 @@ class GreaterOrEqual(Constraint):
         return f"GreaterOrEqual(value={self.value})"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class LessThan(Constraint):
     value: TNum
 
@@ -29,7 +29,7 @@ class LessThan(Constraint):
         return f"LessThan(value={self.value})"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class LessOrEqual(Constraint):
     value: TNum
 
@@ -37,7 +37,7 @@ class LessOrEqual(Constraint):
         return f"LessOrEqual(value={self.value})"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class MultipleOf(Constraint):
     value: TNum
 

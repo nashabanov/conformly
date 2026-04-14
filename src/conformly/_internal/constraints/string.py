@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from .base import Constraint
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class MinLength(Constraint):
     value: int
 
@@ -11,7 +11,7 @@ class MinLength(Constraint):
         return f"MinLength(value={self.value})"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class MaxLength(Constraint):
     value: int
 
@@ -19,7 +19,7 @@ class MaxLength(Constraint):
         return f"MaxLength(value={self.value})"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Pattern(Constraint):
     regex: str
 
