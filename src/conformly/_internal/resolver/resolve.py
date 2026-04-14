@@ -70,7 +70,7 @@ def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
     )
     list_semantic = None
 
-    if field_spec.collection_type is list:
+    if field_spec.collection_type in (list, set, frozenset):
         list_semantic = create_list_semantics(
             constraints=field_spec.collection_constraints,
             element_semantic=create_field_semantic(field_spec),
