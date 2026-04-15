@@ -1,7 +1,9 @@
 from .base import Constraint
+from .collections import MaxItems, MinItems, UniqueItems
 from .enum import OneOf
 from .keys import (
     ALLOWED_CONSTRAINT_TYPE,
+    COLLECTION_CONSTRAINTS,
     NUMERIC_CONSTRAINTS,
     STRING_CONSTRAINTS,
     ConstraintType,
@@ -12,6 +14,7 @@ from .string import MaxLength, MinLength, Pattern
 
 __all__ = [
     "ALLOWED_CONSTRAINT_TYPE",
+    "COLLECTION_CONSTRAINTS",
     "NUMERIC_CONSTRAINTS",
     "STRING_CONSTRAINTS",
     "Constraint",
@@ -20,10 +23,13 @@ __all__ = [
     "GreaterThan",
     "LessOrEqual",
     "LessThan",
+    "MaxItems",
     "MaxLength",
+    "MinItems",
     "MinLength",
     "MultipleOf",
     "OneOf",
     "Pattern",
+    "UniqueItems",
     "create_constraint",
 ]

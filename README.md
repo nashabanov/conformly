@@ -190,6 +190,9 @@ If you need **deterministic control** over which exact constraint to violate, th
 | Numeric | `LessOrEqual(v)` | `le=v` |
 | Numeric | `MultipleOf(v)` | `multitiple_of=v` |
 | Closed-set | `OneOf(values)` | `Literal[...]`, `Enum` |
+| Collection | `MinItems(n)` | `min_length=n` (for lists in `Field(...)`) |
+| Collection | `MaxItems(n)` | `max_length=n` (for lists in `Field(...)`) |
+| Collection | `UniqueItems(bool)` | `set[T]`, `frozenset[T]` |
 
 > Important: Pydantic's constr(), conint(), and functional validators are not interpreted as constraints.
 > Use Field() parameters for constraint extraction.
@@ -200,7 +203,7 @@ If you need **deterministic control** over which exact constraint to violate, th
 > You can use for both model types (dataclasses, Pydantic)
 ```python
 from typing import Annotated
-from conformly.constraints import MinLength, GreaterOrEqual
+from conformly import MinLength, GreaterOrEqual
 
 username: Annotated[str, MinLength(3)]
 ```
@@ -379,7 +382,7 @@ print(invalid_data_by_field)
 
 ## Collections
 
-### List support (experimental)
+### List support
 
 `conformly` supports basic generation of `list[T]` where `T` is a constrained primitive or a nested model.
 
@@ -388,7 +391,7 @@ print(invalid_data_by_field)
 ```python
 from dataclasses import dataclass
 from typing import Annotated
-from conformly import case, MinLength
+from conformly import case, MinLength, MaxItems, UniqueItems
 
 @dataclass
 class Product:
@@ -397,22 +400,45 @@ class Product:
 
 @dataclass
 class Order:
-    tags: list[str]                           # list of unconstrained strings
-    codes: Annotated[list[str], MinLength(5)] # each element must be ≥5 chars
-    items: list[Product]                      # list of nested models
+    tags: list[str]                                                   # list of unconstrained strings
+    codes: Annotated[list[Annotated[str, MinLength(5)]], MaxItems(6)] # each element ≥5 chars, max 6 items
+    items: Annotated[list[Product], UniqueItems(True)]                # unique nested models
 
 valid = case(Order, valid=True)
-# -> {"tags": ["abc"], "codes": ["ABCDE"], "items": [{"sku": "...", "price": 10.0}]}
+# -> {
+#   "tags": ["abc", "def"],
+#   "codes": ["ABCDE", "FGHIJ"],
+#   "items": [{"sku": "...", "price": 10.0}]
+# }
 
 invalid = case(Order, valid=False, strategy="codes")
-# -> {"tags": [...], "codes": ["ab", "VALID"], "items": [...]}  # exactly one code violates min_length
+# -> {
+#   "tags": [...],
+#   "codes": ["ab", "VALID"],  # one element violates MinLength
+#   "items": [...]
+# }
 ```
 
-#### Current limitations (v0.3.10)
+### Set and frozenset support
 
-- No `min_items`/`max_items` control (list length is always 1–3 elements)
-- No nested collections (`list[list[T]]` not supported)
-- Invalid generation targets one random element; specific index targeting not available yet
+`set[T]` and `frozenset[T]` are normalized internally to list generation with `UniqueItems(True)` semantics:
+
+```python
+@dataclass
+class Model:
+    tags: set[str]
+
+case(Model)
+# -> {"tags": ["a", "b", "c"]}  # always unique
+```
+
+This ensures consistent output format (list) while preserving uniqueness guarantees.
+
+### Known limitations
+
+- No nested collections (`list[list[T]]` not supported yet)
+- No fine-grained control over which index is violated (random selection only)
+- Uniqueness for non-hashable elements (e.g., dicts) is best-effort (based on structural comparison fallback)
 
 
 ## Development

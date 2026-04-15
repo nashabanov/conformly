@@ -4,24 +4,24 @@ from .base import Constraint
 
 
 @dataclass(frozen=True, slots=True)
-class MinLength(Constraint):
+class MinItems(Constraint):
     value: int
 
     def __repr__(self) -> str:
-        return f"MinLength(value={self.value})"
+        return f"MinItems(value={self.value})"
 
 
 @dataclass(frozen=True, slots=True)
-class MaxLength(Constraint):
+class MaxItems(Constraint):
     value: int
 
     def __repr__(self) -> str:
-        return f"MaxLength(value={self.value})"
+        return f"MaxItems(value={self.value})"
 
 
 @dataclass(frozen=True, slots=True)
-class Pattern(Constraint):
-    regex: str
+class UniqueItems(Constraint):
+    is_unique: bool
 
     def __repr__(self) -> str:
-        return f"Pattern(regex={self.regex})"
+        return f"UniqueItems(is_unique={self.is_unique})"

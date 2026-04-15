@@ -9,11 +9,14 @@ from ._internal.constraints import (
     GreaterThan,
     LessOrEqual,
     LessThan,
+    MaxItems,
     MaxLength,
+    MinItems,
     MinLength,
     MultipleOf,
     OneOf,
     Pattern,
+    UniqueItems,
 )
 from ._internal.fields import Email, IPv4, IPv6, IPvAny
 from .exceptions import ConformlyError
@@ -28,11 +31,14 @@ __all__ = [
     "IPvAny",
     "LessOrEqual",
     "LessThan",
+    "MaxItems",
     "MaxLength",
+    "MinItems",
     "MinLength",
     "MultipleOf",
     "OneOf",
     "Pattern",
+    "UniqueItems",
     "case",
     "cases",
 ]

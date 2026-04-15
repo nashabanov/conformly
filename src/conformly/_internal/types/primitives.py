@@ -56,6 +56,11 @@ class ViolationType(Enum):
     # Enum
     NOT_ALLOWED_VALUE = "not_allowed_value"
 
+    # collections
+    TOO_LESS_ITEMS = "too_less_items"
+    TOO_MANY_ITEMS = "too_many_items"
+    DUPLICATE = "duplicate"
+
     # structural
     MISSING_FIELD = "missing_field"
     EXTRA_FIELD = "extra_field"

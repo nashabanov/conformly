@@ -3,15 +3,16 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any, get_args, get_origin
 
-from ...fields import SPECIAL_NAME_TO_TYPE
 from ..models import FieldSpec, ModelSpec
 
+from conformly._internal.fields import SPECIAL_NAME_TO_TYPE
 from conformly.exceptions import ResolutionError, SchemaError
 
 if TYPE_CHECKING:
-    from ...constraints import Constraint
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo
+
+    from conformly._internal.constraints import Constraint
 
 
 def supports(model: type) -> bool:
@@ -64,11 +65,13 @@ def parse_fields(
 def parse_field(
     field_info: FieldInfo, field_type: Any, name: str, PydanticUndefined: Any
 ) -> FieldSpec:
-    from ...types import ENUMERATED_TYPE
     from ..extractors.constraints import (
         is_constraints_consistent,
+        split_collection_constraints,
     )
     from ..extractors.types import extract_runtime_type_and_constraints, is_nullable
+
+    from conformly._internal.types import ENUMERATED_TYPE
 
     runtime_type, intrinsic_constraints, collection_type = (
         extract_runtime_type_and_constraints(field_type, name)
@@ -92,6 +95,10 @@ def parse_field(
             },
         )
 
+    element_constraints, collection_constraints = split_collection_constraints(
+        all_constraints
+    )
+
     nested_model = (
         parse(resolved_type)
         if resolved_type is not ENUMERATED_TYPE and supports(resolved_type)
@@ -101,11 +108,12 @@ def parse_field(
     return FieldSpec(
         name=name,
         field_type=resolved_type,
-        constraints=all_constraints,
+        constraints=element_constraints,
         default=_parse_default(field_info, PydanticUndefined),
         nullable=is_nullable(field_type),
         nested_model=nested_model,
         collection_type=collection_type,
+        collection_constraints=collection_constraints,
     )
 
 
@@ -121,7 +129,7 @@ def _resolve_pydantic_special_type(field_type: Any) -> Any:
 
 
 def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
-    from ...types import UNSET
+    from conformly._internal.types import UNSET
 
     if field_info.default_factory is not None:
         return field_info.default_factory
@@ -133,10 +141,17 @@ def _parse_default(field_info: FieldInfo, PydanticUndefined: Any) -> Any:
 
 
 def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...]:
-    from ...constraints import ALLOWED_CONSTRAINT_TYPE, Constraint, create_constraint
     from ..extractors.constraints import _validate_constraint_type
 
+    from conformly._internal.constraints import (
+        ALLOWED_CONSTRAINT_TYPE,
+        Constraint,
+        create_constraint,
+    )
+
     constraints: list[Constraint] = []
+    origin = get_origin(field_info.annotation)
+    is_collection = origin in (list, set, frozenset)
 
     for meta in field_info.metadata:
         if isinstance(meta, Constraint):
@@ -152,7 +167,13 @@ def _parse_fieldinfo_constraints(field_info: FieldInfo) -> tuple[Constraint, ...
                 if attr == "pattern":
                     value = getattr(value, "pattern", value)
 
-                constraint = create_constraint(_validate_constraint_type(attr), value)
+                target_attr = attr
+                if is_collection and attr in ("min_length", "max_length"):
+                    target_attr = "min_items" if attr == "min_length" else "max_items"
+
+                constraint = create_constraint(
+                    _validate_constraint_type(target_attr), value
+                )
                 constraints.append(constraint)
 
     return tuple(constraints)

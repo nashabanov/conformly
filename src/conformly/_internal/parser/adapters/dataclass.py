@@ -10,6 +10,7 @@ from ..extractors.constraints import (
     is_constraints_consistent,
     parse_annotated_constraints,
     parse_metadata_constraints,
+    split_collection_constraints,
 )
 from ..extractors.types import extract_runtime_type_and_constraints, is_nullable
 from ..models import FieldSpec, ModelSpec
@@ -70,6 +71,10 @@ def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
             },
         )
 
+    element_constraints, collection_constraints = split_collection_constraints(
+        all_constraints
+    )
+
     nested_model = (
         parse(runtime_type)
         if runtime_type is not ENUMERATED_TYPE and supports(runtime_type)
@@ -79,11 +84,12 @@ def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
     return FieldSpec(
         name=field.name,
         field_type=runtime_type,
-        constraints=all_constraints,
+        constraints=element_constraints,
         default=parse_defaults(field),
         nullable=is_nullable(field_type),
         nested_model=nested_model,
         collection_type=collection_type,
+        collection_constraints=collection_constraints,
     )
 
 

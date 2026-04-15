@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from ..constraints import Constraint
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class FieldSpec:
     name: str
     field_type: type
@@ -18,6 +18,7 @@ class FieldSpec:
     nullable: bool = False
     nested_model: ModelSpec | None = None
     collection_type: type | None = None
+    collection_constraints: tuple[Constraint, ...] = ()
 
     def has_default(self) -> bool:
         return self.default is not UNSET
@@ -37,6 +38,10 @@ class FieldSpec:
             parts.append(f"constraints={[repr(c) for c in self.constraints]!r}")
         if self.nested_model:
             parts.append(f"nested_model={self.nested_model!r}")
+        if self.collection_type:
+            parts.append(f"collection_type={self.collection_type!r}")
+        if self.collection_constraints:
+            parts.append(f"collection_constraints={self.collection_constraints!r}")
 
         return f"Field({', '.join(parts)})"
 
@@ -44,7 +49,7 @@ class FieldSpec:
 ModelType = Literal["dataclass", "pydantic"]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ModelSpec:
     name: str
     type: ModelType

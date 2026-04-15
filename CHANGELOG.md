@@ -18,9 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error context** — every exception includes:
   - `message: str` — human-readable description.
   - `context: dict[str, Any]` — machine-readable diagnostic data (e.g., `code`, `field`, `constraint`, `strategy`).
+- **List-level constraints support**:
+  - `MinItems(n)` — minimum number of elements
+  - `MaxItems(n)` — maximum number of elements
+  - `UniqueItems(bool)` — enforce uniqueness of elements
 
 ### Changed
 - **Public API error handling** — functions `case()`, `cases()`, and low-level pipeline stages now raise `GenerationError` or `PlanningError` instead of built-in exceptions. This enables precise `except` clauses and structured logging.
+- **`set[T]` and `frozenset[T]` types are now normalized** to list-based generation with UniqueItems(True) semantics, ensuring deterministic output format and consistent constraint handling across collection types
 
 
 ## [0.3.10] - 2025.04.11

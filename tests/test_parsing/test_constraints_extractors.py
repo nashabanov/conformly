@@ -1,16 +1,18 @@
 from dataclasses import dataclass, field, fields
-from typing import Annotated
+from typing import Annotated, Any
 
 import pytest
 
 from conformly._internal.constraints import (
     Constraint,
+    ConstraintType,
     GreaterOrEqual,
     MinLength,
     OneOf,
     Pattern,
 )
 from conformly._internal.parser.extractors.constraints import (
+    _coerce_constraint_value,
     _metadata_to_constraints,
     is_constraints_consistent,
     parse_annotated_constraints,
@@ -141,3 +143,107 @@ def test_is_constraints_consistent_valid():
 def test_is_constraints_consistent_invalid():
     constraints = (OneOf((1, 2)), GreaterOrEqual(1))
     assert not is_constraints_consistent(constraints)
+
+
+# ====== TESTS for _coerce_constraint_value() =====
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        ("hello", "hello"),
+        (123, "123"),
+        (3.14, "3.14"),
+        (None, "None"),
+        (True, "True"),
+    ],
+)
+def test_pattern_coerces_to_string(value: Any, expected: str) -> None:
+    assert _coerce_constraint_value("pattern", value) == expected
+
+
+@pytest.mark.parametrize("constraint", ["min_length", "max_length"])
+def test_string_constraints_accept_valid_int_and_str(
+    constraint: ConstraintType,
+) -> None:
+    assert _coerce_constraint_value(constraint, 5) == 5
+    assert _coerce_constraint_value(constraint, "  10  ") == 10
+    assert _coerce_constraint_value(constraint, "-1") == -1
+
+
+@pytest.mark.parametrize("constraint", ["min_length", "max_length"])
+def test_string_constraints_reject_non_numeric_str(constraint: ConstraintType) -> None:
+    with pytest.raises(SchemaError):
+        _coerce_constraint_value(constraint, "abc")
+
+
+@pytest.mark.parametrize("constraint", ["min_length", "max_length"])
+def test_string_constraints_reject_float(constraint: ConstraintType) -> None:
+    with pytest.raises(SchemaError):
+        _coerce_constraint_value(constraint, 1.5)
+
+
+@pytest.mark.parametrize("constraint", ["gt", "ge", "lt", "le", "multiple_of"])
+def test_numeric_constraints_accept_valid(constraint: ConstraintType) -> None:
+    assert _coerce_constraint_value(constraint, 5) == 5
+    assert _coerce_constraint_value(constraint, 2.5) == 2.5
+    assert _coerce_constraint_value(constraint, " -4 ") == -4
+    assert _coerce_constraint_value(constraint, " 0.75 ") == 0.75
+    assert _coerce_constraint_value(constraint, "1e2") == 100.0
+
+
+@pytest.mark.parametrize("constraint", ["gt", "ge", "lt", "le", "multiple_of"])
+def test_numeric_constraints_reject_invalid_str(constraint: ConstraintType) -> None:
+    with pytest.raises(SchemaError):
+        _coerce_constraint_value(constraint, "abc")
+
+
+@pytest.mark.parametrize("constraint", ["min_items", "max_items"])
+def test_collection_constraints_accept_valid(constraint: ConstraintType) -> None:
+    assert _coerce_constraint_value(constraint, 3) == 3
+    assert _coerce_constraint_value(constraint, " 5 ") == 5
+
+
+@pytest.mark.parametrize("constraint", ["min_items", "max_items"])
+def test_collection_constraints_reject_bool(constraint: ConstraintType) -> None:
+    with pytest.raises(SchemaError):
+        _coerce_constraint_value(constraint, True)
+
+
+@pytest.mark.parametrize("constraint", ["min_items", "max_items"])
+def test_collection_constraints_reject_float_and_other(
+    constraint: ConstraintType,
+) -> None:
+    with pytest.raises(SchemaError):
+        _coerce_constraint_value(constraint, 2.5)
+    with pytest.raises(SchemaError):
+        _coerce_constraint_value(constraint, [1, 2])
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        (True, True),
+        (False, False),
+        ("true", True),
+        (" 1 ", True),
+        ("YES", True),
+        ("false", False),
+        ("0", False),
+        ("no", False),
+        (1, True),
+        (0, False),
+        (-5, True),
+        (0.0, False),
+        (0.1, True),
+    ],
+)
+def test_unique_items_coerces_various_types(
+    value: tuple[Any, ...], expected: tuple[Any, ...]
+) -> None:
+    assert _coerce_constraint_value("unique_items", value) is expected
+
+
+def test_unique_items_rejects_unsupported_type() -> None:
+    with pytest.raises(SchemaError):
+        _coerce_constraint_value("unique_items", object())
