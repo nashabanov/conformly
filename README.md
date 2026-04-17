@@ -118,8 +118,15 @@ cases(
 ) -> list[dict]
 ```
 `strategy` values:
-- `<field_name>` - target specific field for invalidation (for nested fields using dot syntax `"profile.name"`)
-- `<field_name>::<violations>` - target specific violation for field (syntax `"profile.name::too_long"`)
+- `<field_name>`(legacy) - target specific field for invalidation (for nested fields using dot syntax `"profile.name"`)
+- `<field_name>::<violations>`(legacy) - target specific violation for field (syntax `"profile.name::too_long"`)
+- **DSL-based targeting** (recommended for violation targeting):
+```python
+from conformly import path, V
+
+path("user.email").violate(V.TOO_SHORT)
+path("profile.name").violate(V.PATTERN_MISMATCH)
+```
 - `"random"` - choose a random field/constraint to violate
 - `"all"` - (for `cases`) produce all minimal invalid variations for the model
 - `"first"` - violate the first constrained field (for `case`) or take the first N constrained fields (for `cases`)
@@ -269,7 +276,7 @@ Standard `uuid.UUID` fields are supported out of the box. Values are generated i
 ```python
 import uuid
 from dataclasses import dataclass
-from conformly import case
+from conformly import case, path, V
 
 @dataclass
 class Session:
@@ -279,9 +286,9 @@ class Session:
 valid = case(Session, valid=True)
 # -> {"id": UUID("550e8400-e29b-41d4-a716-446655440000"), ...}
 
-invalid = case(Session, valid=False, strategy="id::too_short")
+invalid = case(Session, valid=False, strategy=path("id").violate(V.TOO_SHORT))
 # -> {"id": "550e8400-e29b-41d4-a716-44665544000"}  # TOO_SHORT
-invalid = case(Session, valid=False, strategy="id::wrong_uuid_character")
+invalid = case(Session, valid=False, strategy=path(id).violate(V.WRONG_UUID_CHARACTER))
 # -> {"id": "550e8400-e29b-41d4-a71@-446655440000"} # WRONG_UUID_CHARACTER
 ```
 

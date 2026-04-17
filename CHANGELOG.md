@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `MinItems(n)` — minimum number of elements
   - `MaxItems(n)` — maximum number of elements
   - `UniqueItems(bool)` — enforce uniqueness of elements
+- **Path DSL for explicit field targeting**: `path("field.name").violate(V.TOO_SHORT)` explicit violation targeting via DSL
+- **Violation type alias**: `V` — shorthand for `ViolationType` enum used in DSL expressions
 
 ### Changed
 - **Public API error handling** — functions `case()`, `cases()`, and low-level pipeline stages now raise `GenerationError` or `PlanningError` instead of built-in exceptions. This enables precise `except` clauses and structured logging.

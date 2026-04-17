@@ -16,8 +16,10 @@ from conformly import (
     MinLength,
     Pattern,
     UniqueItems,
+    V,
     case,
     cases,
+    path,
 )
 from conformly.exceptions import GenerationError, PlanningError
 
@@ -628,6 +630,63 @@ class TestViolationTypeSyntax:
     def test_reproducibility_with_specific_violation(self):
         invalid1 = case(User, valid=False, strategy="username::too_short")
         invalid2 = case(User, valid=False, strategy="username::too_short")
+
+        assert len(invalid1["username"]) < 3
+        assert len(invalid2["username"]) < 3
+
+    def test_path_selector_specific_violation(self) -> None:
+        invalid = case(
+            User, valid=False, strategy=path("username").violate(V.TOO_SHORT)
+        )
+        assert len(invalid["username"]) < 3
+        assert len(invalid["email"]) > 0
+
+    def test_path_selector_structural_violation(self) -> None:
+        invalid = case(
+            User,
+            valid=False,
+            strategy=path("bio").violate(V.MISSING_FIELD),
+        )
+
+        assert "bio" not in invalid
+
+    def test_path_selector_structural_requires_violation(self):
+        with pytest.raises(GenerationError):
+            cases(
+                User,
+                valid=False,
+                strategy=path("bio"),
+                allow_structural_violations=True,
+            )
+
+    def test_path_selector_incompatible_violation(self):
+        with pytest.raises(PlanningError):
+            case(
+                User,
+                valid=False,
+                strategy=path("username").violate(V.BELOW_MIN),
+            )
+
+    def test_path_selector_field_not_found(self):
+        with pytest.raises(PlanningError):
+            case(
+                User,
+                valid=False,
+                strategy=path("nonexistent").violate(V.TOO_SHORT),
+            )
+
+    def test_path_selector_equals_string_syntax(self):
+        invalid1 = case(
+            User,
+            valid=False,
+            strategy="username::too_short",
+        )
+
+        invalid2 = case(
+            User,
+            valid=False,
+            strategy=path("username").violate(V.TOO_SHORT),
+        )
 
         assert len(invalid1["username"]) < 3
         assert len(invalid2["username"]) < 3
