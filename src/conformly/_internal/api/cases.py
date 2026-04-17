@@ -65,6 +65,9 @@ def cases(
                 violate a specific field with specific type
                 (e.g. strategy="user.profile::below_min")
 
+            - PathSelector DSL:
+                path("user.email").violate(V.TOO_SHORT)
+
         count:
             Number of cases to generate (ignored if strategy="all").
 

@@ -15,6 +15,28 @@ class PathSelector:
 
 
 def path(raw: str) -> PathSelector:
+    """
+    Create a field path selector for violation targeting.
+
+    Supported usage:
+        path("user.email").violate(V.TOO_SHORT)
+        path("bio").violate(V.TOO_LONG)
+
+    Args:
+        raw:
+            Dotted path to a field inside the model.
+            Example: "user.email", "profile.address.street"
+
+    Returns:
+        PathSelector:
+            DSL object that can be refined with:
+                - .violate(ViolationType)
+
+    Notes:
+        This API does not validate the path immediately.
+        Validation is performed during planning stage
+        against the resolved model structure.
+    """
     return PathSelector(raw)
 
 

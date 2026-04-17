@@ -55,6 +55,9 @@ def case(
                 violate a specific field with specific type
                 (e.g. strategy="user.profile::below_min")
 
+            - PathSelector DSL:
+                path("user.email").violate(V.TOO_SHORT)
+
         allow_type_mismatch:
             If True fields could be type mismatched.
             Availiable only when valid=False.
