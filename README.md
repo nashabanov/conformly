@@ -36,7 +36,6 @@ No factories, no hardcoded fixtures, no drift when schema changes.
 - [Nested Models](#nested-models)
 - [Collections](#collections)
 - [Development](#development)
-- [Roadmap](#roadmap)
 - [Changelog](#changelog)
 - [License](#license)
 - [Contributing](#contributing)
@@ -450,29 +449,73 @@ This ensures consistent output format (list) while preserving uniqueness guarant
 
 ## Development
 
-Install dependencies:
+### Setup
+
+Create a virtual environment and install dependencies:
 
 ```bash
-uv sync
+make install-dev
+```
+Install with all optional features:
+
+```bash
+make install-all
 ```
 
-Run tests:
+### Running tests
+
+Run unit tests:
 
 ```bash
-uv run -m pytest -q
+make test
+```
+
+Run all tests (including benchmarks):
+
+```bash
+make test-all
 ```
 
 Run with coverage:
 
 ```bash
-uv run -m pytest --cov=conformly --cov-report=term-missing
+make test-cov
 ```
 
-Build & check package:
+### Code quality
+
+Run linter:
+
 ```bash
-uv build
-uv run -m twine check dist/*
+make lint
 ```
+
+Auto-fix lint issues:
+
+```bash
+make lint-fix
+```
+
+Run type checker:
+
+```bash
+make typecheck
+```
+
+Run all checks:
+```bash
+make check
+```
+
+### Dependencies managment
+
+Sync dependencies from lockfile:
+make sync
+Strict sync (CI mode):
+make sync-strict
+Update dependencies:
+make update
+
 
 ## Changelog
 
