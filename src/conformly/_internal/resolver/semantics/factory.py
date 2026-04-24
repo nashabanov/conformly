@@ -1,5 +1,6 @@
 from . import FieldSemantics
 from .boolean import BooleanSemantic
+from .dict import DictSemantic
 from .enum import EnumSemantic
 from .list import ListSemantic
 from .numeric import NumericSemantic
@@ -48,6 +49,19 @@ def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
                     kind=FieldKind.STRING,
                     length_range=LengthRange(0, None),
                     pattern=None,
+                ),
+            )
+        case FieldKind.DICT:
+            return DictSemantic(
+                key_semantic=StringSemantic(
+                    kind=FieldKind.STRING,
+                    length_range=LengthRange(0, None),
+                    pattern=None,
+                ),
+                value_semantic=NumericSemantic(
+                    kind=FieldKind.INTEGER,
+                    valid_range=Range(0, 100),
+                    invalid_ranges=(Range(-10, 0), Range(100, 110)),
                 ),
             )
         case FieldKind.UUID:
