@@ -3,10 +3,10 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any, get_args, get_origin
 
-from ..models import ElementSpec, FieldSpec, ModelSpec
+from ..models import FieldSpec, ModelSpec
 
 from conformly._internal.fields import SPECIAL_NAME_TO_TYPE
-from conformly.exceptions import ResolutionError, SchemaError
+from conformly.exceptions import ResolutionError
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
@@ -65,117 +65,27 @@ def parse_fields(
 def parse_field(
     field_info: FieldInfo, field_type: Any, name: str, PydanticUndefined: Any
 ) -> FieldSpec:
-    from ..extractors.constraints import (
-        parse_annotated_constraints,
-        split_collection_constraints,
-    )
-    from ..extractors.types import extract_container, is_nullable, unwrap_annotated
-
-    container = extract_container(field_type, name)
-    default = _parse_default(field_info, PydanticUndefined)
-    nullable = is_nullable(field_type)
+    from ..core import build_element_spec, build_field_spec
+    from ..extractors.constraints import parse_annotated_constraints
 
     external_constraints = (
         *parse_annotated_constraints(field_type),
         *_parse_fieldinfo_constraints(field_info),
     )
 
-    element_constraints, collection_constraints = split_collection_constraints(
-        external_constraints
-    )
-
-    if container["kind"] == "scalar":
-        return FieldSpec(
-            name=name,
-            element=parse_element(field_type, name, element_constraints),
-            default=default,
-            nullable=nullable,
-        )
-
-    elif container["kind"] == "list":
-        item_type, item_constraints = unwrap_annotated(container["parts"]["item"])
-        all_collection_constraints = (
-            *container["constraints"],
-            *collection_constraints,
-        )
-
-        return FieldSpec(
-            name=name,
-            element=None,
-            collection_type=container["origin"],
-            collection_constraints=all_collection_constraints,
-            item=parse_element(
-                item_type, name, (*element_constraints, *item_constraints)
-            ),
-            default=default,
-            nullable=nullable,
-        )
-
-    elif container["kind"] == "dict":
-        all_collection_constraints = (
-            *container["constraints"],
-            *collection_constraints,
-        )
-
-        return FieldSpec(
-            name=name,
-            element=None,
-            collection_type=container["origin"],
-            collection_constraints=all_collection_constraints,
-            key=parse_element(container["parts"]["key"], name, element_constraints),
-            value=parse_element(container["parts"]["value"], name, element_constraints),
-            default=default,
-            nullable=nullable,
-        )
-
-    raise ResolutionError(
-        f"Unsupported field type: {field_type}",
-        context={
-            "code": "unsupported_field_type",
-            "field_type": repr(field_type),
-        },
-    )
-
-
-def parse_element(
-    field_type: Any,
-    name: str,
-    extra_constraints: tuple[Constraint, ...],
-) -> ElementSpec:
-    from ..extractors.constraints import is_constraints_consistent
-    from ..extractors.types import extract_runtime_type_and_constraints
-
-    from conformly._internal.types import ENUMERATED_TYPE
-
-    runtime_type, intrinsic_constraints = extract_runtime_type_and_constraints(
-        field_type, name
-    )
-
-    resolved_type = _resolve_pydantic_special_type(runtime_type)
-
-    all_constraints = (*intrinsic_constraints, *extra_constraints)
-
-    if not is_constraints_consistent(all_constraints):
-        raise SchemaError(
-            f"Field '{name}': incompatible constraints",
-            context={
-                "code": "inconsistent_constraints",
-                "field_name": name,
-                "constraints": [type(c).__name__ for c in all_constraints],
-                "reason": "closed set cannot be combined with other constraints",
-            },
-        )
-
-    nested_model = (
-        parse(resolved_type)
-        if resolved_type is not ENUMERATED_TYPE and supports(resolved_type)
-        else None
-    )
-
-    return ElementSpec(
-        field_type=resolved_type,
-        constraints=all_constraints,
-        nested_model=nested_model,
+    return build_field_spec(
+        name=name,
+        field_type=field_type,
+        default=_parse_default(field_info, PydanticUndefined),
+        external_constraints=external_constraints,
+        resolve_element=lambda t, n, c: build_element_spec(
+            field_name=n,
+            field_type=t,
+            extra_constraints=c,
+            resolve_type=_resolve_pydantic_special_type,
+            parse_model=parse,
+            supports_model=supports,
+        ),
     )
 
 
