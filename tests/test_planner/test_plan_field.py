@@ -2,7 +2,7 @@ from typing import cast
 
 import pytest
 
-from conformly._internal.parser import FieldSpec
+from conformly._internal.parser import ElementSpec, FieldSpec
 from conformly._internal.planner import PlannedTask
 from conformly._internal.planner.field import (
     _VIOLATION_PRIORITY,
@@ -633,7 +633,9 @@ def test_list_with_unviolatable_element_returns_empty() -> None:
 
 
 city_field = ResolvedField(
-    field_spec=FieldSpec(name="city", field_type=str, default=UNSET, nullable=False),
+    field_spec=FieldSpec(
+        name="city", element=ElementSpec(str, ()), default=UNSET, nullable=False
+    ),
     path=(2, 0, 0),
     semantic=StringSemantic(
         kind=FieldKind.STRING, length_range=LengthRange(0, None), pattern=None
@@ -641,7 +643,9 @@ city_field = ResolvedField(
 )
 
 zip_field = ResolvedField(
-    field_spec=FieldSpec(name="zip", field_type=str, default=UNSET, nullable=False),
+    field_spec=FieldSpec(
+        name="zip", element=ElementSpec(str, ()), default=UNSET, nullable=False
+    ),
     path=(2, 0, 1),
     semantic=StringSemantic(
         kind=FieldKind.STRING,
@@ -655,7 +659,7 @@ second_nested = ResolvedModel("Address", (city_field, zip_field))
 
 address_field = ResolvedField(
     field_spec=FieldSpec(
-        name="address", field_type=object, default=UNSET, nullable=False
+        name="address", element=ElementSpec(object, ()), default=UNSET, nullable=False
     ),
     path=(2, 0),
     semantic=ObjectSemantic(),
@@ -663,7 +667,9 @@ address_field = ResolvedField(
 )
 
 phone_field = ResolvedField(
-    field_spec=FieldSpec(name="phone", field_type=str, default=UNSET, nullable=True),
+    field_spec=FieldSpec(
+        name="phone", element=ElementSpec(str, ()), default=UNSET, nullable=True
+    ),
     path=(2, 1),
     semantic=StringSemantic(
         kind=FieldKind.STRING,
@@ -676,7 +682,9 @@ phone_field = ResolvedField(
 first_nested = ResolvedModel("Profile", (address_field, phone_field))
 
 name_field = ResolvedField(
-    field_spec=FieldSpec(name="name", field_type=str, default=UNSET, nullable=False),
+    field_spec=FieldSpec(
+        name="name", element=ElementSpec(str, ()), default=UNSET, nullable=False
+    ),
     path=(0,),
     semantic=StringSemantic(
         kind=FieldKind.STRING,
@@ -687,7 +695,9 @@ name_field = ResolvedField(
 )
 
 age_field = ResolvedField(
-    field_spec=FieldSpec(name="age", field_type=int, default=UNSET, nullable=False),
+    field_spec=FieldSpec(
+        name="age", element=ElementSpec(int, ()), default=UNSET, nullable=False
+    ),
     path=(1,),
     semantic=NumericSemantic(
         kind=FieldKind.INTEGER,
@@ -699,7 +709,7 @@ age_field = ResolvedField(
 
 profile_field = ResolvedField(
     field_spec=FieldSpec(
-        name="profile", field_type=object, default=UNSET, nullable=False
+        name="profile", element=ElementSpec(object, ()), default=UNSET, nullable=False
     ),
     path=(2,),
     semantic=ObjectSemantic(),

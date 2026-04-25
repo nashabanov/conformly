@@ -20,7 +20,7 @@ from conformly._internal.constraints import (
     UniqueItems,
 )
 from conformly._internal.fields import SPECIAL_KINDS, Email
-from conformly._internal.parser import FieldSpec, ModelSpec
+from conformly._internal.parser import ElementSpec, FieldSpec, ModelSpec
 from conformly._internal.resolver import ResolvedModel
 from conformly._internal.resolver.resolve import (
     _build_indexes,
@@ -28,7 +28,7 @@ from conformly._internal.resolver.resolve import (
     calculate_invalid_numeric_ranges,
     calculate_max_offset,
     calculate_numeric_bounds,
-    create_field_semantic,
+    create_scalar_semantic,
     create_string_semantic,
     extract_enum_included_values,
     resolve_field,
@@ -63,13 +63,18 @@ def simple_model_spec() -> ModelSpec:
         name="User",
         type="dataclass",
         fields=(
-            FieldSpec("id", int, constraints=(GreaterThan(0),)),
-            FieldSpec("name", str, constraints=(MinLength(1),)),
-            FieldSpec("active", bool),
             FieldSpec(
-                "type",
-                ENUMERATED_TYPE,
-                constraints=(OneOf(("user", "admin")),),
+                name="id", element=ElementSpec(int, constraints=(GreaterThan(0),))
+            ),
+            FieldSpec(
+                name="name", element=ElementSpec(str, constraints=(MinLength(1),))
+            ),
+            FieldSpec("active", element=ElementSpec(bool)),
+            FieldSpec(
+                name="type",
+                element=ElementSpec(
+                    ENUMERATED_TYPE, constraints=(OneOf(("user", "admin")),)
+                ),
             ),
         ),
     )
@@ -78,14 +83,16 @@ def simple_model_spec() -> ModelSpec:
 @pytest.fixture
 def nested_model_spec() -> ModelSpec:
     address = ModelSpec(
-        name="Address", type="dataclass", fields=(FieldSpec("street", str),)
+        name="Address",
+        type="dataclass",
+        fields=(FieldSpec(name="street", element=ElementSpec(str, ())),),
     )
     return ModelSpec(
         name="Person",
         type="dataclass",
         fields=(
-            FieldSpec("name", str),
-            FieldSpec("addr", dict, nested_model=address),
+            FieldSpec(name="name", element=ElementSpec(str, ())),
+            FieldSpec("addr", element=ElementSpec(dict, (), nested_model=address)),
         ),
     )
 
@@ -437,12 +444,14 @@ def test_create_field_semantic_dispatch(
 ) -> None:
     field_spec = FieldSpec(
         name="test",
-        field_type=field_type,
-        constraints=constraints,
-        nested_model=nested_model,
+        element=ElementSpec(
+            field_type=field_type,
+            constraints=constraints,
+            nested_model=nested_model,
+        ),
     )
 
-    semantic = create_field_semantic(field_spec)
+    semantic = create_scalar_semantic(field_spec.element, field_spec)  # type: ignore
     assert isinstance(semantic, expected_semantic_type)
 
     if expected_semantic_type is NumericSemantic:
@@ -452,9 +461,9 @@ def test_create_field_semantic_dispatch(
 
 
 def test_create_field_semantic_unsupported_type() -> None:
-    field_spec = FieldSpec("x", bytes)
+    field_spec = FieldSpec("x", ElementSpec(bytes, ()))
     with pytest.raises(ResolutionError):
-        create_field_semantic(field_spec)
+        create_scalar_semantic(field_spec.element, field_spec)  # type: ignore
 
 
 # ===== TESTS for extract_enum_included_values() =====
@@ -507,10 +516,9 @@ def test_extract_numeric_multiple_of(
 def test_resolve_field_flat() -> None:
     field_spec = FieldSpec(
         name="count",
-        field_type=int,
+        element=ElementSpec(int, (GreaterThan(2),)),
         default=43,
         nullable=False,
-        constraints=(GreaterThan(2),),
     )
     path: FieldPath = (1, 3)
 
@@ -527,8 +535,17 @@ def test_resolve_field_flat() -> None:
 
 
 def test_resolve_field_with_nested_model():
-    inner = ModelSpec("Point", "dataclass", (FieldSpec("x", int), FieldSpec("y", int)))
-    field_spec = FieldSpec("origin", dict, nested_model=inner)
+    inner = ModelSpec(
+        "Point",
+        "dataclass",
+        (
+            FieldSpec(name="x", element=ElementSpec(int, ())),
+            FieldSpec(name="y", element=ElementSpec(int, ())),
+        ),
+    )
+    field_spec = FieldSpec(
+        name="origin", element=ElementSpec(dict, (), nested_model=inner)
+    )
     path: FieldPath = (0,)
 
     resolved = resolve_field(field_spec, path)
@@ -544,7 +561,9 @@ def test_resolve_field_with_nested_model():
 
 
 def test_resolve_list_field() -> None:
-    field_spec = FieldSpec(name="emails", field_type=Email, collection_type=list)
+    field_spec = FieldSpec(
+        name="emails", item=ElementSpec(Email, ()), collection_type=list
+    )
     path: FieldPath = (0,)
 
     resolved = resolve_field(field_spec, path)
@@ -558,9 +577,8 @@ def test_resolve_list_field() -> None:
 def test_resolve_list_with_constrained_type() -> None:
     field_spec = FieldSpec(
         name="nums",
-        field_type=int,
+        item=ElementSpec(int, (GreaterOrEqual(10), LessOrEqual(100))),
         collection_type=list,
-        constraints=(GreaterOrEqual(10), LessOrEqual(100)),
     )
     path: FieldPath = (1, 2)
 
@@ -578,9 +596,8 @@ def test_resolve_list_with_constrained_type() -> None:
 def test_resolve_list_with_nested_model(simple_model_spec) -> None:
     field_spec = FieldSpec(
         name="models",
-        field_type=type,
+        item=ElementSpec(type, (), simple_model_spec),
         collection_type=list,
-        nested_model=simple_model_spec,
     )
     path: FieldPath = (1, 2)
 
@@ -596,8 +613,7 @@ def test_resolve_list_with_nested_model(simple_model_spec) -> None:
 def test_resolve_constrained_list_type() -> None:
     field_spec = FieldSpec(
         name="names",
-        field_type=str,
-        constraints=(MinLength(1), MaxLength(10)),
+        item=ElementSpec(str, (MinLength(1), MaxLength(10))),
         collection_type=list,
         collection_constraints=(MinItems(10), MaxItems(15), UniqueItems(True)),
     )
@@ -621,7 +637,7 @@ def test_resolve_constrained_list_type() -> None:
 def test_resolve_list_invalid_range_raises() -> None:
     field_spec = FieldSpec(
         name="names",
-        field_type=str,
+        item=ElementSpec(str, ()),
         collection_type=list,
         collection_constraints=(MinItems(20), MaxItems(15), UniqueItems(True)),
     )

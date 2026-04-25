@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any, get_args, get_origin
 
-from ..models import FieldSpec, ModelSpec
+from ..models import ElementSpec, FieldSpec, ModelSpec
 
 from conformly._internal.fields import SPECIAL_NAME_TO_TYPE
 from conformly.exceptions import ResolutionError, SchemaError
@@ -66,23 +66,103 @@ def parse_field(
     field_info: FieldInfo, field_type: Any, name: str, PydanticUndefined: Any
 ) -> FieldSpec:
     from ..extractors.constraints import (
-        is_constraints_consistent,
+        parse_annotated_constraints,
         split_collection_constraints,
     )
-    from ..extractors.types import extract_runtime_type_and_constraints, is_nullable
+    from ..extractors.types import extract_container, is_nullable
+
+    container = extract_container(field_type, name)
+    default = _parse_default(field_info, PydanticUndefined)
+    nullable = is_nullable(field_type)
+
+    external_constraints = (
+        *parse_annotated_constraints(field_type),
+        *_parse_fieldinfo_constraints(field_info),
+    )
+
+    element_constraints, collection_constraints = split_collection_constraints(
+        external_constraints
+    )
+
+    if container["kind"] == "scalar":
+        return FieldSpec(
+            name=name,
+            element=parse_element(field_type, name, field_info, element_constraints),
+            default=default,
+            nullable=nullable,
+        )
+
+    elif container["kind"] == "list":
+        all_collection_constraints = (
+            *container["constraints"],
+            *collection_constraints,
+        )
+
+        return FieldSpec(
+            name=name,
+            element=None,
+            collection_type=container["origin"],
+            collection_constraints=all_collection_constraints,
+            item=parse_element(
+                container["parts"]["item"], name, field_info, element_constraints
+            ),
+            default=default,
+            nullable=nullable,
+        )
+
+    elif container["kind"] == "dict":
+        all_collection_constraints = (
+            *container["constraints"],
+            *collection_constraints,
+        )
+
+        return FieldSpec(
+            name=name,
+            element=None,
+            collection_type=container["origin"],
+            collection_constraints=all_collection_constraints,
+            key=parse_element(
+                container["parts"]["key"], name, field_info, element_constraints
+            ),
+            value=parse_element(
+                container["parts"]["value"], name, field_info, element_constraints
+            ),
+            default=default,
+            nullable=nullable,
+        )
+
+    raise ResolutionError(
+        f"Unsupported field type: {field_type}",
+        context={
+            "code": "unsupported_field_type",
+            "field_type": repr(field_type),
+        },
+    )
+
+
+def parse_element(
+    field_type: Any,
+    name: str,
+    field_info: FieldInfo,
+    extra_constraints: tuple[Constraint, ...],
+) -> ElementSpec:
+    from ..extractors.constraints import is_constraints_consistent
+    from ..extractors.types import extract_runtime_type_and_constraints
 
     from conformly._internal.types import ENUMERATED_TYPE
 
-    runtime_type, intrinsic_constraints, collection_type = (
-        extract_runtime_type_and_constraints(field_type, name)
+    runtime_type, intrinsic_constraints = extract_runtime_type_and_constraints(
+        field_type, name
     )
 
     resolved_type = _resolve_pydantic_special_type(runtime_type)
 
-    all_constraints = (
-        *intrinsic_constraints,
+    external_constraints = (
         *_parse_fieldinfo_constraints(field_info),
+        *extra_constraints,
     )
+
+    all_constraints = (*intrinsic_constraints, *external_constraints)
 
     if not is_constraints_consistent(all_constraints):
         raise SchemaError(
@@ -95,25 +175,16 @@ def parse_field(
             },
         )
 
-    element_constraints, collection_constraints = split_collection_constraints(
-        all_constraints
-    )
-
     nested_model = (
         parse(resolved_type)
         if resolved_type is not ENUMERATED_TYPE and supports(resolved_type)
         else None
     )
 
-    return FieldSpec(
-        name=name,
+    return ElementSpec(
         field_type=resolved_type,
-        constraints=element_constraints,
-        default=_parse_default(field_info, PydanticUndefined),
-        nullable=is_nullable(field_type),
+        constraints=all_constraints,
         nested_model=nested_model,
-        collection_type=collection_type,
-        collection_constraints=collection_constraints,
     )
 
 

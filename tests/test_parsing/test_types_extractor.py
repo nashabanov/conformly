@@ -4,7 +4,7 @@ from typing import Annotated, Literal, Optional, Union
 
 import pytest
 
-from conformly._internal.constraints import Constraint, MaxLength, MinLength, OneOf
+from conformly._internal.constraints import Constraint, OneOf
 from conformly._internal.fields import Email
 from conformly._internal.parser.extractors.types import (
     extract_runtime_type_and_constraints,
@@ -35,11 +35,11 @@ def assert_constraints_equal(
 
 
 def test_extract_runtime_type_plain() -> None:
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(int, "field")
+    runtime_type, constraints = extract_runtime_type_and_constraints(int, "field")
     assert runtime_type is int
     assert constraints == ()
 
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
+    runtime_type, constraints = extract_runtime_type_and_constraints(
         DummyDataclass, "field"
     )
     assert runtime_type is DummyDataclass
@@ -47,14 +47,14 @@ def test_extract_runtime_type_plain() -> None:
 
 
 def test_extract_runtime_type_optional() -> None:
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
+    runtime_type, constraints = extract_runtime_type_and_constraints(
         Optional[int],  # noqa: UP045
         "field",
     )
     assert runtime_type is int
     assert constraints == ()
 
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
+    runtime_type, constraints = extract_runtime_type_and_constraints(
         Optional[DummyDataclass],  # noqa: UP045
         "field",
     )
@@ -63,13 +63,13 @@ def test_extract_runtime_type_optional() -> None:
 
 
 def test_extract_runtime_type_union_with_none() -> None:
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
+    runtime_type, constraints = extract_runtime_type_and_constraints(
         DummyDataclass | None, "field"
     )
     assert runtime_type is DummyDataclass
     assert constraints == ()
 
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
+    runtime_type, constraints = extract_runtime_type_and_constraints(
         Union[int, None],  # noqa: UP007
         "field",
     )
@@ -79,18 +79,14 @@ def test_extract_runtime_type_union_with_none() -> None:
 
 def test_extract_runtime_type_annotated() -> None:
     annotated = Annotated[DummyDataclass, "metadata"]
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
-        annotated, "field"
-    )
+    runtime_type, constraints = extract_runtime_type_and_constraints(annotated, "field")
     assert runtime_type is DummyDataclass
     assert constraints == ()
 
 
 def test_extract_runtime_type_annotated_optional() -> None:
     annotated = Annotated[int | None, "metadata"]
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
-        annotated, "field"
-    )
+    runtime_type, constraints = extract_runtime_type_and_constraints(annotated, "field")
     assert runtime_type is int
     assert constraints == ()
 
@@ -104,7 +100,7 @@ def test_extract_runtime_type_invalid_union() -> None:
 
 
 def test_extract_runtime_type_literal() -> None:
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
+    runtime_type, constraints = extract_runtime_type_and_constraints(
         Literal[1, 2], "field"
     )
     assert runtime_type is ENUMERATED_TYPE
@@ -112,7 +108,7 @@ def test_extract_runtime_type_literal() -> None:
 
 
 def test_extract_runtime_type_optional_literal() -> None:
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
+    runtime_type, constraints = extract_runtime_type_and_constraints(
         Optional[Literal[1, 2]],  # noqa: UP045
         "field",
     )
@@ -121,7 +117,7 @@ def test_extract_runtime_type_optional_literal() -> None:
 
 
 def test_extract_runtime_type_literal_union_with_none() -> None:
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
+    runtime_type, constraints = extract_runtime_type_and_constraints(
         Literal["a", "b"] | None, "field"
     )
     assert runtime_type is ENUMERATED_TYPE
@@ -129,7 +125,7 @@ def test_extract_runtime_type_literal_union_with_none() -> None:
 
 
 def test_extract_runtime_type_heterogeneous_literal() -> None:
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
+    runtime_type, constraints = extract_runtime_type_and_constraints(
         Literal[1, "a", 2.0, True], "field"
     )
     assert runtime_type is ENUMERATED_TYPE
@@ -137,15 +133,13 @@ def test_extract_runtime_type_heterogeneous_literal() -> None:
 
 
 def test_extract_runtime_type_enum() -> None:
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
-        BaseEnum, "field"
-    )
+    runtime_type, constraints = extract_runtime_type_and_constraints(BaseEnum, "field")
     assert runtime_type is ENUMERATED_TYPE
     assert_constraints_equal(constraints, (OneOf(("a", "b")),))
 
 
 def test_extract_runtime_type_optional_enum() -> None:
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
+    runtime_type, constraints = extract_runtime_type_and_constraints(
         Optional[BaseEnum],  # noqa: UP045
         "field",
     )
@@ -167,7 +161,7 @@ def test_extract_runtime_type_heterogeneous_enum() -> None:
         STR = "text"
         FLOAT = 3.14
 
-    runtime_type, constraints, _ = extract_runtime_type_and_constraints(
+    runtime_type, constraints = extract_runtime_type_and_constraints(
         HeterogeneousEnum, "field"
     )
     assert runtime_type is ENUMERATED_TYPE
@@ -185,54 +179,7 @@ def test_extract_runtime_type_unsupported_annotation() -> None:
 
 
 def test_extract_runtime_type_email() -> None:
-    assert extract_runtime_type_and_constraints(Email, "email") == (Email, (), None)
-
-
-def test_basic_list() -> None:
-    leaf, constraints, collection = extract_runtime_type_and_constraints(
-        list[str], "tags"
-    )
-    assert leaf is str
-    assert constraints == ()
-    assert collection is list
-
-
-def test_typing_list_alias() -> None:
-    leaf, constraints, collection = extract_runtime_type_and_constraints(
-        list[str], "items"
-    )
-    assert leaf is str
-    assert constraints == ()
-    assert collection is list
-
-
-def test_list_with_annotated_element():
-    leaf, constraints, collection = extract_runtime_type_and_constraints(
-        list[Annotated[str, MinLength(5)]], "codes"
-    )
-    assert leaf is str
-    assert len(constraints) == 1
-    assert isinstance(constraints[0], MinLength)
-    assert constraints[0].value == 5
-    assert collection is list
-
-
-def test_list_with_multiple_element_constraints():
-    leaf, constraints, collection = extract_runtime_type_and_constraints(
-        list[Annotated[str, MinLength(2), MaxLength(10)]], "short_ids"
-    )
-    assert leaf is str
-    assert len(constraints) == 2
-    assert collection is list
-
-
-def test_list_email() -> None:
-    leaf, constraints, collection = extract_runtime_type_and_constraints(
-        list[Email], "emails"
-    )
-    assert leaf is Email
-    assert len(constraints) == 0
-    assert collection is list
+    assert extract_runtime_type_and_constraints(Email, "email") == (Email, ())
 
 
 # ====== TESTS FOR is_nullable() ======

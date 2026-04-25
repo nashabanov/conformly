@@ -116,13 +116,12 @@ def _generate_list_item(
 ) -> Any:
     from ..orchestration import generate_field
 
-    from conformly._internal.parser import FieldSpec
+    from conformly._internal.parser import ElementSpec, FieldSpec
     from conformly._internal.resolver import ResolvedField
 
     mock_spec = FieldSpec(
         name="__list_item",
-        field_type=object,
-        constraints=(),
+        element=ElementSpec(object, ()),
         default=UNSET,
         nullable=False,
     )

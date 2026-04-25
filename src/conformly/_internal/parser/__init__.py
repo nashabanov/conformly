@@ -1,4 +1,4 @@
 from .api import parse_model
-from .models import FieldSpec, ModelSpec
+from .models import ElementSpec, FieldSpec, ModelSpec
 
-__all__ = ["FieldSpec", "ModelSpec", "parse_model"]
+__all__ = ["ElementSpec", "FieldSpec", "ModelSpec", "parse_model"]
