@@ -69,7 +69,7 @@ def parse_field(
         parse_annotated_constraints,
         split_collection_constraints,
     )
-    from ..extractors.types import extract_container, is_nullable
+    from ..extractors.types import extract_container, is_nullable, unwrap_annotated
 
     container = extract_container(field_type, name)
     default = _parse_default(field_info, PydanticUndefined)
@@ -87,12 +87,13 @@ def parse_field(
     if container["kind"] == "scalar":
         return FieldSpec(
             name=name,
-            element=parse_element(field_type, name, field_info, element_constraints),
+            element=parse_element(field_type, name, element_constraints),
             default=default,
             nullable=nullable,
         )
 
     elif container["kind"] == "list":
+        item_type, item_constraints = unwrap_annotated(container["parts"]["item"])
         all_collection_constraints = (
             *container["constraints"],
             *collection_constraints,
@@ -104,7 +105,7 @@ def parse_field(
             collection_type=container["origin"],
             collection_constraints=all_collection_constraints,
             item=parse_element(
-                container["parts"]["item"], name, field_info, element_constraints
+                item_type, name, (*element_constraints, *item_constraints)
             ),
             default=default,
             nullable=nullable,
@@ -121,12 +122,8 @@ def parse_field(
             element=None,
             collection_type=container["origin"],
             collection_constraints=all_collection_constraints,
-            key=parse_element(
-                container["parts"]["key"], name, field_info, element_constraints
-            ),
-            value=parse_element(
-                container["parts"]["value"], name, field_info, element_constraints
-            ),
+            key=parse_element(container["parts"]["key"], name, element_constraints),
+            value=parse_element(container["parts"]["value"], name, element_constraints),
             default=default,
             nullable=nullable,
         )
@@ -143,7 +140,6 @@ def parse_field(
 def parse_element(
     field_type: Any,
     name: str,
-    field_info: FieldInfo,
     extra_constraints: tuple[Constraint, ...],
 ) -> ElementSpec:
     from ..extractors.constraints import is_constraints_consistent
@@ -157,12 +153,7 @@ def parse_element(
 
     resolved_type = _resolve_pydantic_special_type(runtime_type)
 
-    external_constraints = (
-        *_parse_fieldinfo_constraints(field_info),
-        *extra_constraints,
-    )
-
-    all_constraints = (*intrinsic_constraints, *external_constraints)
+    all_constraints = (*intrinsic_constraints, *extra_constraints)
 
     if not is_constraints_consistent(all_constraints):
         raise SchemaError(

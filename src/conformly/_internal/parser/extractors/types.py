@@ -10,6 +10,8 @@ from typing import (
     get_origin,
 )
 
+from .constraints import parse_annotated_constraints
+
 from conformly._internal.constraints import Constraint, OneOf, UniqueItems
 from conformly._internal.types import ENUMERATED_TYPE
 from conformly.exceptions import SchemaError
@@ -24,6 +26,7 @@ def extract_runtime_type_and_constraints(
     outer_constraints: tuple[Constraint, ...] = ()
 
     if get_origin(t) is Annotated:
+        # outer_constraints = parse_annotated_constraints(t)
         t = get_args(t)[0]
 
     if get_origin(t) in UNION_TYPES:
@@ -166,6 +169,13 @@ def extract_container(field_type: Any, field_name: str) -> ContainerSpec:
         }
 
     return {"kind": "scalar"}
+
+
+def unwrap_annotated(field_type: Any) -> tuple[Any, tuple[Constraint, ...]]:
+    constraints = parse_annotated_constraints(field_type)
+    while get_origin(field_type) is Annotated:
+        field_type = get_args(field_type)[0]
+    return field_type, constraints
 
 
 def is_nullable(field_type: Any) -> bool:

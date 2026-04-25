@@ -16,6 +16,7 @@ from ..extractors.types import (
     extract_container,
     extract_runtime_type_and_constraints,
     is_nullable,
+    unwrap_annotated,
 )
 from ..models import ElementSpec, FieldSpec, ModelSpec
 
@@ -57,7 +58,7 @@ def resolve_type(type_hints: dict[str, Any], field_name: str) -> Any:
 def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
     container = extract_container(field_type, field.name)
     default = parse_defaults(field)
-    nullable = is_nullable(field)
+    nullable = is_nullable(field_type)
 
     external_constraints = (
         *parse_annotated_constraints(field_type),
@@ -77,6 +78,7 @@ def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
         )
 
     elif container["kind"] == "list":
+        item_type, item_constraints = unwrap_annotated(container["parts"]["item"])
         all_collection_constraints = (
             *container["constraints"],
             *collection_constraints,
@@ -86,7 +88,7 @@ def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
             collection_type=container["origin"],
             collection_constraints=all_collection_constraints,
             item=parse_element(
-                container["parts"]["item"], field.name, element_constraints
+                item_type, field.name, (*element_constraints, *item_constraints)
             ),
             default=default,
             nullable=nullable,

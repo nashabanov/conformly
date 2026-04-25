@@ -351,7 +351,7 @@ def test_parse_emailstr() -> None:
     assert field_spec.element.field_type is Email
 
 
-def test_parse_dataclass_with_list_fields() -> None:
+def test_parse_model_with_list_fields() -> None:
     spec = parse(ListFieldModel)
 
     assert len(spec.fields) == 3
