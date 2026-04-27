@@ -1,10 +1,10 @@
+from dataclasses import dataclass
 from enum import Enum
 from types import UnionType
 from typing import (
     Annotated,
     Any,
     Literal,
-    TypedDict,
     Union,
     get_args,
     get_origin,
@@ -19,31 +19,92 @@ from conformly.exceptions import SchemaError
 UNION_TYPES = (Union, UnionType)
 
 
-def extract_runtime_type_and_constraints(
-    field_type: Any, field_name: str
-) -> tuple[type, tuple[Constraint, ...]]:
-    t = field_type
-    outer_constraints: tuple[Constraint, ...] = ()
+@dataclass(frozen=True, slots=True)
+class ScalarNode:
+    kind: Literal["scalar"]
+    runtime_type: Any
+    nullable: bool
+    constraints: tuple[Constraint, ...]
 
-    if get_origin(t) is Annotated:
-        # outer_constraints = parse_annotated_constraints(t)
-        t = get_args(t)[0]
 
-    if get_origin(t) in UNION_TYPES:
+@dataclass(frozen=True, slots=True)
+class ListNode:
+    kind: Literal["list"]
+    runtime_type: Any
+    origin: type
+    nullable: bool
+    constraints: tuple[Constraint, ...]
+    item: "TypeNode"
+
+
+@dataclass(frozen=True, slots=True)
+class DictNode:
+    kind: Literal["dict"]
+    runtime_type: Any
+    nullable: bool
+    constraints: tuple[Constraint, ...]
+    key: "TypeNode"
+    value: "TypeNode"
+
+
+TypeNode = ScalarNode | ListNode | DictNode
+
+
+def normalize_type(field_type: Any, field_name: str) -> TypeNode:
+    t, annotated_constraints = _unwrap_annotated(field_type)
+    t, nullable = _unwrap_optional(t, field_name)
+    origin = get_origin(t)
+
+    if origin in (list, set, frozenset):
         args = get_args(t)
-        non_none = [a for a in args if a is not type(None)]
-        if len(non_none) == 1 and len(args) >= 2:
-            t = args[0]
-        else:
+        if not args:
             raise SchemaError(
-                f"Field '{field_name}': unsupported union type",
+                f"Field '{field_name}': empty collection",
                 context={
-                    "code": "unsupported_union",
+                    "code": "empty_collection",
                     "field_name": field_name,
                     "field_type": repr(field_type),
-                    "allowed": "Optional[T], Union[T, None]",
                 },
             )
+
+        item_node = normalize_type(args[0], field_name)
+
+        intrinsic_constraints = (
+            (UniqueItems(True),) if origin in (set, frozenset) else ()
+        )
+
+        return ListNode(
+            kind="list",
+            runtime_type=origin,
+            origin=origin,
+            nullable=nullable,
+            constraints=(*annotated_constraints, *intrinsic_constraints),
+            item=item_node,
+        )
+
+    if origin is dict:
+        args = get_args(t)
+        if len(args) != 2:
+            raise SchemaError(
+                f"Field '{field_name}': dict must have 2 type args",
+                context={
+                    "code": "wrong_dict_type_args",
+                    "field_name": field_name,
+                    "field_type": repr(field_type),
+                },
+            )
+
+        key_node = normalize_type(args[0], field_name)
+        value_node = normalize_type(args[1], field_name)
+
+        return DictNode(
+            kind="dict",
+            runtime_type=dict,
+            nullable=nullable,
+            constraints=annotated_constraints,
+            key=key_node,
+            value=value_node,
+        )
 
     if get_origin(t) is Literal:
         values = get_args(t)
@@ -56,30 +117,34 @@ def extract_runtime_type_and_constraints(
                     "field_type": repr(field_type),
                 },
             )
-        return ENUMERATED_TYPE, (OneOf(values),)
+
+        return ScalarNode(
+            kind="scalar",
+            runtime_type=ENUMERATED_TYPE,
+            nullable=nullable,
+            constraints=(*annotated_constraints, OneOf(values)),
+        )
 
     if isinstance(t, type) and issubclass(t, Enum):
-        members = list(t)
-        if not members:
-            raise SchemaError(
-                f"Field '{field_name}': empty Enum",
-                context={
-                    "code": "empty_enum",
-                    "field_name": field_name,
-                    "field_type": t.__name__,
-                },
-            )
-        values = tuple(member.value for member in members)
-        return ENUMERATED_TYPE, (OneOf(values),)
+        values = tuple(member.value for member in t)
+
+        return ScalarNode(
+            kind="scalar",
+            runtime_type=ENUMERATED_TYPE,
+            nullable=nullable,
+            constraints=(*annotated_constraints, OneOf(values)),
+        )
 
     if isinstance(t, type):
-        if is_special_string_type(t):
-            return t, outer_constraints
-
-        return t, outer_constraints
+        return ScalarNode(
+            kind="scalar",
+            runtime_type=t,
+            nullable=nullable,
+            constraints=annotated_constraints,
+        )
 
     raise SchemaError(
-        f"Field '{field_name}': unsupported type annotation",
+        f"Field '{field_name}': unsupported type",
         context={
             "code": "unsupported_type",
             "field_name": field_name,
@@ -88,108 +153,29 @@ def extract_runtime_type_and_constraints(
     )
 
 
-class ListParts(TypedDict):
-    item: Any
-
-
-class DictParts(TypedDict):
-    key: Any
-    value: Any
-
-
-class ListContainer(TypedDict):
-    kind: Literal["list"]
-    origin: type
-    parts: ListParts
-    constraints: tuple[Constraint, ...]
-
-
-class DictContainer(TypedDict):
-    kind: Literal["dict"]
-    origin: type
-    parts: DictParts
-    constraints: tuple[Constraint, ...]
-
-
-class NoContainer(TypedDict):
-    kind: Literal["scalar"]
-
-
-ContainerSpec = ListContainer | DictContainer | NoContainer
-
-
-def extract_container(field_type: Any, field_name: str) -> ContainerSpec:
-    t = field_type
-
+def _unwrap_annotated(t: Any) -> tuple[Any, tuple[Constraint, ...]]:
     if get_origin(t) is Annotated:
-        t = get_args(t)[0]
+        return get_args(t)[0], parse_annotated_constraints(t)
+    return t, ()
 
+
+def _unwrap_optional(t: Any, field_name: str) -> tuple[Any, bool]:
     origin = get_origin(t)
-
-    if origin is None:
-        return {"kind": "scalar"}
-
     args = get_args(t)
 
-    if origin in (list, set, frozenset):
-        if not args:
-            raise SchemaError(
-                f"Field '{field_name}': empty collection",
-                context={
-                    "code": "empty_collection",
-                    "field_name": field_name,
-                    "field_type": repr(field_type),
-                },
-            )
-        instrinsic_constraints = (
-            (UniqueItems(True),) if origin in (set, frozenset) else ()
+    if origin in UNION_TYPES:
+        non_none = [a for a in args if a is not type(None)]
+
+        if len(non_none) == 1 and len(args) >= 2:
+            return non_none[0], True
+
+        raise SchemaError(
+            f"Field '{field_name}': unsupported union type",
+            context={
+                "code": "unsupported_union",
+                "field_name": field_name,
+                "field_type": repr(t),
+            },
         )
-        return {
-            "kind": "list",
-            "origin": origin,
-            "parts": {"item": args[0]},
-            "constraints": instrinsic_constraints,
-        }
 
-    if origin is dict:
-        if len(args) != 2:
-            raise SchemaError(
-                f"Field '{field_name}': dict must have 2 type args",
-                context={
-                    "code": "wrong_dict_type_args",
-                    "field_name": field_name,
-                    "field_type": repr(field_type),
-                },
-            )
-        return {
-            "kind": "dict",
-            "origin": dict,
-            "parts": {"key": args[0], "value": args[1]},
-            "constraints": (),
-        }
-
-    return {"kind": "scalar"}
-
-
-def unwrap_annotated(field_type: Any) -> tuple[Any, tuple[Constraint, ...]]:
-    constraints = parse_annotated_constraints(field_type)
-    while get_origin(field_type) is Annotated:
-        field_type = get_args(field_type)[0]
-    return field_type, constraints
-
-
-def is_nullable(field_type: Any) -> bool:
-    t = field_type
-    if get_origin(t) is Annotated:
-        t = get_args(t)[0]
-
-    return type(None) in get_args(t)
-
-
-def is_special_string_type(t: type) -> bool:
-    try:
-        from ...fields import SpecialString
-
-        return isinstance(t, type) and issubclass(t, SpecialString)
-    except ImportError:
-        return False
+    return t, False

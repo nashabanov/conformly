@@ -66,22 +66,18 @@ def parse_field(
     field_info: FieldInfo, field_type: Any, name: str, PydanticUndefined: Any
 ) -> FieldSpec:
     from ..core import build_element_spec, build_field_spec
-    from ..extractors.constraints import parse_annotated_constraints
 
-    external_constraints = (
-        *parse_annotated_constraints(field_type),
-        *_parse_fieldinfo_constraints(field_info),
-    )
+    external_constraints = _parse_fieldinfo_constraints(field_info)
 
     return build_field_spec(
         name=name,
         field_type=field_type,
         default=_parse_default(field_info, PydanticUndefined),
         external_constraints=external_constraints,
-        resolve_element=lambda t, n, c: build_element_spec(
-            field_name=n,
-            field_type=t,
-            extra_constraints=c,
+        resolve_element=lambda node, field_name, constraints: build_element_spec(
+            node=node,
+            field_name=field_name,
+            extra_constraints=constraints,
             resolve_type=_resolve_pydantic_special_type,
             parse_model=parse,
             supports_model=supports,

@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Any
 
 from ..extractors.constraints import is_constraints_consistent
-from ..extractors.types import extract_runtime_type_and_constraints
+from ..extractors.types import TypeNode
 from ..models import ElementSpec, ModelSpec
 
 from conformly._internal.constraints import Constraint
@@ -12,20 +12,16 @@ from conformly.exceptions import SchemaError
 
 def build_element_spec(
     *,
-    field_type: Any,
+    node: TypeNode,
     field_name: str,
     extra_constraints: tuple[Constraint, ...],
     resolve_type: Callable[[Any], Any],
     parse_model: Callable[[type], ModelSpec],
     supports_model: Callable[[type], bool],
 ) -> ElementSpec:
-    runtime_type, instrinsic_constraints = extract_runtime_type_and_constraints(
-        field_type, field_name
-    )
+    runtime_type = resolve_type(node.runtime_type)
 
-    runtime_type = resolve_type(runtime_type)
-
-    all_constraints = (*instrinsic_constraints, *extra_constraints)
+    all_constraints = (*node.constraints, *extra_constraints)
 
     if not is_constraints_consistent(all_constraints):
         raise SchemaError(

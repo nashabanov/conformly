@@ -6,10 +6,7 @@ from typing import (
 )
 
 from ..core import build_element_spec, build_field_spec
-from ..extractors.constraints import (
-    parse_annotated_constraints,
-    parse_metadata_constraints,
-)
+from ..extractors.constraints import parse_metadata_constraints
 from ..models import FieldSpec, ModelSpec
 
 from conformly._internal.types import UNSET
@@ -48,20 +45,17 @@ def resolve_type(type_hints: dict[str, Any], field_name: str) -> Any:
 
 
 def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
-    external_constraints = (
-        *parse_annotated_constraints(field_type),
-        *parse_metadata_constraints(field.metadata),
-    )
+    external_constraints = parse_metadata_constraints(field.metadata)
 
     return build_field_spec(
         name=field.name,
         field_type=field_type,
         default=parse_defaults(field),
         external_constraints=external_constraints,
-        resolve_element=lambda t, n, c: build_element_spec(
-            field_name=n,
-            field_type=t,
-            extra_constraints=c,
+        resolve_element=lambda node, field_name, constraints: build_element_spec(
+            node=node,
+            field_name=field_name,
+            extra_constraints=constraints,
             resolve_type=lambda x: x,
             parse_model=parse,
             supports_model=supports,
