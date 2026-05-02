@@ -2,6 +2,7 @@ from ._errors import generation_error
 from .protocol import TypeGeneratorProtocol
 from .types import (
     boolean,
+    dictionaries,
     email,
     enum,
     float,
@@ -28,6 +29,7 @@ _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
     FieldKind.IPv6: ipv6,
     FieldKind.IPvAny: ipvany,
     FieldKind.LIST: list,
+    FieldKind.DICT: dictionaries,
     FieldKind.UUID: uuid,
     FieldKind.URL: url,
     FieldKind.HTTPURL: url,
