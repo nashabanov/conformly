@@ -87,6 +87,16 @@ class ListFieldDataclass:
     unique_list: set[str]
 
 
+@dataclass
+class DictFieldDataclass:
+    text: str
+    emails: dict[str, Email]
+    model_dict: dict[str, DefaultDataclass]
+    annotated_dict: Annotated[
+        dict[Annotated[str, MinLength(5)], Annotated[str, MaxLength(10)]], MinItems(4)
+    ]
+
+
 class BaseEnum(Enum):
     a = "a"
     b = "b"
@@ -422,6 +432,51 @@ def test_parse_dataclass_with_list_fields() -> None:
     assert unique_items.item.field_type is str
     assert unique_items.collection_type is set
     assert unique_items.collection_constraints == (UniqueItems(True),)
+
+
+def test_parse_dataclass_with_dict_fields() -> None:
+    spec = parse(DictFieldDataclass)
+
+    assert len(spec.fields) == 4
+
+    text = spec.fields[0]
+    emails = spec.fields[1]
+    models = spec.fields[2]
+    annotated_dicts = spec.fields[3]
+
+    assert text.collection_type is None
+
+    assert emails.collection_type is dict
+    assert emails.key is not None
+    assert emails.key.field_type is str
+    assert emails.value is not None
+    assert emails.value.field_type is Email
+    assert (
+        len(emails.key.constraints)
+        == len(emails.value.constraints)
+        == len(emails.collection_constraints)
+        == 0
+    )
+
+    assert models.collection_type is dict
+    assert models.key is not None
+    assert models.key.field_type is str
+    assert models.value is not None
+    assert models.value.field_type is DefaultDataclass
+    assert models.value.nested_model is not None
+    assert (
+        len(models.key.constraints)
+        == len(models.value.constraints)
+        == len(models.collection_constraints)
+        == 0
+    )
+
+    assert annotated_dicts.collection_type is dict
+    assert annotated_dicts.collection_constraints == (MinItems(4),)
+    assert annotated_dicts.key is not None
+    assert annotated_dicts.key.constraints == (MinLength(5),)
+    assert annotated_dicts.value is not None
+    assert annotated_dicts.value.constraints == (MaxLength(10),)
 
 
 # ====== EDGE CASES ======
