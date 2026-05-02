@@ -42,6 +42,7 @@ from conformly._internal.resolver.semantics import (
     ObjectSemantic,
     StringSemantic,
 )
+from conformly._internal.resolver.semantics.dict import DictSemantic
 from conformly._internal.resolver.semantics.uuid import UUIDSemantic
 from conformly._internal.types import (
     ENUMERATED_TYPE,
@@ -644,6 +645,67 @@ def test_resolve_list_invalid_range_raises() -> None:
 
     with pytest.raises(SchemaError):
         resolve_field(field_spec, (1,))
+
+
+def test_resolve_dict_field() -> None:
+    field_spec = FieldSpec(
+        name="emails",
+        key=ElementSpec(str, (MaxLength(15),)),
+        value=ElementSpec(Email, ()),
+        collection_type=dict,
+    )
+    path: FieldPath = (0,)
+
+    resolved = resolve_field(field_spec, path)
+
+    assert resolved.name == "emails"
+    assert resolved.path == path
+    assert isinstance(resolved.semantic, DictSemantic)
+    assert isinstance(resolved.semantic.key_semantic, StringSemantic)
+    assert resolved.semantic.key_semantic.has_constraints is True
+    assert resolved.semantic.key_semantic.length_range.max_length == 15
+    assert isinstance(resolved.semantic.value_semantic, StringSemantic)
+    assert resolved.semantic.value_semantic.kind == FieldKind.EMAIL
+
+
+def test_resolve_constrained_dict_type(simple_model_spec) -> None:
+    field_spec = FieldSpec(
+        name="models",
+        key=ElementSpec(str, (MaxLength(15),)),
+        value=ElementSpec(simple_model_spec, (), nested_model=simple_model_spec),
+        collection_type=dict,
+        collection_constraints=(UniqueItems(True), MaxItems(5)),
+    )
+    path: FieldPath = (0,)
+
+    resolved = resolve_field(field_spec, path)
+
+    assert resolved.name == "models"
+    assert resolved.path == path
+    assert isinstance(resolved.semantic, DictSemantic)
+    assert resolved.semantic.has_constraints is True
+    assert resolved.semantic.length_range is not None
+    assert resolved.semantic.length_range.max_length == 5
+    assert resolved.semantic.is_unique_items is True
+    assert isinstance(resolved.semantic.key_semantic, StringSemantic)
+    assert resolved.semantic.key_semantic.has_constraints is True
+    assert resolved.semantic.key_semantic.length_range.max_length == 15
+    assert isinstance(resolved.semantic.value_semantic, ObjectSemantic)
+    assert isinstance(resolved.semantic.value_nested_model, ResolvedModel)
+
+
+@pytest.mark.parametrize("key_type", [int, list, ResolvedModel, bool])
+def test_resolve_dict_field_invalid_key_type_raises(key_type: type) -> None:
+    field_spec = FieldSpec(
+        name="emails",
+        key=ElementSpec(key_type, (MaxLength(15),)),
+        value=ElementSpec(Email, ()),
+        collection_type=dict,
+    )
+    path: FieldPath = (0,)
+
+    with pytest.raises(ResolutionError):
+        resolve_field(field_spec, path)
 
 
 # ===== TESTS for resolve_model() =====

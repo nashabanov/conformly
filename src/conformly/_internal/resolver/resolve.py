@@ -91,6 +91,16 @@ def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
         )
 
     if field_spec.collection_type is dict and field_spec.value and field_spec.key:
+        if field_spec.key.field_type not in (str, ENUMERATED_TYPE):
+            raise ResolutionError(
+                "Invalid dict`s key type: key type must be Enum | Literal | str",
+                context={
+                    "code": "invalid_dict_key",
+                    "field_name": field_spec.name,
+                    "key_type": field_spec.key.field_type,
+                },
+            )
+
         key_semantic, _ = resolve_element(field_spec.key, field_spec, path)
         value_semantic, value_nested = resolve_element(
             field_spec.value, field_spec, path
