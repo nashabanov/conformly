@@ -13,6 +13,7 @@ from conformly._internal.resolver.semantics import (
     StringSemantic,
     UUIDSemantic,
 )
+from conformly._internal.resolver.semantics.dict import DictSemantic
 from conformly._internal.types import (
     FieldKind,
     FieldPath,
@@ -119,6 +120,9 @@ def _define_allowed_violation_types(
         case ListSemantic(kind=FieldKind.LIST):
             violations = _define_list_violations(semantic)
 
+        case DictSemantic(kind=FieldKind.DICT):
+            violations = _define_dict_violations(semantic)
+
         case EnumSemantic(kind=FieldKind.ENUM):
             violations = [ViolationType.NOT_ALLOWED_VALUE]
 
@@ -213,13 +217,6 @@ def _define_string_violations(
 def _define_list_violations(semantic: ListSemantic) -> list[ViolationType]:
     collection_violations: list[ViolationType] = []
 
-    try:
-        type_violations = list(
-            _define_allowed_violation_types(semantic.element_semantic, False, False)
-        )
-    except PlanningError:
-        type_violations = []
-
     if semantic.is_unique_items is True:
         collection_violations.append(ViolationType.DUPLICATE)
 
@@ -230,4 +227,28 @@ def _define_list_violations(semantic: ListSemantic) -> list[ViolationType]:
         if semantic.length_range.max_length is not None:
             collection_violations.append(ViolationType.TOO_MANY_ITEMS)
 
-    return [*collection_violations, *type_violations]
+    return [*collection_violations, *_safe_define(semantic.element_semantic)]
+
+
+def _define_dict_violations(semantic: DictSemantic) -> list[ViolationType]:
+    collection_violations: list[ViolationType] = []
+
+    if semantic.length_range is not None:
+        if semantic.length_range.min_length > 0:
+            collection_violations.append(ViolationType.TOO_LESS_ITEMS)
+
+        if semantic.length_range.max_length is not None:
+            collection_violations.append(ViolationType.TOO_MANY_ITEMS)
+
+    return [
+        *collection_violations,
+        *_safe_define(semantic.key_semantic),
+        *_safe_define(semantic.value_semantic),
+    ]
+
+
+def _safe_define(semantic: FieldSemantics) -> list[ViolationType]:
+    try:
+        return list(_define_allowed_violation_types(semantic, False, False))
+    except PlanningError:
+        return []

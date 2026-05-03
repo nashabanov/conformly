@@ -550,16 +550,14 @@ def create_dict_semantic(
     value_semantic: FieldSemantics,
     value_nested_model: ResolvedModel | None,
 ) -> DictSemantic:
-    has_constraints, length_range, is_unique_items = _resolve_collection_constraints(
-        constraints
-    )
+    has_constraints, length_range, _ = _resolve_collection_constraints(constraints)
 
     return DictSemantic(
         key_semantic=key_semantic,
         value_semantic=value_semantic,
         value_nested_model=value_nested_model,
         length_range=length_range,
-        is_unique_items=is_unique_items,
+        is_unique_items=False,
         has_constraints=has_constraints,
     )
 
