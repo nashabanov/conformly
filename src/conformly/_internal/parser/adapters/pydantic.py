@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Annotated, Any, get_args, get_origin
 from ..models import FieldSpec, ModelSpec
 
 from conformly._internal.fields import SPECIAL_NAME_TO_TYPE
-from conformly.exceptions import ResolutionError, SchemaError
+from conformly.exceptions import ResolutionError
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
@@ -65,55 +65,23 @@ def parse_fields(
 def parse_field(
     field_info: FieldInfo, field_type: Any, name: str, PydanticUndefined: Any
 ) -> FieldSpec:
-    from ..extractors.constraints import (
-        is_constraints_consistent,
-        split_collection_constraints,
-    )
-    from ..extractors.types import extract_runtime_type_and_constraints, is_nullable
+    from ..core import build_element_spec, build_field_spec
 
-    from conformly._internal.types import ENUMERATED_TYPE
+    external_constraints = _parse_fieldinfo_constraints(field_info)
 
-    runtime_type, intrinsic_constraints, collection_type = (
-        extract_runtime_type_and_constraints(field_type, name)
-    )
-
-    resolved_type = _resolve_pydantic_special_type(runtime_type)
-
-    all_constraints = (
-        *intrinsic_constraints,
-        *_parse_fieldinfo_constraints(field_info),
-    )
-
-    if not is_constraints_consistent(all_constraints):
-        raise SchemaError(
-            f"Field '{name}': incompatible constraints",
-            context={
-                "code": "inconsistent_constraints",
-                "field_name": name,
-                "constraints": [type(c).__name__ for c in all_constraints],
-                "reason": "closed set cannot be combined with other constraints",
-            },
-        )
-
-    element_constraints, collection_constraints = split_collection_constraints(
-        all_constraints
-    )
-
-    nested_model = (
-        parse(resolved_type)
-        if resolved_type is not ENUMERATED_TYPE and supports(resolved_type)
-        else None
-    )
-
-    return FieldSpec(
+    return build_field_spec(
         name=name,
-        field_type=resolved_type,
-        constraints=element_constraints,
+        field_type=field_type,
         default=_parse_default(field_info, PydanticUndefined),
-        nullable=is_nullable(field_type),
-        nested_model=nested_model,
-        collection_type=collection_type,
-        collection_constraints=collection_constraints,
+        external_constraints=external_constraints,
+        resolve_element=lambda node, field_name, constraints: build_element_spec(
+            node=node,
+            field_name=field_name,
+            extra_constraints=constraints,
+            resolve_type=_resolve_pydantic_special_type,
+            parse_model=parse,
+            supports_model=supports,
+        ),
     )
 
 

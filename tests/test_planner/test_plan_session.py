@@ -1,4 +1,4 @@
-from conformly._internal.parser import FieldSpec
+from conformly._internal.parser import ElementSpec, FieldSpec
 from conformly._internal.planner.session import _filter_candidate_paths
 from conformly._internal.resolver.models import ResolvedField, ResolvedModel
 from conformly._internal.resolver.resolve import _build_indexes
@@ -23,7 +23,7 @@ resolved_model = ResolvedModel(
         ResolvedField(
             field_spec=FieldSpec(
                 name="name",
-                field_type=str,
+                element=ElementSpec(str, ()),
                 default=UNSET,
                 nullable=False,
             ),
@@ -38,7 +38,7 @@ resolved_model = ResolvedModel(
         ResolvedField(
             field_spec=FieldSpec(
                 name="age",
-                field_type=int,
+                element=ElementSpec(int, ()),
                 default=UNSET,
                 nullable=False,
             ),
@@ -53,7 +53,7 @@ resolved_model = ResolvedModel(
         ResolvedField(
             field_spec=FieldSpec(
                 name="is_admin",
-                field_type=bool,
+                element=ElementSpec(bool, ()),
                 default=True,
                 nullable=False,
             ),
@@ -63,7 +63,7 @@ resolved_model = ResolvedModel(
         ResolvedField(
             field_spec=FieldSpec(
                 name="profile",
-                field_type=object,
+                element=ElementSpec(object, ()),
                 default=UNSET,
                 nullable=False,
             ),
@@ -75,7 +75,7 @@ resolved_model = ResolvedModel(
                     ResolvedField(
                         field_spec=FieldSpec(
                             name="is_blocked",
-                            field_type=bool,
+                            element=ElementSpec(bool, ()),
                             default=False,
                             nullable=False,
                         ),

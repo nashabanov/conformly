@@ -87,6 +87,16 @@ class ListFieldDataclass:
     unique_list: set[str]
 
 
+@dataclass
+class DictFieldDataclass:
+    text: str
+    emails: dict[str, Email]
+    model_dict: dict[str, DefaultDataclass]
+    annotated_dict: Annotated[
+        dict[Annotated[str, MinLength(5)], Annotated[str, MaxLength(10)]], MinItems(4)
+    ]
+
+
 class BaseEnum(Enum):
     a = "a"
     b = "b"
@@ -230,7 +240,8 @@ def test_parse_field_simple() -> None:
     field_spec = parse_field(f, str)
     assert isinstance(field_spec, FieldSpec)
     assert field_spec.name == "name"
-    assert field_spec.field_type is str
+    assert field_spec.element is not None
+    assert field_spec.element.field_type is str
 
 
 def test_parse_field_with_default() -> None:
@@ -243,7 +254,8 @@ def test_parse_field_with_constraints() -> None:
     f = fields(ConstraintsDataclass)[0]
     field_type = Annotated[int, "ge=0", "le=150"]
     field_spec = parse_field(f, field_type)
-    assert len(field_spec.constraints) > 0
+    assert field_spec.element is not None
+    assert len(field_spec.element.constraints) > 0
 
 
 def test_parse_field_nullable() -> None:
@@ -273,17 +285,19 @@ def test_parse_field_has_default_method() -> None:
 def test_parse_field_literal() -> None:
     f = fields(EnumeratedDataclass)[0]
     field_spec = parse_field(f, Literal["admin", "guest", "user"])
-    assert field_spec.field_type is ENUMERATED_TYPE
-    assert len(field_spec.constraints) == 1
-    assert field_spec.constraints[0] == OneOf(("admin", "guest", "user"))
+    assert field_spec.element is not None
+    assert field_spec.element.field_type is ENUMERATED_TYPE
+    assert len(field_spec.element.constraints) == 1
+    assert field_spec.element.constraints[0] == OneOf(("admin", "guest", "user"))
 
 
 def test_parse_field_enum() -> None:
     f = fields(EnumeratedDataclass)[1]
     field_spec = parse_field(f, RoleTypeEnum)
-    assert field_spec.field_type is ENUMERATED_TYPE
-    assert len(field_spec.constraints) == 1
-    assert field_spec.constraints[0] == OneOf((0, 1, 2))
+    assert field_spec.element is not None
+    assert field_spec.element.field_type is ENUMERATED_TYPE
+    assert len(field_spec.element.constraints) == 1
+    assert field_spec.element.constraints[0] == OneOf((0, 1, 2))
 
 
 # ====== TESTS FOR parse_fields() ======
@@ -322,7 +336,8 @@ def test_parse_fields_mixed() -> None:
     assert field_specs[2].default is None
 
     assert field_specs[3].name == "age"
-    assert field_specs[3].field_type is int
+    assert field_specs[3].element is not None
+    assert field_specs[3].element.field_type is int
     assert field_specs[3].default == 18
     assert field_specs[3].nullable is False
 
@@ -330,7 +345,7 @@ def test_parse_fields_mixed() -> None:
 def test_parse_fields_resolves_types_once() -> None:
     field_specs = parse_fields(DummyDataclass)
 
-    assert all(isinstance(fs.field_type, type) for fs in field_specs)
+    assert all(isinstance(fs.element.field_type, type) for fs in field_specs)  # type: ignore
 
 
 # ====== TESTS FOR parse() ======
@@ -400,19 +415,68 @@ def test_parse_dataclass_with_list_fields() -> None:
     unique_items = spec.fields[4]
 
     assert text.collection_type is None
-    assert emails.field_type is Email
+    assert emails.item is not None
+    assert emails.item.field_type is Email
     assert emails.collection_type is list
-    assert len(emails.constraints) == 0
-    assert names.field_type is str
+    assert len(emails.item.constraints) == 0
+    assert names.item is not None
+    assert names.item.field_type is str
     assert names.collection_type is list
-    assert len(names.constraints) == 2
+    assert len(names.item.constraints) == 2
     assert len(names.collection_constraints) == 2
-    assert model_list.field_type is DefaultDataclass
-    assert model_list.nested_model is not None
+    assert model_list.item is not None
+    assert model_list.item.field_type is DefaultDataclass
+    assert model_list.item.nested_model is not None
     assert model_list.collection_type is list
-    assert unique_items.field_type is str
+    assert unique_items.item is not None
+    assert unique_items.item.field_type is str
     assert unique_items.collection_type is set
     assert unique_items.collection_constraints == (UniqueItems(True),)
+
+
+def test_parse_dataclass_with_dict_fields() -> None:
+    spec = parse(DictFieldDataclass)
+
+    assert len(spec.fields) == 4
+
+    text = spec.fields[0]
+    emails = spec.fields[1]
+    models = spec.fields[2]
+    annotated_dicts = spec.fields[3]
+
+    assert text.collection_type is None
+
+    assert emails.collection_type is dict
+    assert emails.key is not None
+    assert emails.key.field_type is str
+    assert emails.value is not None
+    assert emails.value.field_type is Email
+    assert (
+        len(emails.key.constraints)
+        == len(emails.value.constraints)
+        == len(emails.collection_constraints)
+        == 0
+    )
+
+    assert models.collection_type is dict
+    assert models.key is not None
+    assert models.key.field_type is str
+    assert models.value is not None
+    assert models.value.field_type is DefaultDataclass
+    assert models.value.nested_model is not None
+    assert (
+        len(models.key.constraints)
+        == len(models.value.constraints)
+        == len(models.collection_constraints)
+        == 0
+    )
+
+    assert annotated_dicts.collection_type is dict
+    assert annotated_dicts.collection_constraints == (MinItems(4),)
+    assert annotated_dicts.key is not None
+    assert annotated_dicts.key.constraints == (MinLength(5),)
+    assert annotated_dicts.value is not None
+    assert annotated_dicts.value.constraints == (MaxLength(10),)
 
 
 # ====== EDGE CASES ======
@@ -458,7 +522,8 @@ def test_parse_get_field_method() -> None:
     spec = parse(DummyDataclass)
     field = spec.get_field("name")
     assert field.name == "name"
-    assert field.field_type is str
+    assert field.element is not None
+    assert field.element.field_type is str
 
 
 def test_parse_get_field_not_found() -> None:
@@ -522,18 +587,21 @@ def test_parse_nested_models() -> None:
     assert len(spec.fields) == 6
 
     role_field = next(f for f in spec.fields if f.name == "role")
-    assert role_field.nested_model is not None
-    assert role_field.nested_model.name == "Role"
+    assert role_field.element is not None
+    assert role_field.element.nested_model is not None
+    assert role_field.element.nested_model.name == "Role"
 
     permissions_field = next(
-        f for f in role_field.nested_model.fields if f.name == "permissions"
+        f for f in role_field.element.nested_model.fields if f.name == "permissions"
     )
-    assert permissions_field.nested_model is not None
-    assert permissions_field.nested_model.name == "Permissions"
+    assert permissions_field.element is not None
+    assert permissions_field.element.nested_model is not None
+    assert permissions_field.element.nested_model.name == "Permissions"
 
     name_field = next(f for f in spec.fields if f.name == "name")
-    assert len(name_field.constraints) == 2
-    assert any(isinstance(c, MinLength) for c in name_field.constraints)
+    assert name_field.element is not None
+    assert len(name_field.element.constraints) == 2
+    assert any(isinstance(c, MinLength) for c in name_field.element.constraints)
 
 
 def test_parse_is_consistent() -> None:

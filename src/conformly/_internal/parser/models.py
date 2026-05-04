@@ -10,15 +10,23 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True, slots=True)
-class FieldSpec:
-    name: str
+class ElementSpec:
     field_type: type
     constraints: tuple[Constraint, ...] = ()
-    default: Any = UNSET
-    nullable: bool = False
     nested_model: ModelSpec | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class FieldSpec:
+    name: str
+    element: ElementSpec | None = None
     collection_type: type | None = None
     collection_constraints: tuple[Constraint, ...] = ()
+    item: ElementSpec | None = None
+    key: ElementSpec | None = None
+    value: ElementSpec | None = None
+    nullable: bool = False
+    default: Any = UNSET
 
     def has_default(self) -> bool:
         return self.default is not UNSET
@@ -27,23 +35,21 @@ class FieldSpec:
         return self.nullable
 
     def has_constraints(self) -> bool:
-        return len(self.constraints) > 0
+        return (
+            (self.element is not None and len(self.element.constraints) != 0)
+            or (self.item is not None and len(self.item.constraints) != 0)
+            or (self.key is not None and len(self.key.constraints) != 0)
+            or (self.value is not None and len(self.value.constraints) != 0)
+            or len(self.collection_constraints) != 0
+        )
 
-    def __repr__(self) -> str:
-        parts = [
-            f"name={self.name!r}",
-            f"type={self.field_type!r}",
-        ]
-        if self.constraints:
-            parts.append(f"constraints={[repr(c) for c in self.constraints]!r}")
-        if self.nested_model:
-            parts.append(f"nested_model={self.nested_model!r}")
-        if self.collection_type:
-            parts.append(f"collection_type={self.collection_type!r}")
-        if self.collection_constraints:
-            parts.append(f"collection_constraints={self.collection_constraints!r}")
-
-        return f"Field({', '.join(parts)})"
+    def has_nested_model(self) -> bool:
+        return (
+            (self.element is not None and self.element.nested_model is not None)
+            or (self.item is not None and self.item.nested_model is not None)
+            or (self.key is not None and self.key.nested_model is not None)
+            or (self.value is not None and self.value.nested_model is not None)
+        )
 
 
 ModelType = Literal["dataclass", "pydantic"]
@@ -66,10 +72,3 @@ class ModelSpec:
 
     def get_optional_fields(self) -> list[FieldSpec]:
         return [field for field in self.fields if field.is_optional()]
-
-    def __repr__(self) -> str:
-        return (
-            f"Model(name={self.name!r}, "
-            f"type={self.type!r}, "
-            f"fields={[repr(f) for f in self.fields]!r})"
-        )

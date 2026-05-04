@@ -6,7 +6,7 @@ from conformly._internal.generator.orchestration import (
     generate_invalid,
     generate_valid,
 )
-from conformly._internal.parser import FieldSpec
+from conformly._internal.parser import ElementSpec, FieldSpec
 from conformly._internal.planner import PlannedTask
 from conformly._internal.resolver import ResolvedField, ResolvedModel
 from conformly._internal.resolver.semantics import (
@@ -27,7 +27,9 @@ from conformly._internal.types import (
 from conformly.exceptions import GenerationError
 
 simple_string_field = ResolvedField(
-    field_spec=FieldSpec(name="name", field_type=str, default=UNSET, nullable=False),
+    field_spec=FieldSpec(
+        name="name", element=ElementSpec(str, ()), default=UNSET, nullable=False
+    ),
     path=(0,),
     semantic=StringSemantic(
         kind=FieldKind.STRING,
@@ -39,7 +41,7 @@ simple_string_field = ResolvedField(
 
 default_string_field = ResolvedField(
     field_spec=FieldSpec(
-        name="city", field_type=str, default="Palo Alto", nullable=False
+        name="city", element=ElementSpec(str, ()), default="Palo Alto", nullable=False
     ),
     path=(0, 1),
     semantic=StringSemantic(
@@ -52,7 +54,10 @@ default_string_field = ResolvedField(
 
 optional_string_field = ResolvedField(
     field_spec=FieldSpec(
-        name="description", field_type=str, default="simple description", nullable=True
+        name="description",
+        element=ElementSpec(str, ()),
+        default="simple description",
+        nullable=True,
     ),
     path=(3,),
     semantic=StringSemantic(
@@ -65,7 +70,7 @@ optional_string_field = ResolvedField(
 
 bool_field = ResolvedField(
     field_spec=FieldSpec(
-        name="is_admin", field_type=bool, default=UNSET, nullable=False
+        name="is_admin", element=ElementSpec(bool, ()), default=UNSET, nullable=False
     ),
     path=(4,),
     semantic=BooleanSemantic(),
@@ -76,7 +81,10 @@ nested_model = ResolvedModel(
     fields=(
         ResolvedField(
             field_spec=FieldSpec(
-                name="address", field_type=str, default=UNSET, nullable=True
+                name="address",
+                element=ElementSpec(str, ()),
+                default=UNSET,
+                nullable=True,
             ),
             path=(1, 0),
             semantic=StringSemantic(
@@ -88,7 +96,7 @@ nested_model = ResolvedModel(
         ),
         ResolvedField(
             field_spec=FieldSpec(
-                name="age", field_type=int, default=UNSET, nullable=False
+                name="age", element=ElementSpec(int, ()), default=UNSET, nullable=False
             ),
             path=(1, 1),
             semantic=NumericSemantic(
@@ -106,7 +114,7 @@ nested_model = ResolvedModel(
 
 nested_field = ResolvedField(
     field_spec=FieldSpec(
-        name="profile", field_type=object, default=UNSET, nullable=False
+        name="profile", element=ElementSpec(object, ()), default=UNSET, nullable=False
     ),
     path=(1,),
     nested_model=nested_model,

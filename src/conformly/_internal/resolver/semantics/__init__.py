@@ -1,4 +1,5 @@
 from .boolean import BooleanSemantic
+from .dict import DictSemantic
 from .enum import EnumSemantic
 from .list import ListSemantic
 from .numeric import NumericSemantic
@@ -14,11 +15,13 @@ FieldSemantics = (
     | EnumSemantic
     | ListSemantic
     | UUIDSemantic
+    | DictSemantic
 )
 
 
 __all__ = [
     "BooleanSemantic",
+    "DictSemantic",
     "EnumSemantic",
     "FieldSemantics",
     "ListSemantic",

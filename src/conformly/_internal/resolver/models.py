@@ -25,7 +25,15 @@ class ResolvedField:
 
     @property
     def py_type(self) -> type:
-        return self.field_spec.field_type
+        if self.field_spec.element is not None:
+            return self.field_spec.element.field_type
+        if self.field_spec.item is not None:
+            return self.field_spec.item.field_type
+        if self.field_spec.key is not None:
+            return self.field_spec.key.field_type
+        if self.field_spec.value is not None:
+            return self.field_spec.value.field_type
+        return object
 
     @property
     def default(self) -> Any:
@@ -33,7 +41,7 @@ class ResolvedField:
 
     @property
     def nullable(self) -> bool:
-        return self.field_spec.nullable
+        return self.field_spec.is_optional()
 
 
 @dataclass(frozen=True, slots=True)

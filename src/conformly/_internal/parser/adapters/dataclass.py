@@ -5,17 +5,12 @@ from typing import (
     get_type_hints,
 )
 
-from ...types import ENUMERATED_TYPE, UNSET
-from ..extractors.constraints import (
-    is_constraints_consistent,
-    parse_annotated_constraints,
-    parse_metadata_constraints,
-    split_collection_constraints,
-)
-from ..extractors.types import extract_runtime_type_and_constraints, is_nullable
+from ..core import build_element_spec, build_field_spec
+from ..extractors.constraints import parse_metadata_constraints
 from ..models import FieldSpec, ModelSpec
 
-from conformly.exceptions import ResolutionError, SchemaError
+from conformly._internal.types import UNSET
+from conformly.exceptions import ResolutionError
 
 
 def supports(model: type) -> bool:
@@ -50,46 +45,21 @@ def resolve_type(type_hints: dict[str, Any], field_name: str) -> Any:
 
 
 def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
-    runtime_type, intrinsic_constraints, collection_type = (
-        extract_runtime_type_and_constraints(field_type, field.name)
-    )
+    external_constraints = parse_metadata_constraints(field.metadata)
 
-    external_constraints = (
-        *parse_annotated_constraints(field_type),
-        *parse_metadata_constraints(field.metadata),
-    )
-
-    all_constraints = (*intrinsic_constraints, *external_constraints)
-    if not is_constraints_consistent(all_constraints):
-        raise SchemaError(
-            f"Field '{field.name}': incompatible constraints",
-            context={
-                "code": "inconsistent_constraints",
-                "field_name": field.name,
-                "constraints": [type(c).__name__ for c in all_constraints],
-                "reason": "closed set cannot be combined with other constraints",
-            },
-        )
-
-    element_constraints, collection_constraints = split_collection_constraints(
-        all_constraints
-    )
-
-    nested_model = (
-        parse(runtime_type)
-        if runtime_type is not ENUMERATED_TYPE and supports(runtime_type)
-        else None
-    )
-
-    return FieldSpec(
+    return build_field_spec(
         name=field.name,
-        field_type=runtime_type,
-        constraints=element_constraints,
+        field_type=field_type,
         default=parse_defaults(field),
-        nullable=is_nullable(field_type),
-        nested_model=nested_model,
-        collection_type=collection_type,
-        collection_constraints=collection_constraints,
+        external_constraints=external_constraints,
+        resolve_element=lambda node, field_name, constraints: build_element_spec(
+            node=node,
+            field_name=field_name,
+            extra_constraints=constraints,
+            resolve_type=lambda x: x,
+            parse_model=parse,
+            supports_model=supports,
+        ),
     )
 
 

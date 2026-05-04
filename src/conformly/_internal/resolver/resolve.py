@@ -6,6 +6,7 @@ import uuid
 from .models import ResolvedField, ResolvedModel
 from .semantics import (
     BooleanSemantic,
+    DictSemantic,
     EnumSemantic,
     FieldSemantics,
     ListSemantic,
@@ -35,7 +36,7 @@ from conformly._internal.fields import (
     SPECIAL_TYPE_TO_KIND,
     SpecialString,
 )
-from conformly._internal.parser import FieldSpec, ModelSpec
+from conformly._internal.parser import ElementSpec, FieldSpec, ModelSpec
 from conformly._internal.types import (
     ENUMERATED_TYPE,
     FLOAT_MAX,
@@ -63,26 +64,84 @@ def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:
 
 
 def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
-    resolved_nested = (
-        resolve_model(field_spec.nested_model, path)
-        if field_spec.nested_model
-        else None
-    )
-    list_semantic = None
+    if field_spec.element is not None:
+        semantic, nested = resolve_element(field_spec.element, field_spec, path)
 
-    if field_spec.collection_type in (list, set, frozenset):
-        list_semantic = create_list_semantics(
-            constraints=field_spec.collection_constraints,
-            element_semantic=create_field_semantic(field_spec),
-            element_nested_model=resolved_nested,
+        return ResolvedField(
+            field_spec=field_spec,
+            path=path,
+            semantic=semantic,
+            nested_model=nested,
         )
 
-    return ResolvedField(
-        field_spec=field_spec,
-        path=path,
-        semantic=list_semantic or create_field_semantic(field_spec),
-        nested_model=resolved_nested,
+    if field_spec.collection_type in (list, set, frozenset, tuple) and field_spec.item:
+        item_semantic, item_nested = resolve_element(field_spec.item, field_spec, path)
+
+        list_semantic = create_list_semantics(
+            constraints=field_spec.collection_constraints,
+            element_semantic=item_semantic,
+            element_nested_model=item_nested,
+        )
+
+        return ResolvedField(
+            field_spec=field_spec,
+            path=path,
+            semantic=list_semantic,
+            nested_model=item_nested,
+        )
+
+    if field_spec.collection_type is dict and field_spec.value and field_spec.key:
+        if field_spec.key.field_type not in (str, ENUMERATED_TYPE):
+            raise ResolutionError(
+                "Invalid dict`s key type: key type must be Enum | Literal | str",
+                context={
+                    "code": "invalid_dict_key",
+                    "field_name": field_spec.name,
+                    "key_type": field_spec.key.field_type,
+                },
+            )
+
+        key_semantic, _ = resolve_element(field_spec.key, field_spec, path)
+        value_semantic, value_nested = resolve_element(
+            field_spec.value, field_spec, path
+        )
+
+        dict_semantic = create_dict_semantic(
+            constraints=field_spec.collection_constraints,
+            key_semantic=key_semantic,
+            value_semantic=value_semantic,
+            value_nested_model=value_nested,
+        )
+
+        return ResolvedField(
+            field_spec=field_spec,
+            path=path,
+            semantic=dict_semantic,
+            nested_model=value_nested,
+        )
+
+    raise ResolutionError(
+        "Invalid FieldSpec state: cannot determine field shape",
+        context={
+            "code": "invalid_field_spec",
+            "field_name": field_spec.name,
+            "collection_type": repr(field_spec.collection_type),
+            "has_element": field_spec.element is not None,
+            "has_item": field_spec.item is not None,
+            "has_key": field_spec.key is not None,
+            "has_value": field_spec.value is not None,
+        },
     )
+
+
+def resolve_element(
+    element: ElementSpec, field_spec: FieldSpec, path: FieldPath
+) -> tuple[FieldSemantics, ResolvedModel | None]:
+    nested = resolve_model(element.nested_model, path) if element.nested_model else None
+
+    semantic = create_scalar_semantic(element, field_spec)
+
+    return semantic, nested
 
 
 def _build_indexes(model: ResolvedModel) -> None:
@@ -124,9 +183,11 @@ def _build_indexes(model: ResolvedModel) -> None:
     object.__setattr__(model, "name_to_path", name_to_path)
 
 
-def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
-    t = field_spec.field_type
-    c = field_spec.constraints
+def create_scalar_semantic(
+    element: ElementSpec, field_spec: FieldSpec
+) -> FieldSemantics:
+    t = element.field_type
+    c = element.constraints
 
     if isinstance(t, type) and issubclass(t, SpecialString):
         kind = SPECIAL_TYPE_TO_KIND.get(t)
@@ -171,7 +232,7 @@ def create_field_semantic(field_spec: FieldSpec) -> FieldSemantics:
     elif t is str:
         return create_string_semantic(c)
 
-    elif field_spec.nested_model is not None:
+    elif element.nested_model is not None:
         return ObjectSemantic(has_constraints=field_spec.has_constraints())
 
     elif t is bool:
@@ -470,6 +531,40 @@ def create_list_semantics(
     element_semantic: FieldSemantics,
     element_nested_model: ResolvedModel | None,
 ) -> ListSemantic:
+    has_constraints, length_range, is_unique_items = _resolve_collection_constraints(
+        constraints
+    )
+
+    return ListSemantic(
+        element_semantic=element_semantic,
+        element_nested_model=element_nested_model,
+        length_range=length_range,
+        is_unique_items=is_unique_items,
+        has_constraints=has_constraints,
+    )
+
+
+def create_dict_semantic(
+    constraints: tuple[Constraint, ...],
+    key_semantic: FieldSemantics,
+    value_semantic: FieldSemantics,
+    value_nested_model: ResolvedModel | None,
+) -> DictSemantic:
+    has_constraints, length_range, _ = _resolve_collection_constraints(constraints)
+
+    return DictSemantic(
+        key_semantic=key_semantic,
+        value_semantic=value_semantic,
+        value_nested_model=value_nested_model,
+        length_range=length_range,
+        is_unique_items=False,
+        has_constraints=has_constraints,
+    )
+
+
+def _resolve_collection_constraints(
+    constraints: tuple[Constraint, ...],
+) -> tuple[bool, LengthRange, bool]:
     has_constraints = len(constraints) > 0
     min_length = 0
     max_length = None
@@ -501,10 +596,4 @@ def create_list_semantics(
             },
         )
 
-    return ListSemantic(
-        element_semantic=element_semantic,
-        element_nested_model=element_nested_model,
-        length_range=LengthRange(min_length, max_length),
-        is_unique_items=is_unique_items,
-        has_constraints=has_constraints,
-    )
+    return has_constraints, LengthRange(min_length, max_length), is_unique_items
