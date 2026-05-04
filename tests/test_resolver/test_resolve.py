@@ -686,7 +686,7 @@ def test_resolve_constrained_dict_type(simple_model_spec) -> None:
     assert resolved.semantic.has_constraints is True
     assert resolved.semantic.length_range is not None
     assert resolved.semantic.length_range.max_length == 5
-    assert resolved.semantic.is_unique_items is True
+    assert resolved.semantic.is_unique_items is False
     assert isinstance(resolved.semantic.key_semantic, StringSemantic)
     assert resolved.semantic.key_semantic.has_constraints is True
     assert resolved.semantic.key_semantic.length_range.max_length == 15
