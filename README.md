@@ -440,11 +440,51 @@ case(Model)
 
 This ensures consistent output format (list) while preserving uniqueness guarantees.
 
+### Dict support
+
+`conformly` supports generation of `dict[K, V]`, where K must be a hashable type (`str` or `Enum`) and `V` can be any supported type (primitives, nested models, etc.).
+Collection-level constraints (`MinItems`, `MaxItems`) control the number of key-value pairs. The `UniqueItems` constraint is automatically ignored for dictionaries, as Python enforces key uniqueness natively.
+
+#### Example
+
+```python
+from dataclasses import dataclass
+from typing import Annotated
+from conformly import case, MinItems, MaxItems, path, V
+
+@dataclass
+class Product:
+    sku: str
+    price: float
+
+@dataclass
+class Inventory:
+    metadata: dict[str, str]                                                    # simple key-value mapping
+    products: Annotated[dict[str, Product], MinItems(2), MaxItems(4)]           # constrained pair count
+    settings: Annotated[dict[str, int], MaxItems(3)]
+
+valid = case(Inventory, valid=True)
+# -> {
+#   "metadata": {"brand": "acme", "status": "active"},
+#   "products": {"P1": {"sku": "...", "price": 10.0}, "P2": {...}},
+#   "settings": {"timeout": 30}
+# }
+
+invalid = case(Inventory, valid=False, strategy=path("products").violate(V.TOO_SHORT))
+# -> {
+#   "metadata": {...},
+#   "products": {"P1": {"sku": "...", "price": 10.0}},  # violates MinItems(2)
+#   "settings": {...}
+# }
+```
+
+
 ### Known limitations
 
 - No nested collections (`list[list[T]]` not supported yet)
 - No fine-grained control over which index is violated (random selection only)
 - Uniqueness for non-hashable elements (e.g., dicts) is best-effort (based on structural comparison fallback)
+- Dictionary keys are restricted to `str` and `Enum` types; complex objects as keys are not supported
 
 
 ## Development
