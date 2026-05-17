@@ -79,8 +79,6 @@ def parse_field(
             field_name=field_name,
             extra_constraints=constraints,
             resolve_type=_resolve_pydantic_special_type,
-            parse_model=parse,
-            supports_model=supports,
         ),
     )
 
