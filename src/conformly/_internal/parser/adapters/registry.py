@@ -21,3 +21,10 @@ def get_adapter(model: type) -> ParcingAdapterProtocol:
             "registred_adapters": [type(a).__name__ for a in _adapters],
         },
     )
+
+
+def get_adapter_or_none(model: type) -> ParcingAdapterProtocol | None:
+    for adapter in _adapters:
+        if adapter.supports(model):
+            return adapter
+    return None

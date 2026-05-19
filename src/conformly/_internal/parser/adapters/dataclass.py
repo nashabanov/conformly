@@ -57,8 +57,6 @@ def parse_field(field: Field[Any], field_type: Any) -> FieldSpec:
             field_name=field_name,
             extra_constraints=constraints,
             resolve_type=lambda x: x,
-            parse_model=parse,
-            supports_model=supports,
         ),
     )
 

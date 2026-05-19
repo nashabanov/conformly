@@ -1,9 +1,10 @@
 from collections.abc import Callable
 from typing import Any
 
+from ..adapters.registry import get_adapter_or_none
 from ..extractors.constraints import is_constraints_consistent
 from ..extractors.types import TypeNode
-from ..models import ElementSpec, ModelSpec
+from ..models import ElementSpec
 
 from conformly._internal.constraints import Constraint
 from conformly._internal.types.constants import ENUMERATED_TYPE
@@ -16,8 +17,6 @@ def build_element_spec(
     field_name: str,
     extra_constraints: tuple[Constraint, ...],
     resolve_type: Callable[[Any], Any],
-    parse_model: Callable[[type], ModelSpec],
-    supports_model: Callable[[type], bool],
 ) -> ElementSpec:
     runtime_type = resolve_type(node.runtime_type)
 
@@ -34,10 +33,12 @@ def build_element_spec(
             },
         )
 
+    adapter = get_adapter_or_none(runtime_type)
+
     nested_model = (
-        parse_model(runtime_type)
-        if runtime_type is not ENUMERATED_TYPE and supports_model(runtime_type)
-        else None
+        None
+        if runtime_type is ENUMERATED_TYPE or adapter is None
+        else adapter.parse(runtime_type)
     )
 
     return ElementSpec(
