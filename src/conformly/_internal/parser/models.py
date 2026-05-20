@@ -52,7 +52,7 @@ class FieldSpec:
         )
 
 
-ModelType = Literal["dataclass", "pydantic"]
+ModelType = Literal["dataclass", "pydantic", "typeddict"]
 
 
 @dataclass(frozen=True, slots=True)
