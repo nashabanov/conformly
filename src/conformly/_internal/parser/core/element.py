@@ -20,6 +20,8 @@ def build_element_spec(
 ) -> ElementSpec:
     runtime_type = resolve_type(node.runtime_type)
 
+    print(runtime_type)
+
     all_constraints = (*node.constraints, *extra_constraints)
 
     if not is_constraints_consistent(all_constraints):

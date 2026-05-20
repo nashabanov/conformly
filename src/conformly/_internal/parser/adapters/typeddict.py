@@ -1,5 +1,13 @@
 from functools import lru_cache
-from typing import Any, get_type_hints, is_typeddict
+from typing import (
+    Any,
+    NotRequired,
+    Required,
+    get_args,
+    get_origin,
+    get_type_hints,
+    is_typeddict,
+)
 
 from ..core import build_element_spec, build_field_spec
 from ..models import FieldSpec, ModelSpec
@@ -9,6 +17,7 @@ from conformly.exceptions import ResolutionError
 
 
 def supports(model: type) -> bool:
+    print(is_typeddict(model))
     return is_typeddict(model)
 
 
@@ -43,7 +52,14 @@ def parse_fields(model: type) -> tuple[FieldSpec, ...]:
 
 
 def resolve_type(type_hints: dict[str, Any], field_name: str) -> Any:
-    return type_hints[field_name]
+    t = type_hints[field_name]
+
+    origin = get_origin(t)
+
+    if origin is NotRequired or origin is Required:
+        return get_args(t)[0]
+
+    return t
 
 
 def parse_field(name: str, field_type: Any, required: bool) -> FieldSpec:
