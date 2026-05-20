@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Cross-adapter parsign** - now parser uses adapters registry for nested models, so schemas like `dataclass` inside `pydantic.BaseModel` supported
+- **TypedDict adapter** - support for parsing `TypedDict` schemas, including required/optional fields via `NotRequired` / `Required`
+
 
 ## [0.4.0] - 2025.05.09
 

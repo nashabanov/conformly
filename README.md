@@ -11,7 +11,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 
-**Declarative test data generator for Python. Turns data models (dataclasses, Pydantic) and type constraints into valid fixtures and negative test cases.**
+**Declarative test data generator for Python. Turns data models (dataclasses, Pydantic, TypedDict) and type constraints into valid fixtures and negative test cases.**
 Define constraints once in type annotations — generate both valid and minimal invalid test data automatically.
 No factories, no hardcoded fixtures, no drift when schema changes.
 
@@ -24,6 +24,8 @@ No factories, no hardcoded fixtures, no drift when schema changes.
 - [Quickstart](#quickstart)
   - [With dataclasses](#with-dataclasses)
   - [With Pydantic](#with-pydantic)
+  - [With TypedDict](#with-typeddict)
+  - [With Mixed Models](#with-mixed-models)
 - [API Reference](#api-reference)
 - [Error Handling](#error-handling)
 - [Invalid Generation Contract](#invalid-generation-contract)
@@ -47,6 +49,8 @@ No factories, no hardcoded fixtures, no drift when schema changes.
 - **Schema as single source of truth** - change a constraint → all test data adapts automatically
 - **Unified constraint model** - multiple declaration styles normalized internaly
 - **Framework adapters** - dataclasses (built-in), Pydantic (optional via `conformly[pydantic]`)
+- **Cross-adapter nesting** - freely combine schemas across frameworks (e.g. `TypedDict` inside `dataclass`, `dataclass` inside `Pydantic`)
+
 
 ## Install
 
@@ -92,6 +96,47 @@ class User(BaseModel):
 
 valid = case(User, valid=True)
 # -> {"username": "Abc", "email": "x@y.z", "age": 42}
+```
+
+### With TypedDict
+
+```python
+from typing import Annotated, TypedDict
+from conformly import case, MinLength, Pattern, GreaterOrEqual, LessOrEqual
+
+
+class User(TypedDict):
+    username: Annotated[str, MinLength(3)]
+    email: Annotated[str, Pattern(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")]
+    age: Annotated[int, GreaterOrEqual(18), LessOrEqual(120)]
+
+valid = case(User, valid=True)
+# -> {"username": "Abc", "email": "x@y.z", "age": 42}
+```
+
+### With Mixed Models
+
+```python
+from dataclasses import dataclass
+from typing import TypedDict
+from pydantic import BaseModel
+
+
+class Meta(TypedDict):
+    version: int
+
+
+@dataclass
+class Profile:
+    meta: Meta
+
+
+class User(BaseModel):
+    profile: Profile
+
+
+valid = case(User, valid=True)
+# -> {"profile": {"meta": {"version": 1}}}
 ```
 
 ## API Reference
