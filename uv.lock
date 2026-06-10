@@ -12,6 +12,15 @@ wheels = [
 ]
 
 [[package]]
+name = "attrs"
+version = "26.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9a/8e/82a0fe20a541c03148528be8cac2408564a6c9a0cc7e9171802bc1d26985/attrs-26.1.0.tar.gz", hash = "sha256:d03ceb89cb322a8fd706d4fb91940737b6642aa36998fe130a9bc96c985eff32", size = 952055, upload-time = "2026-03-19T14:22:25.026Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a6df63d1157e028ed19f90d4cd97c36717afef2bc2f395/attrs-26.1.0-py3-none-any.whl", hash = "sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309", size = 67548, upload-time = "2026-03-19T14:22:23.645Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.2.25"
 source = { registry = "https://pypi.org/simple" }
@@ -133,6 +142,14 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+all = [
+    { name = "attrs" },
+    { name = "email-validator" },
+    { name = "pydantic" },
+]
+attrs = [
+    { name = "attrs" },
+]
 pydantic = [
     { name = "email-validator" },
     { name = "pydantic" },
@@ -151,11 +168,15 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "attrs", marker = "extra == 'all'", specifier = ">=23.0.0" },
+    { name = "attrs", marker = "extra == 'attrs'", specifier = ">=23.0.0" },
+    { name = "email-validator", marker = "extra == 'all'", specifier = ">=2.0.0" },
     { name = "email-validator", marker = "extra == 'pydantic'", specifier = ">=2.0.0" },
+    { name = "pydantic", marker = "extra == 'all'", specifier = ">=2.0.0,<3.0.0" },
     { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.0.0,<3.0.0" },
     { name = "rstr", specifier = ">=3.2.2" },
 ]
-provides-extras = ["pydantic"]
+provides-extras = ["pydantic", "attrs", "all"]
 
 [package.metadata.requires-dev]
 dev = [

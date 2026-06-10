@@ -5,14 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] - Planned
+## [0.5.0] - 2026.06.10
 
 ### Added
-- **Cross-adapter parsign** - now parser uses adapters registry for nested models, so schemas like `dataclass` inside `pydantic.BaseModel` supported
+- **Basic `attrs` adapter** - support for attrs models as source for generation *(Note: native `attrs` validators are not yet supported and will be added later)*
+- **Cross-adapter parsing** - now parser uses adapters registry for nested models, so schemas like `dataclass` inside `pydantic.BaseModel` supported
 - **TypedDict adapter** - support for parsing `TypedDict` schemas, including required/optional fields via `NotRequired` / `Required`
 
 
-## [0.4.0] - 2025.05.09
+## [0.4.0] - 2026.05.09
 
 ### Added
 - **Unified exception hierarchy** — all library errors now inherit from `ConformlyError`, providing consistent interface for error handling and logging.
@@ -41,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `ElementSpec` for standardized type representation.
 
 
-## [0.3.10] - 2025.04.11
+## [0.3.10] - 2026.04.11
 
 ### Added
 - **Full support for `multiple_of` constraint**. Added `MultipleOf` constraint in conformly-style semantics and `Field(multiple_of=...)` support for Pydantic models. Values are now generated respecting the step, including invalid value generation (`NOT_MULTIPLE` violation).
@@ -60,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Hide internal logic** in `_internal` module.
 
 
-## [0.3.9] - 2025.03.21
+## [0.3.9] - 2026.03.21
 
 ### Added
 - **Deterministic generation** new `seed: int | None = None` parameter in `case()` and `cases()` for reproducible test data
@@ -71,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Internal architecture** - all generators now receive `GenerationContext` instead of raw `rng`
 
 
-## [0.3.8] - 2025.03.09
+## [0.3.8] - 2026.03.09
 
 ### Added
 - **all_violations** srategy - generates case for every allowed violations including constraints, structural and type violations (ignores count)
@@ -85,7 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ViolationType enum** now uses string values instead of auto()
 
 
-## [0.3.7] - 2025.03.03
+## [0.3.7] - 2026.03.03
 
 ### Added
 - **Internal benchmarking infrastructure** for dataclasses and pydantic models (Makefile, pytest marks), benchmark tests
@@ -96,7 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Optimized generate_invalid** logic by splitting loops, removing tuple allocations, and simplifying recursion
 - **`ResolvedField` refactor** to store `FieldSpec` directly instead of copying values
 
-## [0.3.6] - 2025.02.18
+## [0.3.6] - 2026.02.18
 
 ### Added
 - **`allow_structural_violations` flag for `cases()`** API to abable field missing and extra fields for invalid generation
@@ -104,7 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`MISSING_FIELD`** available for every field like `TYPE_MISMATCH`
 - **`EXTRA_FIELD`** adds only one time for model/nested model
 
-## [0.3.5] - 2025.02.15
+## [0.3.5] - 2026.02.15
 
 ### Added
 - **`allow_type_mismatch` flag for `case()` and `cases()`** APIs to enable type mismatch violations (e.g., string instead of int) when generating invalid examples
@@ -115,7 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `bool` and `object` fields can now be violated via type mismatches when `allow_type_mismatch=True`; `NotImplementedError` is raised only when attempting to violate these types with `allow_type_mismatch=False` (no semantic constraints available)
 
-## [0.3.4] - 2025.02.09
+## [0.3.4] - 2026.02.09
 
 ### Added
 - **Pydantic parsing adapter** as optional adapter (availiable only with `pip install conformly[pydantic]`)
@@ -132,7 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Known Limitations
 - `default_factory` support not yet implemented for dataclass/Pydantic fields
 
-## [0.3.3] - 2025.02.01
+## [0.3.3] - 2026.02.01
 
 ### Added
 - **Full support for closed-set types** (`Literal` from `typing` and classical `Enum`)
@@ -148,14 +149,14 @@ but can be used as part of real model)
 Combinig `Literal`/`Enum` with other constraints results in a parsing error.
 
 
-## [0.3.2] - 2025.01.29
+## [0.3.2] - 2026.01.29
 
 ### Changed
 - Refactored internal collections to use `tuple` instead of `list` for
   immutable data structures. **No changes to public API or runtime behavior**.
 
 
-## [0.3.1] - 2025-01-28
+## [0.3.1] - 2026-01-28
 
 ### Added
 - Semantic relover  (`ModelSpec -> ResolvedModel`)
@@ -176,7 +177,7 @@ Combinig `Literal`/`Enum` with other constraints results in a parsing error.
 
 
 
-## [0.3.0] - 2025-01-21
+## [0.3.0] - 2026-01-21
 
 ### Added
 - Support for **nested_models** (tree structures) in parsing and generation

@@ -8,6 +8,13 @@ def register_builtin_adapters() -> None:
     try:
         from . import pydantic
     except ImportError:
-        return
+        pass
+    else:
+        register(pydantic)
 
-    register(pydantic)
+    try:
+        from . import attrs
+    except ImportError:
+        pass
+    else:
+        register(attrs)
