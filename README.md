@@ -25,6 +25,7 @@ No factories, no hardcoded fixtures, no drift when schema changes.
   - [With dataclasses](#with-dataclasses)
   - [With Pydantic](#with-pydantic)
   - [With TypedDict](#with-typeddict)
+  - [With Attrs](#with-attrs)
   - [With Mixed Models](#with-mixed-models)
 - [API Reference](#api-reference)
 - [Error Handling](#error-handling)
@@ -113,6 +114,27 @@ class User(TypedDict):
 valid = case(User, valid=True)
 # -> {"username": "Abc", "email": "x@y.z", "age": 42}
 ```
+
+### With Attrs
+
+```python
+import attrs
+from typing import Annotated
+from conformly import case, MinLength, Pattern, GreaterOrEqual, LessOrEqual
+
+
+@attrs.define
+class User:
+    username: Annotated[str, MinLength(3)]
+    email: Annotated[str, Pattern(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")]
+    age: Annotated[int, GreaterOrEqual(18), LessOrEqual(120)]
+
+valid = case(User, valid=True)
+# -> {"username": "Abc", "email": "x@y.z", "age": 42}
+```
+
+> Note: Native attrs validators are not yet supported. To define constraints for attrs models, please use `typing.Annotated` with conformly constraints as shown in the example above. Support for native attrs validators will be added later
+
 
 ### With Mixed Models
 
