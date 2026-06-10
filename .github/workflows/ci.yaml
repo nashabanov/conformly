@@ -57,10 +57,37 @@ jobs:
             config: core
             extras: ""
             collect-coverage: false
+          - python-version: "3.14"
+            config: core
+            extras: ""
+            collect-coverage: true
+
+          - python-version: "3.12"
+            config: pydantic
+            extras: "pydantic"
+            collect-coverage: false
           - python-version: "3.13"
             config: pydantic
             extras: "pydantic"
+            collect-coverage: false
+          - python-version: "3.14"
+            config: pydantic
+            extras: "pydantic"
             collect-coverage: true
+
+          - python-version: "3.12"
+            config: attrs
+            extras: "attrs"
+            collect-coverage: false
+          - python-version: "3.13"
+            config: attrs
+            extras: "attrs"
+            collect-coverage: false
+          - python-version: "3.14"
+            config: attrs
+            extras: "attrs"
+            collect-coverage: true
+
     name: Test (${{ matrix.config }}, py${{ matrix.python-version }})
     steps:
       - name: Checkout
