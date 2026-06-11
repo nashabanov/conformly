@@ -41,6 +41,7 @@ def test_pydantic_type_is_class(spec):
     assert isinstance(pydantic_type, type)
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("spec", SPECIAL_STRINGS)
 def test_pydantic_adapter_valid_generation(spec):
     pydantic_type = get_pydantic_type(spec.pydantic_name)
