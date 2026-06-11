@@ -1,9 +1,11 @@
 import ast
 from collections.abc import Callable
+import contextlib
 from dataclasses import dataclass
 import inspect
 import textwrap
 from typing import Any, TypeVar, overload
+import weakref
 
 from ._errors import api_error
 
@@ -102,7 +104,15 @@ def parse_strategy_input(
     return strategy, None
 
 
+_path_cache: weakref.WeakKeyDictionary[Callable[[Any], Any], str] = (
+    weakref.WeakKeyDictionary()
+)
+
+
 def _extract_path_from_lambda(expr: Callable[[Any], Any]) -> str:
+    if expr in _path_cache:
+        return _path_cache[expr]
+
     try:
         source = inspect.getsource(expr)
     except (OSError, TypeError) as e:
@@ -147,7 +157,12 @@ def _extract_path_from_lambda(expr: Callable[[Any], Any]) -> str:
             code="path_empty_result",
         )
 
-    return ".".join(parts)
+    path_str = ".".join(parts)
+
+    with contextlib.suppress(TypeError):
+        _path_cache[expr] = path_str
+
+    return path_str
 
 
 def _find_lambda(tree: ast.AST) -> ast.Lambda | None:
