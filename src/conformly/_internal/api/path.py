@@ -4,14 +4,12 @@ import contextlib
 from dataclasses import dataclass
 import inspect
 import textwrap
-from typing import Any, TypeVar, overload
+from typing import Any, overload
 import weakref
 
 from ._errors import api_error
 
 from conformly._internal.types import ViolationType
-
-T = TypeVar("T")
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,10 +26,12 @@ def path(target: str) -> PathSelector: ...
 
 
 @overload
-def path(target: type[T], expr: Callable[[T], Any]) -> PathSelector: ...
+def path[T](target: type[T], expr: Callable[[T], Any]) -> PathSelector: ...
 
 
-def path(target: str | type[T], expr: Callable[[T], Any] | None = None) -> PathSelector:
+def path[T](
+    target: str | type[T], expr: Callable[[T], Any] | None = None
+) -> PathSelector:
     """
     Create a field path selector for violation targeting.
 
