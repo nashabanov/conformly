@@ -190,8 +190,15 @@ cases(
 ```python
 from conformly import path, V
 
+# type safe
+path(User, lambda u: u.email).violate(V.TOO_SHORT)
+path(User, lambda u: u.profile.name).violate(V.PATTERN_MISMATCH)
+
+# string-based
 path("user.email").violate(V.TOO_SHORT)
 path("profile.name").violate(V.PATTERN_MISMATCH)
+
+
 ```
 - `"random"` - choose a random field/constraint to violate
 - `"all"` - (for `cases`) produce all minimal invalid variations for the model
