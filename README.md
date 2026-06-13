@@ -62,6 +62,8 @@ pip install conformly
 # With Pydantic support
 pip install conformly[pydantic]
 
+# With Attrs support
+pip install conformly[attrs]
 ```
 
 ## Quickstart
@@ -280,7 +282,7 @@ If you need **deterministic control** over which exact constraint to violate, th
 ### Defining constraints
 
 #### 1) `Annotated[..., Constraint(...)]` (recommended)
-> You can use for both model types (dataclasses, Pydantic)
+> You can use for all model types
 ```python
 from typing import Annotated
 from conformly import MinLength, GreaterOrEqual
