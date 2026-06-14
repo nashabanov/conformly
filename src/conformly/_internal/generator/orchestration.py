@@ -105,6 +105,7 @@ def generate_field(
     ctx: GenerationContext,
     field: ResolvedField,
     violations: tuple[ViolationType, ...] | None = None,
+    override: Any | None = None,
 ) -> Any:
     if violations is None:
         if field.nullable:
@@ -116,6 +117,9 @@ def generate_field(
                 return default()
 
             return field.default
+
+        if override is not None:
+            return override
 
         if field.nested_model and not isinstance(field.semantic, ListSemantic):
             return generate_valid(ctx, field.nested_model)

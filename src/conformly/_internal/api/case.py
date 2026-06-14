@@ -16,6 +16,7 @@ def case(
     valid: bool = True,
     seed: int | None = None,
     strategy: CaseStrategy | PathSelector = "first",
+    overrides: PathSelector | None = None,
     allow_type_mismatch: bool = False,
 ) -> dict[str, Any]:
     """

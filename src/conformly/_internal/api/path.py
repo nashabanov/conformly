@@ -16,9 +16,13 @@ from conformly._internal.types import ViolationType
 class PathSelector:
     raw_path: str
     forced_violation: ViolationType | None = None
+    override: Any | None = None
+
+    def set(self, override: Any) -> "PathSelector":
+        return PathSelector(self.raw_path, override=override)
 
     def violate(self, violation: ViolationType) -> "PathSelector":
-        return PathSelector(self.raw_path, violation)
+        return PathSelector(self.raw_path, forced_violation=violation)
 
 
 @overload
@@ -54,7 +58,8 @@ def path[T](
 
     Returns:
         PathSelector:
-            DSL object that can be refined with `.violate(ViolationType)`.
+            DSL object that can be refined with
+            `.violate(ViolationType)` or `.set(Any)`.
 
     Notes:
         - String paths are not validated immediately. Validation occurs during
