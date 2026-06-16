@@ -1,7 +1,7 @@
 from typing import Any
 
 from ._errors import api_error
-from ._utils import ensure_model_or_spec, plan_tasks
+from ._utils import ensure_model_or_spec, normalize_overrides, plan_tasks
 from .path import PathSelector
 
 from conformly._internal.generator.context import create_context
@@ -16,7 +16,7 @@ def case(
     valid: bool = True,
     seed: int | None = None,
     strategy: CaseStrategy | PathSelector = "first",
-    overrides: PathSelector | None = None,
+    overrides: list[PathSelector] | None = None,
     allow_type_mismatch: bool = False,
 ) -> dict[str, Any]:
     """
@@ -70,6 +70,8 @@ def case(
 
     ctx = create_context(seed)
 
+    _overrides = normalize_overrides(model, overrides)
+
     if valid:
         if allow_type_mismatch:
             raise api_error(
@@ -85,7 +87,7 @@ def case(
                 strategy=strategy,
             )
 
-        return generate_valid(ctx, model)
+        return generate_valid(ctx, model, _overrides)
 
     if strategy == "all":
         raise api_error(
@@ -103,4 +105,4 @@ def case(
         count=1,
         allow_type_mismatch=allow_type_mismatch,
     )[0]
-    return generate_invalid(ctx, model, task)
+    return generate_invalid(ctx, model, task, _overrides)

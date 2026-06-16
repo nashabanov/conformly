@@ -1,10 +1,12 @@
+from typing import Any
+
 from .path import PathSelector, parse_strategy_input
 
 from conformly._internal.generator import GenerationContext
 from conformly._internal.parser import ModelSpec, parse_model
 from conformly._internal.planner import PlannedTask, plan_violation_task, select_paths
 from conformly._internal.resolver import ResolvedModel, resolve_model
-from conformly._internal.types import CasesStrategy
+from conformly._internal.types import CasesStrategy, FieldPath
 
 
 def ensure_model_or_spec(
@@ -17,6 +19,22 @@ def ensure_model_or_spec(
         return resolve_model(model_or_spec)
 
     return resolve_model(parse_model(model_or_spec))
+
+
+def normalize_overrides(
+    model: ResolvedModel, overrides: list[PathSelector] | None
+) -> dict[FieldPath, Any] | None:
+    if overrides is None:
+        return None
+
+    normalized_overrides: dict[FieldPath, Any] = {}
+
+    for v in overrides:
+        path = model.name_to_path.get(v.raw_path)
+        if path:
+            normalized_overrides[path] = v.override
+
+    return normalized_overrides
 
 
 def plan_tasks(

@@ -14,12 +14,22 @@ from conformly._internal.resolver.semantics import ListSemantic
 from conformly._internal.types import UNSET, FieldKind, FieldPath, ViolationType
 
 
-def generate_valid(ctx: GenerationContext, model: ResolvedModel) -> dict[str, Any]:
-    return {field.name: generate_field(ctx, field) for field in model.fields}
+def generate_valid(
+    ctx: GenerationContext,
+    model: ResolvedModel,
+    overrides: dict[FieldPath, Any] | None = None,
+) -> dict[str, Any]:
+    return {
+        field.name: generate_field(ctx, field, None, overrides)
+        for field in model.fields
+    }
 
 
 def generate_invalid(
-    ctx: GenerationContext, model: ResolvedModel, task: PlannedTask
+    ctx: GenerationContext,
+    model: ResolvedModel,
+    task: PlannedTask,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> dict[str, Any]:
     return _built_dict_with_violations(
         ctx=ctx,
@@ -27,6 +37,7 @@ def generate_invalid(
         target_path=task.path,
         depth=0,
         violations=task.allowed_violations,
+        overrides=overrides,
     )
 
 
@@ -36,6 +47,7 @@ def _built_dict_with_violations(
     target_path: FieldPath,
     depth: int,
     violations: tuple[ViolationType, ...],
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> dict[str, Any]:
     result: dict[str, Any] = {}
     target_index = target_path[depth]
@@ -54,7 +66,7 @@ def _built_dict_with_violations(
 
     for i in range(0, target_index):
         field = fields[i]
-        result[field.name] = generate_field(ctx, field)
+        result[field.name] = generate_field(ctx, field, None, overrides)
 
     if target_index < total_fields:
         field = fields[target_index]
@@ -67,7 +79,7 @@ def _built_dict_with_violations(
                     field=field.name,
                 )
 
-            value = generate_field(ctx, field, violations)
+            value = generate_field(ctx, field, violations, overrides)
             if value is not UNSET:
                 result[field.name] = value
 
@@ -85,6 +97,7 @@ def _built_dict_with_violations(
                 target_path=target_path,
                 depth=depth + 1,
                 violations=violations,
+                overrides=overrides,
             )
 
     else:
@@ -105,9 +118,12 @@ def generate_field(
     ctx: GenerationContext,
     field: ResolvedField,
     violations: tuple[ViolationType, ...] | None = None,
-    override: Any | None = None,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> Any:
     if violations is None:
+        if overrides and field.path in overrides:
+            return overrides[field.path]
+
         if field.nullable:
             return None
 
@@ -118,11 +134,8 @@ def generate_field(
 
             return field.default
 
-        if override is not None:
-            return override
-
         if field.nested_model and not isinstance(field.semantic, ListSemantic):
-            return generate_valid(ctx, field.nested_model)
+            return generate_valid(ctx, field.nested_model, overrides)
 
     violation = _choose_violation(violations)
 
