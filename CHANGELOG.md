@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.0] - Planned
 
 ### Added
+- **Overrides support** in `case()` and `cases()` to explicitly set field values
+    - Syntax example `path(T, lambda t: t.name).set("name")`
+    - Overrides has higher priotity than field default
 
 ### Changed
 - Now `path` uses proxy-object instead of ast parsing

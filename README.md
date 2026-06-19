@@ -171,7 +171,8 @@ case(
     valid: bool,
     seed: int | None = None,
     strategy: str | None = None,
-    allow_type_mismatch: bool = False
+    overrides: list[PathSelector] | None = None,
+    allow_type_mismatch: bool = False,
 ) -> dict
 
 cases(
@@ -180,6 +181,7 @@ cases(
     valid: bool,
     seed: int | None = None,
     strategy: str = "all",
+    overrides: list[PathSelector] | None = None,
     count: int | None = None,
     allow_type_mismatch: bool = False,
     allow_structural_violations: bool = False
@@ -206,6 +208,15 @@ path("profile.name").violate(V.PATTERN_MISMATCH)
 - `"all"` - (for `cases`) produce all minimal invalid variations for the model
 - `"first"` - violate the first constrained field (for `case`) or take the first N constrained fields (for `cases`)
 - `"all_violations"` - generate one invalid case per every available violations including constraints, structural and type violations (ignores count)
+- `"overrides"` - default values for fields in current generation
+> If a field is selected for invalidation → override is ignored
+> Otherwise → override is applied
+```python
+overrides=[
+    path(User, lambda u: u.full_name).set("Amogus"),
+    path(User, lambda u: u.email).set("amogus@example.com"),
+]
+```
 
 ## Error Handling
 

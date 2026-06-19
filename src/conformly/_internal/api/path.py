@@ -15,9 +15,11 @@ class PathSelector:
     override: Any | None = None
 
     def set(self, override: Any) -> "PathSelector":
+        """Override field value"""
         return PathSelector(self.raw_path, override=override)
 
     def violate(self, violation: ViolationType) -> "PathSelector":
+        """Force violation type"""
         return PathSelector(self.raw_path, forced_violation=violation)
 
 

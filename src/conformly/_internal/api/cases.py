@@ -72,6 +72,13 @@ def cases(
         count:
             Number of cases to generate (ignored if strategy="all").
 
+        overrides:
+            Optional list of `PathSelector` to set field values.
+            - Applied after generation
+            - Override generated values
+            - With valid=False: act as defaults (ignored if field is violated)
+
+
         allow_type_mismatch:
             If True fields could be type mismatched.
             Available only when valid=False.
