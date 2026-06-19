@@ -209,8 +209,8 @@ path("profile.name").violate(V.PATTERN_MISMATCH)
 - `"first"` - violate the first constrained field (for `case`) or take the first N constrained fields (for `cases`)
 - `"all_violations"` - generate one invalid case per every available violations including constraints, structural and type violations (ignores count)
 - `"overrides"` - default values for fields in current generation
-> If a field is selected for invalidation → override is ignored
-> Otherwise → override is applied
+> Note: If a field is selected for invalidation → override is ignored.
+> Otherwise → override is applied.
 ```python
 overrides=[
     path(User, lambda u: u.full_name).set("Amogus"),
