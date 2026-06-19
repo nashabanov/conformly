@@ -1,7 +1,7 @@
 from typing import Any
 
 from ._errors import api_error
-from ._utils import ensure_model_or_spec, plan_tasks
+from ._utils import ensure_model_or_spec, normalize_overrides, plan_tasks
 from .path import PathSelector, parse_strategy_input
 
 from conformly._internal.generator.context import create_context
@@ -19,6 +19,7 @@ def cases(
     count: int = 1,
     allow_type_mismatch: bool = False,
     allow_structural_violations: bool = False,
+    overrides: list[PathSelector] | None = None,
 ) -> list[dict[str, Any]]:
     """
     Generate multiple examples of a model.
@@ -71,6 +72,13 @@ def cases(
         count:
             Number of cases to generate (ignored if strategy="all").
 
+        overrides:
+            Optional list of `PathSelector` to set field values.
+            - Applied after generation
+            - Override generated values
+            - With valid=False: act as defaults (ignored if field is violated)
+
+
         allow_type_mismatch:
             If True fields could be type mismatched.
             Available only when valid=False.
@@ -93,6 +101,8 @@ def cases(
         )
 
     model = ensure_model_or_spec(model_or_spec)
+
+    _overrides = normalize_overrides(model, overrides)
 
     ctx = create_context(seed)
 
@@ -118,7 +128,7 @@ def cases(
                 strategy=strategy,
             )
 
-        return [generate_valid(ctx, model) for _ in range(count)]
+        return [generate_valid(ctx, model, _overrides) for _ in range(count)]
 
     field_strategy, forced_violation = parse_strategy_input(strategy)
 
@@ -166,4 +176,4 @@ def cases(
             allow_type_mismatch=allow_type_mismatch,
         )
 
-    return [generate_invalid(ctx, model, task) for task in tasks]
+    return [generate_invalid(ctx, model, task, _overrides) for task in tasks]

@@ -33,11 +33,15 @@ body:
     attributes:
       label: Implementation notes
 
-  - type: checkboxes
+  - type: textarea
     id: acceptance
     attributes:
       label: Acceptance criteria
-      options:
-        - label: Tests added
-        - label: README updated
-        - label: CHANGELOG updated
+      description: Define the conditions that must be met for this task to be considered complete.
+      value: |
+        - [ ] Tests added/updated
+        - [ ] Documentation (README/docs) updated
+        - [ ] CHANGELOG updated
+        - [ ] Code reviewed and merged
+    validations:
+      required: true
