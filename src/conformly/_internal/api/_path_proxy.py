@@ -4,7 +4,7 @@ from typing import Any, NoReturn
 from ._errors import api_error
 
 
-class ProxyPath:
+class PathProxy:
     __slots__ = ("_path",)
 
     _path: list[str]
@@ -12,8 +12,8 @@ class ProxyPath:
     def __init__(self, path: list[str] | None = None) -> None:
         self._path = path or []
 
-    def __getattr__(self, name: str) -> "ProxyPath":
-        return ProxyPath([*self._path, name])
+    def __getattr__(self, name: str) -> "PathProxy":
+        return PathProxy([*self._path, name])
 
     def __getitem__(self, _: Any) -> NoReturn:
         raise api_error(
@@ -35,7 +35,7 @@ class ProxyPath:
 
 
 def extract_path_from_proxy[T](expr: Callable[[T], Any]) -> str:
-    proxy = ProxyPath()
+    proxy = PathProxy()
 
     try:
         result = expr(proxy)  # type: ignore
@@ -45,7 +45,7 @@ def extract_path_from_proxy[T](expr: Callable[[T], Any]) -> str:
             code="path_invalid_signature",
         ) from e
 
-    if not isinstance(result, ProxyPath):
+    if not isinstance(result, PathProxy):
         raise api_error(
             "Lambda must return attribute access chain: lambda x: x.field.subfield",
             code="path_invalid_expression",

@@ -5,8 +5,8 @@ description = "Generate valid & invalid test data from your typed schemas"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = ["rstr>=3.2.2"]
-license = {text = "MIT"}
-authors = [{name = "Nikita Shabanov", email = "nik.shabanov2024@gmail.com"}]
+license = { text = "MIT" }
+authors = [{ name = "Nikita Shabanov", email = "nik.shabanov2024@gmail.com" }]
 keywords = ["testing", "fixtures", "test-data", "dataclasses", "validation"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -67,7 +67,7 @@ exclude = [
     "__pycache__",
     ".mypy_cache",
     ".ruff_cache",
-    ".pytest_cache"
+    ".pytest_cache",
 ]
 
 [tool.ruff.lint]
@@ -90,14 +90,9 @@ line-ending = "auto"
 
 
 [tool.pytest.ini_options]
-markers = [
-    "benchmark: performance benchmarks"
-]
+markers = ["benchmark: performance benchmarks"]
 
-addopts = [
-    "-v",
-    "--strict-markers",
-]
+addopts = ["-v", "--strict-markers"]
 
 [tool.pytest-benchmark]
 min_rounds = 5

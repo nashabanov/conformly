@@ -854,3 +854,61 @@ class TestDeterministicGeneration:
         user1 = case(User, valid=False, seed=42)
         user2 = case(User, valid=False, seed=42)
         assert user1 == user2
+
+
+class TestOverrides:
+    def test_case_overrides(self) -> None:
+        user = case(
+            User,
+            valid=True,
+            overrides=[
+                path(User, lambda u: u.full_name).set("Amogus"),
+                path(User, lambda u: u.email).set("amogus@example.com"),
+            ],
+        )
+        assert user["full_name"] == "Amogus"
+        assert user["email"] == "amogus@example.com"
+
+    def test_cases_overrides(self) -> None:
+        users = cases(
+            User,
+            valid=True,
+            overrides=[
+                path(User, lambda u: u.full_name).set("Amogus"),
+                path(User, lambda u: u.email).set("amogus@example.com"),
+            ],
+            count=4,
+        )
+
+        for u in users:
+            assert u["full_name"] == "Amogus"
+            assert u["email"] == "amogus@example.com"
+
+    def test_cases_overrides_respected_when_field_not_invalidated(self) -> None:
+        users = cases(
+            User,
+            valid=False,
+            overrides=[
+                path(User, lambda u: u.full_name).set("Amogus"),
+            ],
+            strategy="all",
+        )
+
+        assert users
+
+        seen_valid_override = False
+        seen_broken_override = False
+
+        for user in users:
+            if user["full_name"] == "Amogus":
+                seen_valid_override = True
+            else:
+                seen_broken_override = True
+
+        assert seen_valid_override, (
+            "Override should be applied when field is not invalidated"
+        )
+
+        assert seen_broken_override, (
+            "Override should be ignored when field is invalidated"
+        )

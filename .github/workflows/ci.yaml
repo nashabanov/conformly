@@ -2,10 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
-
+    branches: ["main"]
 
 jobs:
   quality:
@@ -48,7 +47,7 @@ jobs:
     needs: quality
     strategy:
       matrix:
-          include:
+        include:
           - python-version: "3.12"
             config: core
             extras: ""

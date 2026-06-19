@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Annotated
 
 from conformly import GreaterOrEqual, MinLength, case, cases
+from conformly._internal.api.path import path
 
 
 @dataclass
@@ -42,3 +43,10 @@ def test_nested_invalid_all_strategy():
     violated = {"name" if len(d["name"]) < 5 else "profile.age" for d in data}
 
     assert violated == {"name", "profile.age"}
+
+
+def test_nested_overrides() -> None:
+    user = case(
+        User, valid=True, overrides=[path(User, lambda u: u.profile.age).set(19)]
+    )
+    assert user["profile"]["age"] == 19
