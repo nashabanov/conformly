@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from conformly._internal.constraints import ConstraintType
+from conformly._internal.constraints.base import Constraint
+from conformly._internal.fields import SpecialString
 from conformly._internal.types import ViolationType
 
 
@@ -12,12 +13,15 @@ class ValueSource(Enum):
     OVERRIDDEN = "overridden"
 
 
+Rule = Constraint | type[SpecialString] | None
+
+
 @dataclass(frozen=True, slots=True)
 class Trace:
     target_path: str
     seed: int | None
 
-    constraint: ConstraintType | None
+    rule: Rule
     violation: ViolationType | None
 
     generated_value: Any
@@ -28,7 +32,7 @@ class Tracer:
     _target_path: str = ""
     _seed: int | None
 
-    _constraint: ConstraintType | None
+    _rule: Rule
     _violation: ViolationType | None
 
     _generated_value: Any
@@ -37,7 +41,7 @@ class Tracer:
     def __init__(self) -> None:
         self._target_path = ""
         self._seed = None
-        self._constraint = None
+        self._rule = None
         self._violation = None
         self._generated_value = None
         self._value_source = ValueSource.GENERATED
@@ -45,11 +49,11 @@ class Tracer:
     def record_plan(
         self,
         target_path: str,
-        constraint: ConstraintType | None = None,
+        rule: Rule = None,
         violation: ViolationType | None = None,
     ) -> None:
         self._target_path = target_path
-        self._constraint = constraint
+        self._rule = rule
         self._violation = violation
 
     def record_generation(
@@ -63,7 +67,7 @@ class Tracer:
         return Trace(
             target_path=self._target_path,
             seed=self._seed,
-            constraint=self._constraint,
+            rule=self._rule,
             violation=self._violation,
             generated_value=self._generated_value,
             value_source=self._value_source,

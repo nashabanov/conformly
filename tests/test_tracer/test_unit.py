@@ -1,3 +1,4 @@
+from conformly import Email
 from conformly._internal.tracer import Trace, Tracer, ValueSource
 from conformly._internal.types import ViolationType
 
@@ -7,7 +8,7 @@ def test_build_returns_trace_with_recorded_data() -> None:
 
     tracer.record_plan(
         target_path="profile.email",
-        constraint="pattern",
+        rule=Email,
         violation=ViolationType.PATTERN_MISMATCH,
     )
     tracer.record_generation(
@@ -21,7 +22,7 @@ def test_build_returns_trace_with_recorded_data() -> None:
     assert trace == Trace(
         target_path="profile.email",
         seed=123,
-        constraint="pattern",
+        rule=Email,
         violation=ViolationType.PATTERN_MISMATCH,
         generated_value="invalid-email",
         value_source=ValueSource.GENERATED,
@@ -43,7 +44,7 @@ def test_build_supports_optional_plan_fields() -> None:
     assert trace == Trace(
         target_path="name",
         seed=None,
-        constraint=None,
+        rule=None,
         violation=None,
         generated_value="John",
         value_source=ValueSource.MODEL_DEFAULT,
