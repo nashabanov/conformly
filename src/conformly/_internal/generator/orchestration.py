@@ -11,6 +11,7 @@ from conformly._internal.resolver import (
     create_minimal_semantic,
 )
 from conformly._internal.resolver.semantics import ListSemantic
+from conformly._internal.tracer import Tracer, ValueSource
 from conformly._internal.types import UNSET, FieldKind, FieldPath, ViolationType
 
 
@@ -30,7 +31,10 @@ def generate_invalid(
     model: ResolvedModel,
     task: PlannedTask,
     overrides: dict[FieldPath, Any] | None = None,
+    tracer: Tracer | None = None,
 ) -> dict[str, Any]:
+    if tracer:
+        tracer.set_seed(ctx.seed)
     return _built_dict_with_violations(
         ctx=ctx,
         model=model,
@@ -38,6 +42,7 @@ def generate_invalid(
         depth=0,
         violations=task.allowed_violations,
         overrides=overrides,
+        tracer=tracer,
     )
 
 
@@ -48,6 +53,7 @@ def _built_dict_with_violations(
     depth: int,
     violations: tuple[ViolationType, ...],
     overrides: dict[FieldPath, Any] | None = None,
+    tracer: Tracer | None = None,
 ) -> dict[str, Any]:
     result: dict[str, Any] = {}
     target_index = target_path[depth]
@@ -66,7 +72,7 @@ def _built_dict_with_violations(
 
     for i in range(0, target_index):
         field = fields[i]
-        result[field.name] = generate_field(ctx, field, None, overrides)
+        result[field.name] = generate_field(ctx, field, None, overrides, tracer)
 
     if target_index < total_fields:
         field = fields[target_index]
@@ -79,7 +85,7 @@ def _built_dict_with_violations(
                     field=field.name,
                 )
 
-            value = generate_field(ctx, field, violations, overrides)
+            value = generate_field(ctx, field, violations, overrides, tracer)
             if value is not UNSET:
                 result[field.name] = value
 
@@ -98,18 +104,19 @@ def _built_dict_with_violations(
                 depth=depth + 1,
                 violations=violations,
                 overrides=overrides,
+                tracer=tracer,
             )
 
     else:
         for i, field in enumerate(fields):
-            result[field.name] = generate_field(ctx, field)
+            result[field.name] = generate_field(ctx, field, tracer=tracer)
 
         key, value = _generate_extra_field_value(ctx)
         result[key] = value
 
     for i in range(target_index + 1, total_fields):
         field = fields[i]
-        result[field.name] = generate_field(ctx, field)
+        result[field.name] = generate_field(ctx, field, tracer=tracer)
 
     return result
 
@@ -119,37 +126,66 @@ def generate_field(
     field: ResolvedField,
     violations: tuple[ViolationType, ...] | None = None,
     overrides: dict[FieldPath, Any] | None = None,
+    tracer: Tracer | None = None,
 ) -> Any:
     if violations is None:
         if overrides and field.path in overrides:
-            return overrides[field.path]
+            value = overrides[field.path]
+            if tracer:
+                tracer.set_value_source(ValueSource.OVERRIDDEN)
+                tracer.set_generated_value(value)
+            return value
 
         if field.nullable:
             return None
 
         if field.default is not UNSET:
+            if tracer:
+                tracer.set_value_source(ValueSource.MODEL_DEFAULT)
+
             default = field.default
             if callable(default):
+                if tracer:
+                    tracer.set_generated_value(default())
                 return default()
 
-            return field.default
+            if tracer:
+                tracer.set_generated_value(default())
+
+            return default
 
         if field.nested_model and not isinstance(field.semantic, ListSemantic):
             return generate_valid(ctx, field.nested_model, overrides)
 
     violation = _choose_violation(violations)
 
+    if tracer:
+        tracer.set_violation(violation)
+        tracer.set_value_source(ValueSource.GENERATED)
+
     if violation == ViolationType.TYPE_MISMATCH:
         mismatch_kind = choose_mismatch_kind(field.semantic.kind)
         mismatch_semantic = create_minimal_semantic(mismatch_kind)
-        return get_generator(mismatch_kind).generate_value(ctx, mismatch_semantic, None)
+        value = get_generator(mismatch_kind).generate_value(
+            ctx, mismatch_semantic, None
+        )
+        if tracer:
+            tracer.set_generated_value(value)
+        return value
 
     if violation == ViolationType.MISSING_FIELD:
+        if tracer:
+            tracer.set_generated_value(UNSET)
         return UNSET
 
-    return get_generator(field.semantic.kind).generate_value(
+    value = get_generator(field.semantic.kind).generate_value(
         ctx, field.semantic, violation
     )
+
+    if tracer:
+        tracer.set_generated_value(value)
+
+    return value
 
 
 def _choose_violation(

@@ -38,6 +38,7 @@ No factories, no hardcoded fixtures, no drift when schema changes.
 - [User Cases](#use-cases)
 - [Nested Models](#nested-models)
 - [Collections](#collections)
+- [Experimental](#experimental)
 - [Development](#development)
 - [Changelog](#changelog)
 - [License](#license)
@@ -572,6 +573,31 @@ invalid = case(Inventory, valid=False, strategy=path("products").violate(V.TOO_S
 - No fine-grained control over which index is violated (random selection only)
 - Uniqueness for non-hashable elements (e.g., dicts) is best-effort (based on structural comparison fallback)
 - Dictionary keys are restricted to `str` and `Enum` types; complex objects as keys are not supported
+
+## Experimental
+
+> APIs in this section are experimental and may change in future minor releases.
+
+### Tracing
+
+`Tracer` captures metadata about case generation, making it easier to debug, reproduce, and report generated test cases.
+
+```python
+from conformly import case, Email
+from conformly.tracer import Tracer
+
+tracer = Tracer()
+
+payload = case(User, valid=True, tracer=tracer)
+
+trace = tracer.build()
+
+print(trace.target_path)
+print(trace.generated_value)
+print(trace.seed)
+```
+
+The trace includes generation metadata such as the target path, generated value, violation type, random seed, and value source.
 
 
 ## Development
