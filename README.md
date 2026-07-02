@@ -588,7 +588,7 @@ from conformly.tracer import Tracer
 
 tracer = Tracer()
 
-payload = case(User, valid=True, tracer=tracer)
+payload = case(User, valid=False, tracer=tracer)
 
 trace = tracer.build()
 
