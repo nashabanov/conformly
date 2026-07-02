@@ -7,6 +7,7 @@ from .path import PathSelector
 from conformly._internal.generator.context import create_context
 from conformly._internal.generator.orchestration import generate_invalid, generate_valid
 from conformly._internal.parser import ModelSpec
+from conformly._internal.tracer import Tracer
 from conformly._internal.types import CaseStrategy
 
 
@@ -18,6 +19,7 @@ def case(
     strategy: CaseStrategy | PathSelector = "first",
     overrides: list[PathSelector] | None = None,
     allow_type_mismatch: bool = False,
+    tracer: Tracer | None = None,
 ) -> dict[str, Any]:
     """
     Generate a single example of a model.
@@ -79,6 +81,12 @@ def case(
     _overrides = normalize_overrides(model, overrides)
 
     if valid:
+        if tracer:
+            raise api_error(
+                "Tracing is only available for invalid generation",
+                code="tracing_for_valid",
+            )
+
         if allow_type_mismatch:
             raise api_error(
                 "Type mismatch is only available for invalid generation",
@@ -103,6 +111,9 @@ def case(
             strategy=strategy,
         )
 
+    if tracer and isinstance(strategy, PathSelector):
+        tracer.set_target_path(strategy.raw_path)
+
     task = plan_tasks(
         model,
         ctx=ctx,
@@ -111,4 +122,4 @@ def case(
         count=1,
         allow_type_mismatch=allow_type_mismatch,
     )[0]
-    return generate_invalid(ctx, model, task, _overrides)
+    return generate_invalid(ctx, model, task, _overrides, tracer)

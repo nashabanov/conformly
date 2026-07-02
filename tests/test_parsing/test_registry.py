@@ -17,9 +17,12 @@ class DummyAdapter:
 def clean_registry():
     from conformly._internal.parser.adapters.registry import _adapters
 
+    original = list(_adapters)
+
     _adapters.clear()
     yield
-    _adapters.clear()
+
+    _adapters[:] = original
 
 
 def test_register_and_get_adapter():
