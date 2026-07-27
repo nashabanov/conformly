@@ -2,7 +2,14 @@ from collections.abc import Callable
 from typing import Any
 
 from ..extractors.constraints import split_collection_constraints
-from ..extractors.types import DictNode, ListNode, ScalarNode, TypeNode, normalize_type
+from ..extractors.types import (
+    DictNode,
+    ListNode,
+    ScalarNode,
+    TupleNode,
+    TypeNode,
+    normalize_type,
+)
 from ..models import ElementSpec, FieldSpec
 
 from conformly._internal.constraints import Constraint
@@ -37,6 +44,22 @@ def build_field_spec(
                 collection_type=node.origin,
                 collection_constraints=(*node.constraints, *collection_constraints),
                 item=resolve_element(node.item, name, element_constraints),
+                default=default,
+                nullable=node.nullable,
+            )
+
+        case TupleNode():
+            element_constraints, collection_constraints = split_collection_constraints(
+                external_constraints
+            )
+
+            return FieldSpec(
+                name=name,
+                collection_type=node.origin,
+                collection_constraints=(*node.constraints, *collection_constraints),
+                items=tuple(
+                    resolve_element(i, name, element_constraints) for i in node.items
+                ),
                 default=default,
                 nullable=node.nullable,
             )

@@ -23,6 +23,7 @@ class FieldSpec:
     collection_type: type | None = None
     collection_constraints: tuple[Constraint, ...] = ()
     item: ElementSpec | None = None
+    items: tuple[ElementSpec, ...] | None = None
     key: ElementSpec | None = None
     value: ElementSpec | None = None
     nullable: bool = False
