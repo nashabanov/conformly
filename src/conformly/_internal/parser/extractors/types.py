@@ -140,8 +140,8 @@ def _build_node(
         if len(args) == 2 and args[1] is Ellipsis:
             items.append(normalize_type(args[0], field_name))
         else:
-            for a in args:
-                item = normalize_type(args[a], field_name)
+            for i, _ in enumerate(args):
+                item = normalize_type(args[i], field_name)
                 items.append(item)
         return TupleNode(
             kind="tuple",
