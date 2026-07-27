@@ -51,6 +51,7 @@ _MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
     FieldKind.UUID: FieldKind.FLOAT,
     FieldKind.URL: FieldKind.FLOAT,
     FieldKind.HTTPURL: FieldKind.INTEGER,
+    FieldKind.TUPLE: FieldKind.INTEGER,
 }
 
 
