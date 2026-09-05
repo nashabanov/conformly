@@ -11,6 +11,7 @@ from conformly._internal.resolver.semantics import (
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
+    TupleSemantic,
     UUIDSemantic,
 )
 from conformly._internal.resolver.semantics.dict import DictSemantic
@@ -122,6 +123,9 @@ def _define_allowed_violation_types(
 
         case DictSemantic(kind=FieldKind.DICT):
             violations = _define_dict_violations(semantic)
+
+        case TupleSemantic(kind=FieldKind.TUPLE):
+            violations = _define_tuple_violations(semantic)
 
         case EnumSemantic(kind=FieldKind.ENUM):
             violations = [ViolationType.NOT_ALLOWED_VALUE]
@@ -252,3 +256,20 @@ def _safe_define(semantic: FieldSemantics) -> list[ViolationType]:
         return list(_define_allowed_violation_types(semantic, False, False))
     except PlanningError:
         return []
+
+
+def _define_tuple_violations(semantic: TupleSemantic) -> list[ViolationType]:
+    result: list[ViolationType] = []
+
+    if semantic.is_variadic and semantic.length_range is not None:
+        if semantic.length_range.min_length > 0:
+            result.append(ViolationType.TOO_LESS_ITEMS)
+        if semantic.length_range.max_length is not None:
+            result.append(ViolationType.TOO_MANY_ITEMS)
+
+    for item_semantic, _ in semantic.elements_semantics:
+        for violation in _safe_define(item_semantic):
+            if violation not in result:
+                result.append(violation)
+
+    return result

@@ -39,6 +39,7 @@ class FieldSpec:
         return (
             (self.element is not None and len(self.element.constraints) != 0)
             or (self.item is not None and len(self.item.constraints) != 0)
+            or any(len(item.constraints) != 0 for item in (self.items or ()))
             or (self.key is not None and len(self.key.constraints) != 0)
             or (self.value is not None and len(self.value.constraints) != 0)
             or len(self.collection_constraints) != 0
@@ -48,6 +49,7 @@ class FieldSpec:
         return (
             (self.element is not None and self.element.nested_model is not None)
             or (self.item is not None and self.item.nested_model is not None)
+            or any(item.nested_model is not None for item in (self.items or ()))
             or (self.key is not None and self.key.nested_model is not None)
             or (self.value is not None and self.value.nested_model is not None)
         )

@@ -69,13 +69,17 @@ def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
             return UUIDSemantic()
         case FieldKind.TUPLE:
             return TupleSemantic(
-                elements_semantics={
-                    StringSemantic(
-                        kind=FieldKind.STRING,
-                        length_range=LengthRange(0, None),
-                        pattern=None,
-                    ): None
-                },
+                elements_semantics=(
+                    (
+                        StringSemantic(
+                            kind=FieldKind.STRING,
+                            length_range=LengthRange(0, None),
+                            pattern=None,
+                        ),
+                        None,
+                    ),
+                ),
+                is_variadic=True,
             )
         case _:
             raise ValueError(f"Unsupported FieldKind: {kind}")

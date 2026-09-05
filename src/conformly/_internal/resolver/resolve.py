@@ -13,6 +13,7 @@ from .semantics import (
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
+    TupleSemantic,
     UUIDSemantic,
 )
 
@@ -74,7 +75,7 @@ def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
             nested_model=nested,
         )
 
-    if field_spec.collection_type in (list, set, frozenset, tuple) and field_spec.item:
+    if field_spec.collection_type in (list, set, frozenset) and field_spec.item:
         item_semantic, item_nested = resolve_element(field_spec.item, field_spec, path)
 
         list_semantic = create_list_semantics(
@@ -88,6 +89,24 @@ def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
             path=path,
             semantic=list_semantic,
             nested_model=item_nested,
+        )
+
+    if field_spec.collection_type is tuple and field_spec.items is not None:
+        elements: list[tuple[FieldSemantics, ResolvedModel | None]] = []
+        for i, item in enumerate(field_spec.items):
+            item_semantic, item_nested = resolve_element(item, field_spec, (*path, i))
+            elements.append((item_semantic, item_nested))
+
+        return ResolvedField(
+            field_spec=field_spec,
+            path=path,
+            semantic=create_tuple_semantic(
+                constraints=field_spec.collection_constraints,
+                elements_semantics=tuple(elements),
+                is_variadic=len(field_spec.items) == 1,
+                has_constraints=field_spec.has_constraints(),
+            ),
+            nested_model=None,
         )
 
     if field_spec.collection_type is dict and field_spec.value and field_spec.key:
@@ -540,6 +559,37 @@ def create_list_semantics(
         element_nested_model=element_nested_model,
         length_range=length_range,
         is_unique_items=is_unique_items,
+        has_constraints=has_constraints,
+    )
+
+
+def create_tuple_semantic(
+    constraints: tuple[Constraint, ...],
+    elements_semantics: tuple[tuple[FieldSemantics, ResolvedModel | None], ...],
+    is_variadic: bool,
+    has_constraints: bool,
+) -> TupleSemantic:
+    _, length_range, _ = _resolve_collection_constraints(constraints)
+
+    if not is_variadic:
+        fixed_length = len(elements_semantics)
+        min_length = length_range.min_length or fixed_length
+        max_length = (
+            length_range.max_length
+            if length_range.max_length is not None
+            else fixed_length
+        )
+        if min_length > fixed_length or max_length < fixed_length:
+            raise SchemaError(
+                "Tuple length constraints do not match fixed tuple length",
+                context={"code": "invalid_tuple_length_range", "length": fixed_length},
+            )
+        length_range = LengthRange(fixed_length, fixed_length)
+
+    return TupleSemantic(
+        elements_semantics=elements_semantics,
+        length_range=length_range,
+        is_variadic=is_variadic,
         has_constraints=has_constraints,
     )
 

@@ -12,9 +12,9 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True)
 class TupleSemantic(BaseSemantic):
-    elements_semantics: dict["FieldSemantics", "ResolvedModel | None"]
+    elements_semantics: tuple[tuple["FieldSemantics", "ResolvedModel | None"], ...]
     length_range: LengthRange | None = None
-    is_unique_items: bool = False
+    is_variadic: bool = False
 
     @property
     def kind(self) -> FieldKind:
