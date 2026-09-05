@@ -6,6 +6,7 @@ from .list import ListSemantic
 from .numeric import NumericSemantic
 from .object import ObjectSemantic
 from .string import StringSemantic
+from .tuple import TupleSemantic
 from .uuid import UUIDSemantic
 
 from conformly._internal.types import FieldKind, LengthRange, Range
@@ -66,5 +67,19 @@ def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
             )
         case FieldKind.UUID:
             return UUIDSemantic()
+        case FieldKind.TUPLE:
+            return TupleSemantic(
+                elements_semantics=(
+                    (
+                        StringSemantic(
+                            kind=FieldKind.STRING,
+                            length_range=LengthRange(0, None),
+                            pattern=None,
+                        ),
+                        None,
+                    ),
+                ),
+                is_variadic=True,
+            )
         case _:
             raise ValueError(f"Unsupported FieldKind: {kind}")

@@ -12,6 +12,7 @@ from .types import (
     ipvany,
     list,
     string,
+    tuple,
     url,
     uuid,
 )
@@ -30,6 +31,7 @@ _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
     FieldKind.IPvAny: ipvany,
     FieldKind.LIST: list,
     FieldKind.DICT: dictionaries,
+    FieldKind.TUPLE: tuple,
     FieldKind.UUID: uuid,
     FieldKind.URL: url,
     FieldKind.HTTPURL: url,
@@ -51,6 +53,7 @@ _MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
     FieldKind.UUID: FieldKind.FLOAT,
     FieldKind.URL: FieldKind.FLOAT,
     FieldKind.HTTPURL: FieldKind.INTEGER,
+    FieldKind.TUPLE: FieldKind.INTEGER,
 }
 
 

@@ -13,6 +13,7 @@ from conformly import (
     LessThan,
     MaxItems,
     MaxLength,
+    MinItems,
     MinLength,
     Pattern,
     UniqueItems,
@@ -35,6 +36,12 @@ class User:
     bio: Annotated[str, MaxLength(500)]
     role: Literal["admin", "guest", "user"]
     is_blocked: bool
+
+
+@dataclass
+class TupleModel:
+    fixed: tuple[Annotated[str, MinLength(2)], int]
+    variadic: Annotated[tuple[str, ...], MinItems(2)]
 
 
 @dataclass
@@ -526,6 +533,24 @@ class TestViolationTypeSyntax:
         assert len(invalid_users) == 1
         for user in invalid_users:
             assert len(user["username"]) < 3
+
+
+def test_generates_fixed_and_variadic_tuples() -> None:
+    result = case(TupleModel, valid=True, seed=1)
+
+    assert isinstance(result["fixed"], tuple)
+    assert len(result["fixed"]) == 2
+    assert len(result["fixed"][0]) >= 2
+    assert isinstance(result["fixed"][1], int)
+    assert isinstance(result["variadic"], tuple)
+    assert len(result["variadic"]) >= 2
+
+
+def test_generates_invalid_tuple_element() -> None:
+    result = case(TupleModel, valid=False, strategy="fixed::too_short", seed=1)
+
+    assert len(result["fixed"]) == 2
+    assert len(result["fixed"][0]) < 2
 
     def test_invalid_violation_type_raises(self):
         with pytest.raises(GenerationError):

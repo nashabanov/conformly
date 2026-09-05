@@ -38,6 +38,16 @@ class ListNode:
 
 
 @dataclass(frozen=True, slots=True)
+class TupleNode:
+    kind: Literal["tuple"]
+    runtime_type: Any
+    origin: type
+    nullable: bool
+    constraints: tuple[Constraint, ...]
+    items: tuple["TypeNode", ...]
+
+
+@dataclass(frozen=True, slots=True)
 class DictNode:
     kind: Literal["dict"]
     runtime_type: Any
@@ -47,7 +57,7 @@ class DictNode:
     value: "TypeNode"
 
 
-TypeNode = ScalarNode | ListNode | DictNode
+TypeNode = ScalarNode | ListNode | DictNode | TupleNode
 
 
 def normalize_type(field_type: Any, field_name: str) -> TypeNode:
@@ -114,6 +124,32 @@ def _build_node(
             nullable=nullable,
             constraints=(*constraints, *intrinsic),
             item=item,
+        )
+
+    if origin is tuple:
+        if not args:
+            raise SchemaError(
+                f"Field '{field_name}': '{origin.__name__}' must be parameterized",
+                context={
+                    "code": "empty_collection",
+                    "field_name": field_name,
+                    "field_type": repr(t),
+                },
+            )
+        items: list[TypeNode] = []
+        if len(args) == 2 and args[1] is Ellipsis:
+            items.append(normalize_type(args[0], field_name))
+        else:
+            for i, _ in enumerate(args):
+                item = normalize_type(args[i], field_name)
+                items.append(item)
+        return TupleNode(
+            kind="tuple",
+            runtime_type=origin,
+            origin=origin,
+            nullable=nullable,
+            constraints=constraints,
+            items=tuple(items),
         )
 
     if origin is dict:

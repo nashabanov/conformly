@@ -23,6 +23,7 @@ class FieldKind(Enum):
     # collections
     LIST = "list"
     DICT = "dict"
+    TUPLE = "tuple"
 
 
 class ViolationType(Enum):

@@ -528,6 +528,24 @@ case(Model)
 
 This ensures consistent output format (list) while preserving uniqueness guarantees.
 
+### Tuple support
+
+Fixed tuples and variadic tuples (`tuple[T, ...]`) are generated in their declared
+order. Element annotations and nested models are handled independently:
+
+```python
+@dataclass
+class Event:
+    point: tuple[float, float]
+    labels: tuple[str, ...]
+
+case(Event, valid=True)
+# -> {"point": (1.2, 3.4), "labels": ("abc", "def")}
+```
+
+For invalid generation, a constrained tuple element is selected and invalidated
+without changing the other elements.
+
 ### Dict support
 
 `conformly` supports generation of `dict[K, V]`, where K must be a hashable type (`str` or `Enum`) and `V` can be any supported type (primitives, nested models, etc.).

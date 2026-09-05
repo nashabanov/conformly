@@ -97,6 +97,14 @@ class DictFieldDataclass:
     ]
 
 
+@dataclass
+class TupleFieldDataclass:
+    text: str
+    emails: tuple[Email, ...]
+    model_tuple: tuple[str, DefaultDataclass]
+    annotated_tuple: Annotated[tuple[Annotated[str, MinLength(5)]], MinItems(4)]
+
+
 class BaseEnum(Enum):
     a = "a"
     b = "b"
@@ -477,6 +485,41 @@ def test_parse_dataclass_with_dict_fields() -> None:
     assert annotated_dicts.key.constraints == (MinLength(5),)
     assert annotated_dicts.value is not None
     assert annotated_dicts.value.constraints == (MaxLength(10),)
+
+
+def test_parse_dataclass_with_tuple_fields() -> None:
+    spec = parse(TupleFieldDataclass)
+
+    text = spec.fields[0]
+    emails = spec.fields[1]
+    models = spec.fields[2]
+    annotated_tuple = spec.fields[3]
+
+    assert text.collection_type is None
+
+    assert emails.collection_type is tuple
+    assert emails.items is not None
+    assert emails.items[0].field_type is Email
+    assert len(emails.items[0].constraints) == 0
+
+    assert models.collection_type is tuple
+    assert models.items is not None
+    assert len(models.items) == 2
+    assert models.items[0].field_type is str
+    assert models.items[1].field_type is DefaultDataclass
+    assert models.items[1].nested_model is not None
+    assert (
+        len(models.items[0].constraints)
+        == len(models.items[1].constraints)
+        == len(models.collection_constraints)
+        == 0
+    )
+
+    assert annotated_tuple.collection_type is tuple
+    assert annotated_tuple.collection_constraints == (MinItems(4),)
+    assert annotated_tuple.items is not None
+    assert len(annotated_tuple.items) == 1
+    assert annotated_tuple.items[0].constraints == (MinLength(5),)
 
 
 # ====== EDGE CASES ======

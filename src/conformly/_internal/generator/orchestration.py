@@ -10,7 +10,7 @@ from conformly._internal.resolver import (
     ResolvedModel,
     create_minimal_semantic,
 )
-from conformly._internal.resolver.semantics import ListSemantic
+from conformly._internal.resolver.semantics import ListSemantic, TupleSemantic
 from conformly._internal.tracer import Tracer, ValueSource
 from conformly._internal.types import UNSET, FieldKind, FieldPath, ViolationType
 
@@ -154,7 +154,9 @@ def generate_field(
 
             return default
 
-        if field.nested_model and not isinstance(field.semantic, ListSemantic):
+        if field.nested_model and not isinstance(
+            field.semantic, (ListSemantic, TupleSemantic)
+        ):
             return generate_valid(ctx, field.nested_model, overrides)
 
     violation = _choose_violation(violations)
