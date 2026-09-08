@@ -1,4 +1,5 @@
 import re
+from unittest.mock import Mock
 
 import pytest
 
@@ -12,7 +13,12 @@ from conformly._internal.generator.types.string import (
     generate_value,
 )
 from conformly._internal.resolver.semantics import StringSemantic
-from conformly._internal.types import FieldKind, LengthRange, ViolationType
+from conformly._internal.types import (
+    MAX_GENERATION_ATTEMPTS,
+    FieldKind,
+    LengthRange,
+    ViolationType,
+)
 from conformly.exceptions import GenerationError
 
 
@@ -336,7 +342,19 @@ def test_generate_random_string_invalid(ctx: GenerationContext) -> None:
     assert len(result) > 2
 
 
-@pytest.mark.xfail
-def test_pattern_with_catastrophic_backtracking_safe(ctx: GenerationContext) -> None:
-    with pytest.raises(GenerationError):
+def test_pattern_generation_exhausts_retries(
+    ctx: GenerationContext, monkeypatch
+) -> None:
+    candidate = Mock(return_value="a" * 11)
+    monkeypatch.setattr(ctx.rstr, "xeger", candidate)
+
+    with pytest.raises(GenerationError) as exc_info:
         _random_pattern_with_length(ctx, r"(a+)+", 0, 10)
+
+    assert exc_info.value.context["code"] == "pattern_generation_timeout"
+    assert candidate.call_count == MAX_GENERATION_ATTEMPTS
+
+
+def test_nested_quantifiers_accept_matching_candidate(ctx, monkeypatch) -> None:
+    monkeypatch.setattr(ctx.rstr, "xeger", Mock(return_value="aaa"))
+    assert _random_pattern_with_length(ctx, r"(a+)+", 0, 10) == "aaa"

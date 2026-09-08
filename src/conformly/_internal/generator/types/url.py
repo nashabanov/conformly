@@ -97,7 +97,6 @@ def _generate_invalid_url(
                 "",
                 "   ",
                 "not-a-url",
-                "http:/broken",
                 "http:// bad.com",
                 "://missing.scheme.com",
             ]
@@ -105,6 +104,9 @@ def _generate_invalid_url(
 
     if violation == ViolationType.WRONG_URL_SCHEME:
         scheme = ctx.rng.choice(INVALID_SCHEMES)
+        if semantic.kind == FieldKind.URL:
+            # Arbitrary alphabetic schemes are valid for unrestricted URLs.
+            scheme = "1" + scheme
         return f"{scheme}://example.com"
 
     return "not-a-url"

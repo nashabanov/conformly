@@ -142,7 +142,7 @@ def test_wrong_format_is_invalid(kind: FieldKind, ctx: GenerationContext):
 
 
 @pytest.mark.parametrize("kind", [FieldKind.URL, FieldKind.HTTPURL])
-def test_wrong_scheme_is_not_http(kind: FieldKind, ctx: GenerationContext):
+def test_wrong_scheme_is_invalid_for_url_kind(kind: FieldKind, ctx: GenerationContext):
     semantic = StringSemantic(
         kind=kind, length_range=LengthRange(0, None), pattern=None
     )
@@ -151,8 +151,11 @@ def test_wrong_scheme_is_not_http(kind: FieldKind, ctx: GenerationContext):
         url = generate_value(ctx, semantic, ViolationType.WRONG_URL_SCHEME)
         p = parse(url)
 
-        assert p.scheme and p.netloc
-        assert p.scheme not in {"http", "https"}
+        if kind == FieldKind.URL:
+            assert not p.scheme
+        else:
+            assert p.scheme and p.netloc
+            assert p.scheme not in {"http", "https"}
 
 
 def test_httpurl_wrong_scheme_never_http(ctx: GenerationContext):
@@ -166,15 +169,14 @@ def test_httpurl_wrong_scheme_never_http(ctx: GenerationContext):
         )
 
 
-def test_empty_or_root_path_exists(ctx: GenerationContext):
+@pytest.mark.parametrize(("path_length", "expected_path"), [(0, ""), (1, "/")])
+def test_empty_and_root_paths(path_length, expected_path, ctx, monkeypatch):
     semantic = StringSemantic(
         kind=FieldKind.HTTPURL, length_range=LengthRange(0, None), pattern=None
     )
+    monkeypatch.setattr(ctx.rng, "randint", lambda low, high: path_length)
 
-    found = False
-    for _ in range(80):
-        if parse(generate_value(ctx, semantic)).path in ("", "/"):
-            found = True
-            break
+    result = generate_value(ctx, semantic)
 
-    assert found
+    assert is_http(result)
+    assert parse(result).path == expected_path

@@ -1,5 +1,3 @@
-import contextlib
-
 import pytest
 
 pytest.importorskip("pydantic", reason="Pydantic adapter requires 'pydantic' package")
@@ -41,9 +39,9 @@ def test_pydantic_type_is_class(spec):
     assert isinstance(pydantic_type, type)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("spec", SPECIAL_STRINGS)
-def test_pydantic_adapter_valid_generation(spec):
+@pytest.mark.parametrize("seed", [0, 1, -1])
+def test_pydantic_adapter_valid_generation(spec, seed):
     pydantic_type = get_pydantic_type(spec.pydantic_name)
     if pydantic_type is None:
         pytest.skip(f"{spec.pydantic_name} not available")
@@ -51,7 +49,7 @@ def test_pydantic_adapter_valid_generation(spec):
     class TestModel(BaseModel):
         field: pydantic_type  # type: ignore
 
-    result = case(TestModel, valid=True)
+    result = case(TestModel, valid=True, seed=seed)
 
     assert "field" in result
     assert result["field"] is not None
@@ -85,7 +83,8 @@ def test_pydantic_adapter_valid_generation(spec):
 
 
 @pytest.mark.parametrize("spec", SPECIAL_STRINGS)
-def test_pydantic_adapter_invalid_generation(spec):
+@pytest.mark.parametrize("seed", range(10))
+def test_pydantic_adapter_invalid_generation(spec, seed):
     pydantic_type = get_pydantic_type(spec.pydantic_name)
     if pydantic_type is None:
         pytest.skip(f"{spec.pydantic_name} not available")
@@ -93,7 +92,7 @@ def test_pydantic_adapter_invalid_generation(spec):
     class TestModel(BaseModel):
         field: pydantic_type  # type: ignore
 
-    result = case(TestModel, valid=False)
+    result = case(TestModel, valid=False, seed=seed)
 
-    with contextlib.suppress(ValidationError):
+    with pytest.raises(ValidationError):
         TestModel(**result)

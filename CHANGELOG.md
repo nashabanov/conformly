@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.3] - 2026.09.08
 
 ### Fixed
+- Restore collection of 20 hidden integration tests and guard against nested tests.
+- Replace a flaky random URL path check with explicit empty-path and root-path cases.
+- Isolate indexed planner test models so tests do not depend on execution order.
+- Audit stale expected failures and ineffective validation checks; make unexpected
+  passes fail checks and document collection coverage gaps tracked in #97 and #98.
+- Generate invalid URL schemes rejected by unrestricted URL validators and exclude
+  a malformed HTTP URL that Pydantic normalizes into a valid value.
 - Reproducible generation for zero and negative integer seeds, including UUID values.
 - Preserve unrelated overrides before and after invalid targets and in nested models,
   including missing-field and extra-field cases.

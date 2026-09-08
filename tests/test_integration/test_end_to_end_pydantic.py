@@ -4,7 +4,7 @@ pytest.importorskip("pydantic", reason="Pydantic adapter requires 'pydantic' pac
 
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ValidationError
 
 from conformly import case
 
@@ -57,33 +57,20 @@ class EmailModel(BaseModel):
     email: EmailStr
 
 
-@pytest.mark.xfail
 def test_emailstr_valid() -> None:
-    result = case(EmailModel, valid=True)
+    result = case(EmailModel, valid=True, seed=0)
 
     assert "email" in result
     assert isinstance(result["email"], str)
 
-    try:
-        from email_validator import validate_email
-
-        validate_email(result["email"], check_deliverability=False)
-
-    except ImportError:
-        pass
+    assert EmailModel.model_validate(result).email == result["email"]
 
 
 def test_emailstr_invalid() -> None:
-    result = case(EmailModel, valid=False)
+    result = case(EmailModel, valid=False, seed=0)
 
     assert "email" in result
     assert isinstance(result["email"], str)
 
-    try:
-        from email_validator import EmailSyntaxError, validate_email
-
-        with pytest.raises(EmailSyntaxError):
-            validate_email(result["email"], check_deliverability=False)
-
-    except ImportError:
-        pass
+    with pytest.raises(ValidationError):
+        EmailModel.model_validate(result)

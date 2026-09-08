@@ -718,3 +718,6 @@ Contributions welcome!
 - Add tests for new functionality
 - Run `uv run -m pytest` and `uv run -m ruff check .`
 - Submit a pull request
+
+Test collection and assertion audit findings, including deferred collection checks,
+are documented in [the test audit](docs/test-audit.md).

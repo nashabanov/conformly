@@ -552,169 +552,181 @@ def test_generates_invalid_tuple_element() -> None:
     assert len(result["fixed"]) == 2
     assert len(result["fixed"][0]) < 2
 
-    def test_invalid_violation_type_raises(self):
-        with pytest.raises(GenerationError):
-            case(User, valid=False, strategy="username::invalid_violation")
 
-    def test_incompatible_violation_type_raises(self):
-        with pytest.raises(PlanningError):
-            case(User, valid=False, strategy="username::below_min")
+def test_invalid_violation_type_raises() -> None:
+    with pytest.raises(GenerationError):
+        case(User, valid=False, strategy="username::invalid_violation")
 
-    def test_incompatible_violation_on_enum(self):
-        with pytest.raises(PlanningError):
-            case(User, valid=False, strategy="role::below_min")
 
-    def test_violation_with_allow_type_mismatch(self):
-        invalid = case(
+def test_incompatible_violation_type_raises() -> None:
+    with pytest.raises(PlanningError):
+        case(User, valid=False, strategy="username::below_min")
+
+
+def test_incompatible_violation_on_enum() -> None:
+    with pytest.raises(PlanningError):
+        case(User, valid=False, strategy="role::below_min")
+
+
+def test_violation_with_allow_type_mismatch() -> None:
+    invalid = case(
+        User,
+        valid=False,
+        strategy="is_blocked::type_mismatch",
+        allow_type_mismatch=True,
+    )
+    assert not isinstance(invalid["is_blocked"], (bool,))
+
+
+def test_violation_with_structural_violations() -> None:
+    invalid = case(
+        User,
+        valid=False,
+        strategy="bio::missing_field",
+    )
+    assert "bio" not in invalid
+
+
+def test_deterministic_violation_selection() -> None:
+    results = []
+    for _ in range(10):
+        invalid = case(User, valid=False, strategy="username::too_short")
+        results.append(len(invalid["username"]))
+
+    assert all(r < 3 for r in results)
+
+
+def test_other_fields_remain_valid() -> None:
+    invalid = case(User, valid=False, strategy="email::pattern_mismatch")
+
+    assert not re.match(
+        r"^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", invalid["email"]
+    )
+
+    assert len(invalid["username"]) >= 3
+    assert 2 <= len(invalid["full_name"]) <= 100
+    assert invalid["role"] in ["admin", "guest", "user"]
+    assert len(invalid["bio"]) <= 500
+    assert isinstance(invalid["is_blocked"], bool)
+
+
+def test_case_vs_cases_with_specific_violation() -> None:
+    case_result = case(User, valid=False, strategy="role::not_allowed_value")
+    cases_result = cases(User, valid=False, strategy="role::not_allowed_value", count=1)
+
+    assert case_result["role"] not in ["admin", "guest", "user"]
+    assert cases_result[0]["role"] not in ["admin", "guest", "user"]
+
+
+def test_valid_flag_ignores_strategy() -> None:
+    with pytest.raises(GenerationError):
+        case(User, valid=True, strategy="username::too_short")
+
+
+def test_field_not_found_with_violation() -> None:
+    with pytest.raises(PlanningError) as exc_info:
+        case(User, valid=False, strategy="nonexistent::below_min")
+
+    assert exc_info.value.context["code"] == "field_not_found"
+
+
+def test_available_violations_in_error_message() -> None:
+    with pytest.raises(PlanningError) as exc_info:
+        case(User, valid=False, strategy="username::below_min")
+
+    assert exc_info.value.context["code"] == "invalid_forced_violation"
+    assert "too_short" in exc_info.value.context["allowed"]
+
+
+def test_auto_enable_structural_for_missing_field() -> None:
+    invalid = case(
+        User,
+        valid=False,
+        strategy="bio::missing_field",
+    )
+    assert "bio" not in invalid
+
+
+def test_all_violations_count_with_new_syntax() -> None:
+    invalid_users = cases(
+        User,
+        valid=False,
+        strategy="all_violations",
+        allow_type_mismatch=True,
+        allow_structural_violations=True,
+    )
+    assert len(invalid_users) >= 8
+
+
+def test_reproducibility_with_specific_violation() -> None:
+    invalid1 = case(User, valid=False, strategy="username::too_short", seed=0)
+    invalid2 = case(User, valid=False, strategy="username::too_short", seed=0)
+
+    assert invalid1 == invalid2
+    assert len(invalid1["username"]) < 3
+
+
+def test_path_selector_specific_violation() -> None:
+    invalid = case(User, valid=False, strategy=path("username").violate(V.TOO_SHORT))
+    assert len(invalid["username"]) < 3
+    assert len(invalid["email"]) > 0
+
+
+def test_path_selector_structural_violation() -> None:
+    invalid = case(
+        User,
+        valid=False,
+        strategy=path("bio").violate(V.MISSING_FIELD),
+    )
+
+    assert "bio" not in invalid
+
+
+def test_path_selector_structural_requires_violation() -> None:
+    with pytest.raises(GenerationError):
+        cases(
             User,
             valid=False,
-            strategy="is_blocked::type_mismatch",
-            allow_type_mismatch=True,
-        )
-        assert not isinstance(invalid["is_blocked"], (bool,))
-
-    def test_violation_with_structural_violations(self):
-        invalid = case(
-            User,
-            valid=False,
-            strategy="bio::missing_field",
-        )
-        assert "bio" not in invalid
-
-    def test_deterministic_violation_selection(self):
-        results = []
-        for _ in range(10):
-            invalid = case(User, valid=False, strategy="username::too_short")
-            results.append(len(invalid["username"]))
-
-        assert all(r < 3 for r in results)
-
-    def test_other_fields_remain_valid(self):
-        invalid = case(User, valid=False, strategy="email::pattern_mismatch")
-
-        assert not re.match(
-            r"^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", invalid["email"]
-        )
-
-        assert len(invalid["username"]) >= 3
-        assert 2 <= len(invalid["full_name"]) <= 100
-        assert invalid["role"] in ["admin", "guest", "user"]
-        assert len(invalid["bio"]) <= 500
-        assert isinstance(invalid["is_blocked"], bool)
-
-    def test_case_vs_cases_with_specific_violation(self):
-        case_result = case(User, valid=False, strategy="role::not_allowed_value")
-        cases_result = cases(
-            User, valid=False, strategy="role::not_allowed_value", count=1
-        )
-
-        assert case_result["role"] not in ["admin", "guest", "user"]
-        assert cases_result[0]["role"] not in ["admin", "guest", "user"]
-
-    def test_valid_flag_ignores_strategy(self):
-        with pytest.raises(GenerationError):
-            case(User, valid=True, strategy="username::too_short")
-
-    def test_field_not_found_with_violation(self):
-        with pytest.raises(PlanningError) as exc_info:
-            case(User, valid=False, strategy="nonexistent::below_min")
-
-        assert "not found" in str(exc_info.value).lower() or "Field" in str(
-            exc_info.value
-        )
-
-    def test_available_violations_in_error_message(self):
-        with pytest.raises(PlanningError) as exc_info:
-            case(User, valid=False, strategy="username::below_min")
-
-        error_msg = str(exc_info.value)
-        assert (
-            "too_short" in error_msg
-            or "too_long" in error_msg
-            or "pattern_mismatch" in error_msg
-        )
-
-    def test_auto_enable_structural_for_missing_field(self):
-        invalid = case(
-            User,
-            valid=False,
-            strategy="bio::missing_field",
-        )
-        assert "bio" not in invalid
-
-    def test_all_violations_count_with_new_syntax(self):
-        invalid_users = cases(
-            User,
-            valid=False,
-            strategy="all_violations",
-            allow_type_mismatch=True,
+            strategy=path("bio"),
             allow_structural_violations=True,
         )
-        assert len(invalid_users) >= 8
 
-    def test_reproducibility_with_specific_violation(self):
-        invalid1 = case(User, valid=False, strategy="username::too_short")
-        invalid2 = case(User, valid=False, strategy="username::too_short")
 
-        assert len(invalid1["username"]) < 3
-        assert len(invalid2["username"]) < 3
-
-    def test_path_selector_specific_violation(self) -> None:
-        invalid = case(
-            User, valid=False, strategy=path("username").violate(V.TOO_SHORT)
-        )
-        assert len(invalid["username"]) < 3
-        assert len(invalid["email"]) > 0
-
-    def test_path_selector_structural_violation(self) -> None:
-        invalid = case(
+def test_path_selector_incompatible_violation() -> None:
+    with pytest.raises(PlanningError):
+        case(
             User,
             valid=False,
-            strategy=path("bio").violate(V.MISSING_FIELD),
+            strategy=path("username").violate(V.BELOW_MIN),
         )
 
-        assert "bio" not in invalid
 
-    def test_path_selector_structural_requires_violation(self):
-        with pytest.raises(GenerationError):
-            cases(
-                User,
-                valid=False,
-                strategy=path("bio"),
-                allow_structural_violations=True,
-            )
-
-    def test_path_selector_incompatible_violation(self):
-        with pytest.raises(PlanningError):
-            case(
-                User,
-                valid=False,
-                strategy=path("username").violate(V.BELOW_MIN),
-            )
-
-    def test_path_selector_field_not_found(self):
-        with pytest.raises(PlanningError):
-            case(
-                User,
-                valid=False,
-                strategy=path("nonexistent").violate(V.TOO_SHORT),
-            )
-
-    def test_path_selector_equals_string_syntax(self):
-        invalid1 = case(
+def test_path_selector_field_not_found() -> None:
+    with pytest.raises(PlanningError):
+        case(
             User,
             valid=False,
-            strategy="username::too_short",
+            strategy=path("nonexistent").violate(V.TOO_SHORT),
         )
 
-        invalid2 = case(
-            User,
-            valid=False,
-            strategy=path("username").violate(V.TOO_SHORT),
-        )
 
-        assert len(invalid1["username"]) < 3
-        assert len(invalid2["username"]) < 3
+def test_path_selector_equals_string_syntax() -> None:
+    invalid1 = case(
+        User,
+        valid=False,
+        strategy="username::too_short",
+        seed=0,
+    )
+
+    invalid2 = case(
+        User,
+        valid=False,
+        strategy=path("username").violate(V.TOO_SHORT),
+        seed=0,
+    )
+
+    assert invalid1 == invalid2
+    assert len(invalid1["username"]) < 3
 
 
 class TestApiErrors:
@@ -806,6 +818,7 @@ class TestListGeneration:
             assert isinstance(code, str)
             assert len(code) >= 5
 
+    # Collision-driven structural uniqueness coverage belongs to issue #97.
     def test_items_are_unique_and_valid(self):
         result = case(Order, valid=True)
 
@@ -823,12 +836,13 @@ class TestListGeneration:
         assert len(items) == len({repr(i) for i in items})
 
     def test_items_duplicate_violation(self):
-        result = case(Order, valid=False)
+        # Exact-length duplicate handling is tracked in issue #98.
+        result = case(Order, valid=False, strategy="items::duplicate", seed=0)
 
         items = result["items"]
 
-        if len(items) > 1:
-            assert len(items) != len({repr(i) for i in items})
+        assert len(items) >= 2
+        assert any(item in items[:i] for i, item in enumerate(items))
 
     def test_codes_length_violation(self):
         result = case(Order, valid=False, strategy="codes")
@@ -847,10 +861,9 @@ class TestUUIDGeneration:
         assert parsed.version == 4, f"Expected v4 UUID, got version {parsed.version}"
         assert result["id"] == str(parsed)
 
-    @pytest.mark.xfail
     def test_invalid_uuid_fails_strict_parsing(self):
-        result = case(UserUUID, valid=False)
-        with pytest.raises(GenerationError):
+        result = case(UserUUID, valid=False, seed=0)
+        with pytest.raises(ValueError):
             uuid.UUID(result["id"])
 
     def test_valid_false_respects_violation_type(self):

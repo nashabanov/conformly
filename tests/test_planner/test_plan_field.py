@@ -716,7 +716,12 @@ profile_field = ResolvedField(
     nested_model=first_nested,
 )
 
-base_model = ResolvedModel("User", (name_field, age_field, profile_field))
+
+@pytest.fixture
+def base_model() -> ResolvedModel:
+    model = ResolvedModel("User", (name_field, age_field, profile_field))
+    _build_indexes(model)
+    return model
 
 
 @pytest.mark.parametrize(
@@ -728,8 +733,9 @@ base_model = ResolvedModel("User", (name_field, age_field, profile_field))
         ((2, 0, 0), PlannedTask((2, 0, 0), ())),
     ],
 )
-def test_plan_violation_task_valid(path: FieldPath, expected: PlannedTask) -> None:
-    _build_indexes(base_model)
+def test_plan_violation_task_valid(
+    base_model: ResolvedModel, path: FieldPath, expected: PlannedTask
+) -> None:
     assert plan_violation_task(base_model, path) == expected
 
 
@@ -762,9 +768,8 @@ def test_plan_violation_task_valid(path: FieldPath, expected: PlannedTask) -> No
     ],
 )
 def test_plan_violation_task_allow_type_mismatch(
-    path: FieldPath, expected: PlannedTask
+    base_model: ResolvedModel, path: FieldPath, expected: PlannedTask
 ) -> None:
-    _build_indexes(base_model)
     assert plan_violation_task(base_model, path, True) == expected
 
 
@@ -797,9 +802,8 @@ def test_plan_violation_task_allow_type_mismatch(
     ],
 )
 def test_plan_violation_task_allow_structural_violations(
-    path: FieldPath, expected: PlannedTask
+    base_model: ResolvedModel, path: FieldPath, expected: PlannedTask
 ) -> None:
-    _build_indexes(base_model)
     assert plan_violation_task(base_model, path, False, True) == expected
 
 
@@ -807,26 +811,33 @@ def test_plan_violation_task_allow_structural_violations(
     "path",
     [(3,), (2, 2), (2, 0, 2)],
 )
-def test_plan_violation_task_valid_extra_field(path: FieldPath) -> None:
-    _build_indexes(base_model)
+def test_plan_violation_task_valid_extra_field(
+    base_model: ResolvedModel, path: FieldPath
+) -> None:
     assert plan_violation_task(base_model, path, False, True) == PlannedTask(
         path, (ViolationType.EXTRA_FIELD,)
     )
 
 
 @pytest.mark.parametrize("path", [(3,), (0, 1), (2, 2), (2, 1, 4)])
-def test_plan_violation_task_invalid(path: FieldPath) -> None:
+def test_plan_violation_task_invalid(
+    base_model: ResolvedModel, path: FieldPath
+) -> None:
     with pytest.raises((IndexError, ValueError, ResolutionError, PlanningError)):
         plan_violation_task(base_model, path)
 
 
-def test_plan_violation_task_raises_for_type_mismatch_nested_models() -> None:
+def test_plan_violation_task_raises_for_type_mismatch_nested_models(
+    base_model: ResolvedModel,
+) -> None:
     with pytest.raises(PlanningError):
         plan_violation_task(base_model, (2,), True)
 
 
 @pytest.mark.parametrize("path", [(5,), (2, 5), (2, 0, 4)])
-def test_plan_violation_task_invalid_extra_field(path: FieldPath) -> None:
+def test_plan_violation_task_invalid_extra_field(
+    base_model: ResolvedModel, path: FieldPath
+) -> None:
     with pytest.raises((IndexError, ValueError, ResolutionError)):
         plan_violation_task(base_model, path, False, True)
 
@@ -834,15 +845,17 @@ def test_plan_violation_task_invalid_extra_field(path: FieldPath) -> None:
 # ===== TESTS for _is_extra_field() =====
 
 
-def test_is_extra_field_no_path() -> None:
+def test_is_extra_field_no_path(base_model: ResolvedModel) -> None:
     assert not _is_extra_field(base_model, ())
 
 
-def test_is_extra_field_path_longer_than_extra() -> None:
+def test_is_extra_field_path_longer_than_extra(base_model: ResolvedModel) -> None:
     assert not _is_extra_field(base_model, (4,))
 
 
-def test_is_extra_field_path_longer_than_extra_nester() -> None:
+def test_is_extra_field_path_longer_than_extra_nester(
+    base_model: ResolvedModel,
+) -> None:
     assert not _is_extra_field(base_model, (2, 5))
 
 
@@ -857,9 +870,7 @@ def test_all_violation_types_in_priority() -> None:
     assert not missing, f"ViolationType(s) not in _VIOLATION_PRIORITY: {missing}"
 
 
-def test_first_violation_is_highest_priority() -> None:
-    _build_indexes(base_model)
-
+def test_first_violation_is_highest_priority(base_model: ResolvedModel) -> None:
     test_cases = [
         ((0,), True, True, ViolationType.MISSING_FIELD),
         ((1,), True, True, ViolationType.MISSING_FIELD),
@@ -878,9 +889,7 @@ def test_first_violation_is_highest_priority() -> None:
         )
 
 
-def test_violations_sorted_by_priority() -> None:
-    _build_indexes(base_model)
-
+def test_violations_sorted_by_priority(base_model: ResolvedModel) -> None:
     task = plan_violation_task(
         base_model,
         path=(1,),
