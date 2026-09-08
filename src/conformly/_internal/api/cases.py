@@ -38,9 +38,11 @@ def cases(
             If False, generate invalid ones.
 
         seed:
-            Random seed for reproducible generation.
+            Random seed for reproducible internal generation.
             - `None` (default): Use system randomness (different output each run).
-            - `int`: Initialize RNG with fixed seed (same output for same seed).
+            - `int`: Initialize RNG with a fixed seed, including 0 and negatives.
+            User-provided default factories must be deterministic for identical
+            payloads; their randomness is not controlled by this seed.
 
         strategy:
             Define how fields are selected for violation when valid=False.
@@ -74,8 +76,7 @@ def cases(
 
         overrides:
             Optional list of `PathSelector` to set field values.
-            - Applied after generation
-            - Override generated values
+            - Used instead of generated values and model defaults
             - With valid=False: act as defaults (ignored if field is violated)
 
 

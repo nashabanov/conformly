@@ -12,5 +12,5 @@ class GenerationContext:
 
 
 def create_context(seed: int | None = None) -> GenerationContext:
-    rng = random.Random(seed) if seed else random.Random()
+    rng = random.Random(seed)
     return GenerationContext(rng=rng, rstr=Rstr(rng), seed=seed)

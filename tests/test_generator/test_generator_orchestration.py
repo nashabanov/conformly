@@ -307,3 +307,78 @@ def test_generate_valid_nested(ctx: GenerationContext) -> None:
     assert nested_result["address"] is None
     assert isinstance(nested_result["age"], int)
     assert nested_result["age"] <= 120 and nested_result["age"] >= 18
+
+
+@pytest.mark.parametrize("default", [42, "default", (1, 2), [1, 2]])
+def test_traced_default_is_observed_without_calling_it(ctx, default):
+    from dataclasses import replace
+
+    from conformly._internal.tracer import Tracer, ValueSource
+
+    field = replace(
+        default_string_field,
+        field_spec=replace(default_string_field.field_spec, default=default),
+    )
+    tracer = Tracer()
+    assert generate_field(ctx, field, tracer=tracer) == default
+    assert tracer.build().generated_value == default
+    assert tracer.build().value_source == ValueSource.MODEL_DEFAULT
+
+
+def test_traced_factory_is_called_once(ctx):
+    from dataclasses import replace
+
+    from conformly._internal.tracer import Tracer
+
+    calls = []
+
+    def factory():
+        calls.append(1)
+        return [len(calls)]
+
+    field = replace(
+        default_string_field,
+        field_spec=replace(default_string_field.field_spec, default=factory),
+    )
+    tracer = Tracer()
+    value = generate_field(ctx, field, tracer=tracer)
+    assert calls == [1]
+    assert value == [1]
+    assert tracer.build().generated_value is value
+
+
+@pytest.mark.parametrize("target", [(0,), (1, 1), (2,), (1, 2)])
+def test_tracing_preserves_rng_state_and_target(target):
+    from conformly._internal.generator.context import create_context
+    from conformly._internal.tracer import Tracer, ValueSource
+
+    model = ResolvedModel(name="User", fields=(simple_string_field, nested_field))
+    violation = (
+        ViolationType.EXTRA_FIELD
+        if target[-1] == 2
+        else ViolationType.TOO_LONG
+        if target == (0,)
+        else ViolationType.BELOW_MIN
+    )
+    task = PlannedTask(target, (violation,))
+    plain_ctx = create_context(0)
+    traced_ctx = create_context(0)
+    tracer = Tracer()
+    plain = generate_invalid(plain_ctx, model, task)
+    traced = generate_invalid(traced_ctx, model, task, tracer=tracer)
+    assert plain == traced
+    assert plain_ctx.rng.getstate() == traced_ctx.rng.getstate()
+    trace = tracer.build()
+    expected_path = {
+        (0,): "name",
+        (1, 1): "profile.age",
+        (2,): "extra",
+        (1, 2): "profile.extra",
+    }[target]
+    assert trace.target_path == expected_path
+    value = traced
+    for name in expected_path.split("."):
+        value = value[name]
+    assert trace.generated_value == value
+    assert trace.violation == violation
+    assert trace.value_source == ValueSource.GENERATED

@@ -219,6 +219,12 @@ overrides=[
 ]
 ```
 
+Integer seeds, including `0` and negative values, make `case()` and `cases()`
+reproducible for internal generation, including nested models and UUID values.
+The same model, options, and seed produce the same payloads. User-provided default
+factories run once per generated field and must themselves be deterministic;
+the seed does not control their randomness or external state.
+
 ## Error Handling
 
 All `conformly` errors inherit from `ConformlyError`, providing consistent interface for debugging and programmatic handling.
@@ -615,7 +621,15 @@ print(trace.generated_value)
 print(trace.seed)
 ```
 
-The trace includes generation metadata such as the target path, generated value, violation type, random seed, and value source.
+Tracing is available for `case(..., valid=False)`. The trace describes the selected
+target: its dotted path, violation, generated value, seed, and value source. This
+applies to DSL and string paths as well as `"first"` and `"random"` selection.
+Unrelated fields, defaults, and overrides do not overwrite target metadata. For
+`MISSING_FIELD`, the value is the internal `UNSET` sentinel because the field is
+absent from the payload.
+
+Enabling tracing leaves payloads, internal RNG consumption, and default factory
+call counts unchanged. A reused tracer describes the latest completed generation.
 
 
 ## Development

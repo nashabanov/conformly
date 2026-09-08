@@ -54,6 +54,7 @@ def _built_dict_with_violations(
     violations: tuple[ViolationType, ...],
     overrides: dict[FieldPath, Any] | None = None,
     tracer: Tracer | None = None,
+    path_names: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     result: dict[str, Any] = {}
     target_index = target_path[depth]
@@ -72,7 +73,7 @@ def _built_dict_with_violations(
 
     for i in range(0, target_index):
         field = fields[i]
-        result[field.name] = generate_field(ctx, field, None, overrides, tracer)
+        result[field.name] = generate_field(ctx, field, None, overrides)
 
     if target_index < total_fields:
         field = fields[target_index]
@@ -85,6 +86,8 @@ def _built_dict_with_violations(
                     field=field.name,
                 )
 
+            if tracer:
+                tracer.set_target_path(".".join((*path_names, field.name)))
             value = generate_field(ctx, field, violations, overrides, tracer)
             if value is not UNSET:
                 result[field.name] = value
@@ -105,18 +108,25 @@ def _built_dict_with_violations(
                 violations=violations,
                 overrides=overrides,
                 tracer=tracer,
+                path_names=(*path_names, field.name),
             )
 
     else:
-        for i, field in enumerate(fields):
-            result[field.name] = generate_field(ctx, field, tracer=tracer)
-
         key, value = _generate_extra_field_value(ctx)
+        suffix = 1
+        while key in result:
+            key = f"extra_{suffix}"
+            suffix += 1
         result[key] = value
+        if tracer:
+            tracer.set_target_path(".".join((*path_names, key)))
+            tracer.set_violation(ViolationType.EXTRA_FIELD)
+            tracer.set_value_source(ValueSource.GENERATED)
+            tracer.set_generated_value(value)
 
     for i in range(target_index + 1, total_fields):
         field = fields[i]
-        result[field.name] = generate_field(ctx, field, tracer=tracer)
+        result[field.name] = generate_field(ctx, field, overrides=overrides)
 
     return result
 
@@ -144,15 +154,10 @@ def generate_field(
                 tracer.set_value_source(ValueSource.MODEL_DEFAULT)
 
             default = field.default
-            if callable(default):
-                if tracer:
-                    tracer.set_generated_value(default())
-                return default()
-
+            value = default() if callable(default) else default
             if tracer:
-                tracer.set_generated_value(default())
-
-            return default
+                tracer.set_generated_value(value)
+            return value
 
         if field.nested_model and not isinstance(
             field.semantic, (ListSemantic, TupleSemantic)

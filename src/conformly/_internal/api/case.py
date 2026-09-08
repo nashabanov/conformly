@@ -38,9 +38,11 @@ def case(
             If False, generate an invalid one.
 
         seed:
-            Random seed for reproducible generation.
+            Random seed for reproducible internal generation.
             - `None` (default): Use system randomness (different output each run).
-            - `int`: Initialize RNG with fixed seed (same output for same seed).
+            - `int`: Initialize RNG with a fixed seed, including 0 and negatives.
+            User-provided default factories must be deterministic for identical
+            payloads; their randomness is not controlled by this seed.
 
         strategy:
             Define which field to violate when valid=False.
@@ -63,13 +65,16 @@ def case(
 
         overrides:
             Optional list of `PathSelector` to set field values.
-            - Applied after generation
-            - Override generated values
+            - Used instead of generated values and model defaults
             - With valid=False: act as defaults (ignored if field is violated)
 
         allow_type_mismatch:
             If True fields could be type mismatched.
             Availiable only when valid=False.
+
+        tracer:
+            Optional tracer for invalid generation. Records the selected target
+            path, violation, and value without changing generation or factory calls.
 
     Returns:
         A dictionary representing the instance.
@@ -110,9 +115,6 @@ def case(
             function="case",
             strategy=strategy,
         )
-
-    if tracer and isinstance(strategy, PathSelector):
-        tracer.set_target_path(strategy.raw_path)
 
     task = plan_tasks(
         model,

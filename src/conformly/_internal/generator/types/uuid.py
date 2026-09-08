@@ -24,26 +24,26 @@ def generate_value(
     ctx: GenerationContext, semantic: UUIDSemantic, violation: ViolationType | None
 ) -> str:
     return (
-        _generate_valid_uuid()
+        _generate_valid_uuid(ctx)
         if not violation
         else _generate_invalid_uuid(ctx, violation)
     )
 
 
-def _generate_valid_uuid() -> str:
-    return str(uuid.uuid4())
+def _generate_valid_uuid(ctx: GenerationContext) -> str:
+    return str(uuid.UUID(int=ctx.rng.getrandbits(128), version=4))
 
 
 def _generate_invalid_uuid(ctx: GenerationContext, violation: ViolationType) -> str:
     match violation:
         case ViolationType.TOO_SHORT:
-            uid = str(uuid.uuid4())
+            uid = _generate_valid_uuid(ctx)
             chars_to_remove = ctx.rng.randint(1, min(10, len(uid) - 1))
             result = uid[:-chars_to_remove]
             return result if result else "x"
 
         case ViolationType.TOO_LONG:
-            uid = str(uuid.uuid4())
+            uid = _generate_valid_uuid(ctx)
             extra_len = ctx.rng.randint(1, 10)
             extra = "".join(ctx.rng.choice(HEX_CHARS) for _ in range(extra_len))
             return uid + extra
@@ -57,7 +57,7 @@ def _generate_invalid_uuid(ctx: GenerationContext, violation: ViolationType) -> 
             return template
 
         case ViolationType.WRONG_UUID_CHARACTER:
-            uuid_chars: list[str] = list(str(uuid.uuid4()))
+            uuid_chars: list[str] = list(_generate_valid_uuid(ctx))
             hex_positions = [i for i, ch in enumerate(uuid_chars) if ch != "-"]
             if hex_positions:
                 pos = ctx.rng.choice(hex_positions)

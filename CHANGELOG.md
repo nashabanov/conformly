@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2026.09.08
+
+### Fixed
+- Reproducible generation for zero and negative integer seeds, including UUID values.
+- Preserve unrelated overrides before and after invalid targets and in nested models,
+  including missing-field and extra-field cases.
+- Generate ordinary fields only once when adding an extra field, and avoid
+  overwriting existing fields named `extra`.
+- Make tracing observe scalar and collection defaults without calling scalar values
+  or invoking default factories twice.
+- Keep trace metadata tied to the selected target for DSL, string, first, and random
+  strategies without changing payloads or internal RNG consumption.
+
 ## [0.7.2] - 2026.09.06
 
 ### Added

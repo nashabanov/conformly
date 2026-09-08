@@ -101,3 +101,22 @@ def test_empty_local_not_possible(ctx: GenerationContext) -> None:
     ]:
         result = generate_value(ctx, UUIDSemantic(), violation=violation)
         assert result != "", f"Empty result for {violation}"
+
+
+@pytest.mark.parametrize("seed", [0, 1, -1])
+@pytest.mark.parametrize(
+    "violation",
+    [
+        None,
+        ViolationType.TOO_SHORT,
+        ViolationType.TOO_LONG,
+        ViolationType.WRONG_UUID_FORMAT,
+        ViolationType.WRONG_UUID_CHARACTER,
+    ],
+)
+def test_uuid_generation_reproduces_every_supported_violation(seed, violation):
+    from conformly._internal.generator.context import create_context
+
+    assert generate_value(create_context(seed), UUIDSemantic(), violation) == (
+        generate_value(create_context(seed), UUIDSemantic(), violation)
+    )
