@@ -4,6 +4,7 @@ import uuid
 import pytest
 
 from conformly._internal.generator.context import GenerationContext
+from conformly._internal.generator.types import uuid as uuid_generator
 from conformly._internal.generator.types.uuid import generate_value
 from conformly._internal.resolver.semantics import UUIDSemantic
 from conformly._internal.types import ViolationType
@@ -76,6 +77,18 @@ def test_invalid_format_not_parseable(ctx: GenerationContext) -> None:
         ctx, UUIDSemantic(), violation=ViolationType.WRONG_UUID_FORMAT
     )
     assert not is_valid_uuid_hex(result), f"Expected invalid, but got valid: '{result}'"
+
+
+def test_invalid_format_can_use_literal_template(
+    ctx: GenerationContext, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(uuid_generator, "INVALID_UUID_TEMPLATES", ("not-a-uuid",))
+
+    result = generate_value(
+        ctx, UUIDSemantic(), violation=ViolationType.WRONG_UUID_FORMAT
+    )
+
+    assert result == "not-a-uuid"
 
 
 def test_wrong_character_has_non_hex(ctx: GenerationContext) -> None:

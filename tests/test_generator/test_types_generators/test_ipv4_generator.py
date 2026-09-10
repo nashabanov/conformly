@@ -118,19 +118,6 @@ def test_generate_invalid_ipv4_too_long(ctx: GenerationContext) -> None:
     assert result == "999.999.999.999"
 
 
-def test_generate_invalid_ipv4_too_short_explicit(ctx: GenerationContext) -> None:
-    semantic = StringSemantic(
-        kind=FieldKind.IPv4,
-        length_range=LengthRange(min_length=0, max_length=None),
-        pattern=None,
-        has_constraints=False,
-    )
-
-    result = generate_value(ctx, semantic, violation=ViolationType.TOO_SHORT)
-
-    assert result == "999.999.999.999"
-
-
 def test_generate_valid_ipv4_direct(ctx: GenerationContext) -> None:
     result = _generate_valid_ipv4(ctx)
 

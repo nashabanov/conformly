@@ -1,19 +1,17 @@
+from semantic_factories import numeric_semantic, string_semantic
+
 from conformly._internal.parser import ElementSpec, FieldSpec
 from conformly._internal.planner.session import _filter_candidate_paths
 from conformly._internal.resolver.models import ResolvedField, ResolvedModel
 from conformly._internal.resolver.resolve import _build_indexes
 from conformly._internal.resolver.semantics import (
     BooleanSemantic,
-    NumericSemantic,
     ObjectSemantic,
-    StringSemantic,
 )
 from conformly._internal.types import (
     INT_MAX,
     INT_MIN,
     UNSET,
-    FieldKind,
-    LengthRange,
     Range,
 )
 
@@ -28,9 +26,9 @@ resolved_model = ResolvedModel(
                 nullable=False,
             ),
             path=(0,),
-            semantic=StringSemantic(
-                kind=FieldKind.STRING,
-                length_range=LengthRange(3, None),
+            semantic=string_semantic(
+                min_length=3,
+                max_length=None,
                 pattern=None,
                 has_constraints=True,
             ),
@@ -43,11 +41,9 @@ resolved_model = ResolvedModel(
                 nullable=False,
             ),
             path=(1,),
-            semantic=NumericSemantic(
-                kind=FieldKind.INTEGER,
+            semantic=numeric_semantic(
                 valid_range=Range(18, 120),
                 invalid_ranges=(Range(INT_MIN, 17), Range(121, INT_MAX)),
-                has_constraints=True,
             ),
         ),
         ResolvedField(

@@ -8,6 +8,7 @@ from typing import NotRequired, TypedDict
 from pydantic import BaseModel
 
 from conformly._internal.parser import parse_model
+from conformly._internal.types import UNSET
 
 
 @dataclass
@@ -73,7 +74,7 @@ def test_parse_typeddict_optional_field() -> None:
     nested = spec.fields[0].element.nested_model
     fields = {f.name: f for f in nested.fields}
 
-    assert fields["city"].default is not None or True
+    assert fields["city"].default is UNSET
     assert fields["street"].default is None
 
 

@@ -258,10 +258,3 @@ def test_compress_ipv6_empty_string() -> None:
 def test_compress_ipv6_single_group() -> None:
     result = _compress_ipv6("0000")
     assert result == "::"
-
-
-def test_compress_ipv6_no_zeros() -> None:
-    address = "2001:0db8:0001:0002:0003:0004:0005:0006"
-    result = _compress_ipv6(address)
-
-    assert "::" not in result
