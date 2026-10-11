@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.4] - Planned
 
+### Fixed
+- Respect zero, minimum-only, and large exact collection sizes for lists,
+  dictionaries, and variadic tuples, including normalized sets and frozensets.
+- Enforce structural uniqueness for nested model values; retry collisions to fill
+  the selected size and raise structured `GenerationError` on exhaustion or
+  impossible finite-domain cardinality instead of returning undersized collections.
+- Generate nested-model dictionary values through the dictionary generator so
+  collection size and key constraints are preserved.
+
 ### Changed
 - Refactor the resolver to construct fully indexed models without runtime mutation,
   compose nested indexes from resolved children, and protect cached lookup mappings

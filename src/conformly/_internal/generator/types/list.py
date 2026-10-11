@@ -3,8 +3,10 @@ from typing import Any
 from ..context import GenerationContext
 from ._utils import (
     calculate_valid_collection_range,
+    collection_retry_error,
     generate_collection_item,
     is_hashable,
+    unique_collection_range,
 )
 
 from conformly._internal.resolver.semantics import ListSemantic
@@ -24,36 +26,46 @@ def generate_value(
 def _generate_valid_list(ctx: GenerationContext, semantic: ListSemantic) -> list[Any]:
     min_len, max_len = calculate_valid_collection_range(semantic)
 
+    if semantic.is_unique_items:
+        min_len, max_len = unique_collection_range(
+            min_len, max_len, semantic.element_semantic, collection="list"
+        )
     length = ctx.rng.randint(min_len, max_len)
-
-    result: list[Any] = []
-
     if not semantic.is_unique_items:
-        for _ in range(length):
-            item = generate_collection_item(
+        return [
+            generate_collection_item(
                 ctx, semantic.element_semantic, semantic.element_nested_model, None
             )
-            result.append(item)
+            for _ in range(length)
+        ]
 
-    seen = set()
-    max_attempts = 20
-
-    while len(result) < length and max_attempts > 0:
+    result: list[Any] = []
+    seen: set[Any] = set()
+    unhashable: list[Any] = []
+    max_attempts = max(100, length * 20)
+    for _ in range(max_attempts):
+        if len(result) == length:
+            return result
         item = generate_collection_item(
             ctx, semantic.element_semantic, semantic.element_nested_model, None
         )
-
-        if not is_hashable(item):
-            result.append(item)
-            continue
-
-        if item not in seen:
+        if is_hashable(item):
+            if item in seen or item in unhashable:
+                continue
             seen.add(item)
-            result.append(item)
-
-        max_attempts -= 1
-
-    return result
+        else:
+            if item in result:
+                continue
+            unhashable.append(item)
+        result.append(item)
+    if len(result) == length:
+        return result
+    raise collection_retry_error(
+        collection="list",
+        requested_size=length,
+        generated_size=len(result),
+        attempts=max_attempts,
+    )
 
 
 def _generate_invalid_list(

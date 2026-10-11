@@ -1,7 +1,7 @@
 from typing import Any
 
 from ..context import GenerationContext
-from ._utils import generate_collection_item
+from ._utils import calculate_valid_collection_range, generate_collection_item
 
 from conformly._internal.resolver.semantics import TupleSemantic
 from conformly._internal.types import ViolationType
@@ -34,9 +34,8 @@ def _generate_valid_tuple(
     if not semantic.is_variadic:
         elements = semantic.elements_semantics
     else:
-        min_len = semantic.length_range.min_length if semantic.length_range else 1
-        max_len = semantic.length_range.max_length if semantic.length_range else 3
-        length = ctx.rng.randint(min_len or 1, max_len or 3)
+        min_len, max_len = calculate_valid_collection_range(semantic)
+        length = ctx.rng.randint(min_len, max_len)
         elements = semantic.elements_semantics * length
 
     return tuple(
@@ -52,12 +51,11 @@ def _generate_invalid_tuple(
         if not semantic.is_variadic:
             return _generate_valid_tuple(ctx, semantic)
 
-        min_len = semantic.length_range.min_length if semantic.length_range else 1
-        max_len = semantic.length_range.max_length if semantic.length_range else 3
+        min_len, max_len = calculate_valid_collection_range(semantic)
         length = (
             max(0, min_len - 1)
             if violation == ViolationType.TOO_LESS_ITEMS
-            else (max_len or 3) + 1
+            else max_len + 1
         )
         return tuple(
             generate_collection_item(ctx, *semantic.elements_semantics[0], None)
@@ -65,9 +63,8 @@ def _generate_invalid_tuple(
         )
 
     if semantic.is_variadic:
-        min_len = semantic.length_range.min_length if semantic.length_range else 1
-        max_len = semantic.length_range.max_length if semantic.length_range else 3
-        length = ctx.rng.randint(min_len or 1, max_len or 3)
+        min_len, max_len = calculate_valid_collection_range(semantic)
+        length = ctx.rng.randint(min_len, max_len)
         elements = semantic.elements_semantics * length
     else:
         elements = semantic.elements_semantics

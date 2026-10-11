@@ -57,7 +57,6 @@ class TestListGeneration:
             assert isinstance(code, str)
             assert len(code) >= 5
 
-    # Collision-driven structural uniqueness coverage belongs to issue #97.
     def test_items_are_unique_and_valid(self):
         result = case(Order, valid=True)
 

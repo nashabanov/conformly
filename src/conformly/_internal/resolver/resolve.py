@@ -623,7 +623,7 @@ def _resolve_collection_constraints(
             case UniqueItems(v):
                 is_unique_items = v
 
-    if max_length and min_length > max_length:
+    if max_length is not None and min_length > max_length:
         raise SchemaError(
             "Invalid collection length range",
             context={

@@ -3,8 +3,10 @@ from typing import Any
 from ..context import GenerationContext
 from ._utils import (
     calculate_valid_collection_range,
+    collection_retry_error,
     generate_collection_item,
     is_hashable,
+    unique_collection_range,
 )
 
 from conformly._internal.resolver.semantics import DictSemantic
@@ -28,34 +30,29 @@ def _generate_valid_dict(
 ) -> dict[Any, Any]:
     min_len, max_len = calculate_valid_collection_range(semantic)
 
+    min_len, max_len = unique_collection_range(
+        min_len, max_len, semantic.key_semantic, collection="dict"
+    )
     length = ctx.rng.randint(min_len, max_len)
-
     result: dict[Any, Any] = {}
-    seen_keys = set()
-
-    max_attempts = 20
-
-    while len(result) < length and max_attempts > 0:
+    max_attempts = max(100, length * 20)
+    for _ in range(max_attempts):
+        if len(result) == length:
+            return result
         key = generate_collection_item(ctx, semantic.key_semantic, None, None)
-
-        if not is_hashable(key):
-            max_attempts -= 1
+        if not is_hashable(key) or key in result:
             continue
-
-        if key in seen_keys:
-            max_attempts -= 1
-            continue
-
-        value = generate_collection_item(
+        result[key] = generate_collection_item(
             ctx, semantic.value_semantic, semantic.value_nested_model, None
         )
-
-        seen_keys.add(key)
-        result[key] = value
-
-        max_attempts -= 1
-
-    return result
+    if len(result) == length:
+        return result
+    raise collection_retry_error(
+        collection="dict",
+        requested_size=length,
+        generated_size=len(result),
+        attempts=max_attempts,
+    )
 
 
 def _generate_invalid_dict(

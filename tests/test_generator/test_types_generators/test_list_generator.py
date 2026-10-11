@@ -134,9 +134,6 @@ def test_unique_items_enforced(ctx, mock_elem_semantic) -> None:
         assert len(set(result)) == 3
 
 
-# Audit #95: this length-only check misses duplicate dictionaries.
-# Replace it alongside structural uniqueness and retry fixes in issue #97:
-# https://github.com/nashabanov/conformly/issues/97
 def test_unique_items_with_unhashable_values(ctx, mock_elem_semantic) -> None:
     semantic = ListSemantic(
         element_semantic=mock_elem_semantic,
@@ -147,11 +144,11 @@ def test_unique_items_with_unhashable_values(ctx, mock_elem_semantic) -> None:
 
     with patch(
         "conformly._internal.generator.orchestration.generate_field",
-        return_value={"a": 1},
+        side_effect=[{"a": 1}, {"a": 1}, {"a": 2}],
     ):
         result = generate_value(ctx, semantic, None)
 
-        assert len(result) == 2
+        assert result == [{"a": 1}, {"a": 2}]
 
 
 def test_too_less_items_violation(ctx, list_sem) -> None:
