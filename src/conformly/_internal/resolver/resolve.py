@@ -56,7 +56,7 @@ from conformly.exceptions import ResolutionError, SchemaError
 @lru_cache(maxsize=128)
 def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:
     fields = tuple(resolve_field(f, (*_prefix, i)) for i, f in enumerate(spec.fields))
-    return create_resolved_model(spec.name, fields)
+    return create_resolved_model(spec.name, fields, allows_extra=spec.allows_extra)
 
 
 def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
@@ -159,7 +159,7 @@ def resolve_element(
 
 
 def create_resolved_model(
-    name: str, fields: tuple[ResolvedField, ...]
+    name: str, fields: tuple[ResolvedField, ...], *, allows_extra: bool = False
 ) -> ResolvedModel:
     """Build relative indexes from already indexed children before construction."""
     field_map: dict[FieldPath, ResolvedField] = {}
@@ -188,8 +188,9 @@ def create_resolved_model(
             )
 
     extra_path = (len(fields),)
-    all_paths.append(extra_path)
-    extra_paths.append(extra_path)
+    if not allows_extra:
+        all_paths.append(extra_path)
+        extra_paths.append(extra_path)
     return ResolvedModel(
         name=name,
         fields=fields,

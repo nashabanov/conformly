@@ -52,7 +52,7 @@ def _filter_candidate_paths(
         can_violate = (
             (field.semantic.has_constraints and bool(_safe_define(field.semantic)))
             or (allow_type_mismatch and field.nested_model is None)
-            or allow_structural_violations
+            or (allow_structural_violations and field.field_spec.is_required())
         )
 
         if can_violate:

@@ -28,6 +28,10 @@ class FieldSpec:
     value: ElementSpec | None = None
     nullable: bool = False
     default: Any = UNSET
+    required: bool | None = None
+
+    def is_required(self) -> bool:
+        return self.required if self.required is not None else not self.has_default()
 
     def has_default(self) -> bool:
         return self.default is not UNSET
@@ -63,6 +67,7 @@ class ModelSpec:
     name: str
     type: ModelType
     fields: tuple[FieldSpec, ...]
+    allows_extra: bool = False
 
     def get_field(self, field_name: str) -> FieldSpec:
         for field in self.fields:
@@ -71,7 +76,7 @@ class ModelSpec:
         raise KeyError(f"Field '{field_name}' is not defined in model: '{self.name}'")
 
     def get_requiered_fields(self) -> list[FieldSpec]:
-        return [field for field in self.fields if not field.has_default()]
+        return [field for field in self.fields if field.is_required()]
 
     def get_optional_fields(self) -> list[FieldSpec]:
         return [field for field in self.fields if field.is_optional()]

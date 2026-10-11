@@ -82,6 +82,11 @@ def parse_defaults(attr: Any) -> Any:
         return UNSET
 
     if type(attr.default).__name__ == "Factory":
-        return attr.default
+        if attr.default.takes_self:
+            raise ResolutionError(
+                "Attrs factories requiring an instance are not supported",
+                context={"code": "unsupported_attrs_factory", "field": attr.name},
+            )
+        return attr.default.factory
 
     return attr.default

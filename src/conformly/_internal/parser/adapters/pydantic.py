@@ -44,6 +44,7 @@ def parse(model: type) -> ModelSpec:
         name=model.__name__,
         type="pydantic",
         fields=parse_fields(model, PydanticUndefined),
+        allows_extra=model.model_config.get("extra") != "forbid",
     )
 
 

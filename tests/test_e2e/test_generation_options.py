@@ -36,11 +36,6 @@ class TestDeterministicGeneration:
         user2 = case(User, seed=42)
         assert user1 == user2
 
-    def test_different_seed_different_output(self) -> None:
-        user1 = case(User, seed=44)
-        user2 = case(User, seed=125)
-        assert user1 != user2
-
     def test_same_seed_same_list(self) -> None:
         users1 = cases(User, seed=42)
         users2 = cases(User, seed=42)

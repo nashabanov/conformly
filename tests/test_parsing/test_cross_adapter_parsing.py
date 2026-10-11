@@ -75,7 +75,9 @@ def test_parse_typeddict_optional_field() -> None:
     fields = {f.name: f for f in nested.fields}
 
     assert fields["city"].default is UNSET
-    assert fields["street"].default is None
+    assert fields["street"].default is UNSET
+    assert not fields["street"].is_required()
+    assert not fields["street"].nullable
 
 
 class InnerModel(BaseModel):

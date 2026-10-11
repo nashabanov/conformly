@@ -20,6 +20,7 @@ def build_field_spec(
     name: str,
     field_type: Any,
     default: Any,
+    required: bool | None = None,
     external_constraints: tuple[Constraint, ...],
     resolve_element: Callable[[TypeNode, str, tuple[Constraint, ...]], ElementSpec],
 ) -> FieldSpec:
@@ -31,6 +32,7 @@ def build_field_spec(
                 name=name,
                 element=resolve_element(node, name, external_constraints),
                 default=default,
+                required=required,
                 nullable=node.nullable,
             )
 
@@ -45,6 +47,7 @@ def build_field_spec(
                 collection_constraints=(*node.constraints, *collection_constraints),
                 item=resolve_element(node.item, name, element_constraints),
                 default=default,
+                required=required,
                 nullable=node.nullable,
             )
 
@@ -61,6 +64,7 @@ def build_field_spec(
                     resolve_element(i, name, element_constraints) for i in node.items
                 ),
                 default=default,
+                required=required,
                 nullable=node.nullable,
             )
 
@@ -72,5 +76,6 @@ def build_field_spec(
                 key=resolve_element(node.key, name, external_constraints),
                 value=resolve_element(node.value, name, external_constraints),
                 default=default,
+                required=required,
                 nullable=node.nullable,
             )

@@ -76,7 +76,10 @@ def test_parse_fields_optional():
     defaults = {f.name: f.default for f in fields}
 
     assert defaults["id"] is UNSET
-    assert defaults["name"] is None
+    assert defaults["name"] is UNSET
+    assert fields[0].is_required()
+    assert not fields[1].is_required()
+    assert not fields[1].nullable
 
 
 # ====== EXTRA TESTS ======

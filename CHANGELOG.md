@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.4] - Planned
 
 ### Fixed
+- Keep TypedDict key optionality separate from nullability: generate typed values
+  for `NotRequired` keys and resolve explicit `Required`/`NotRequired` annotations.
+- Plan missing-field violations only for required fields and preserve each
+  Pydantic model's extra-field policy, including nested models.
+- Remove parser debug stdout and invoke attrs default factories instead of returning
+  factory descriptors; reject factories requiring an instance explicitly.
 - Reject impossible integer `NOT_MULTIPLE` and obvious universal regex mismatch
   requests during planning; verify regex inversion candidates and report structured
   errors on exhaustion instead of returning unverified invalid values.
@@ -27,6 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   impossible finite-domain cardinality instead of returning undersized collections.
 - Generate nested-model dictionary values through the dictionary generator so
   collection size and key constraints are preserved.
+
+### Added
+- A fixed-seed public API contract matrix across dataclass, TypedDict, Pydantic
+  and attrs models, with independent validation, nested collections, explicit
+  targeting, and `all`/`all_violations` coverage.
+- Regression coverage and documentation for nullable/default/override priority and
+  unchecked supplied values, plus an all-extras CI test configuration.
 
 ### Changed
 - Use regex search semantics consistently with Pydantic, and define float

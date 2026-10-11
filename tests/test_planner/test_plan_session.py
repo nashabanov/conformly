@@ -105,9 +105,7 @@ def test_gather_constrained_paths_allow_structural_violations() -> None:
     assert _filter_candidate_paths(resolved_model, False, True) == (
         (0,),
         (1,),
-        (2,),
         (3,),
-        (3, 0),
         (3, 1),
         (4,),
     )

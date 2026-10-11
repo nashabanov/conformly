@@ -158,14 +158,14 @@ def test_parse_default_simple() -> None:
 def test_parse_default_factory() -> None:
     fields = attrs.fields(DefaultAttrs)
     default = parse_defaults(fields[1])
-    assert default.factory is list
+    assert default is list
 
 
 def test_parse_default_factory_creates_new() -> None:
     fields = attrs.fields(DefaultAttrs)
     factory_obj = parse_defaults(fields[1])
-    first = factory_obj.factory()
-    second = factory_obj.factory()
+    first = factory_obj()
+    second = factory_obj()
     assert first is not second
     assert first == second
 
@@ -212,7 +212,7 @@ def test_parse_default_factory_exception() -> None:
         x: Any = attrs.field(factory=bad_factory)
 
     default = parse_defaults(attrs.fields(BadFactory)[0])
-    assert default.factory is bad_factory
+    assert default is bad_factory
 
 
 # ====== TESTS FOR parse_field() ======
@@ -555,3 +555,13 @@ def test_parse_attrs_with_dict_fields() -> None:
     assert annotated_dicts.key.constraints == (MinLength(5),)
     assert annotated_dicts.value is not None
     assert annotated_dicts.value.constraints == (MaxLength(10),)
+
+
+def test_factory_requiring_self_is_rejected():
+    @attrs.define
+    class InstanceFactory:
+        value: int = attrs.field(default=attrs.Factory(lambda self: 1, takes_self=True))
+
+    with pytest.raises(ResolutionError) as exc:
+        parse(InstanceFactory)
+    assert exc.value.context["code"] == "unsupported_attrs_factory"

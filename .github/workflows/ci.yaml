@@ -87,6 +87,11 @@ jobs:
             extras: "attrs"
             collect-coverage: true
 
+          - python-version: "3.14"
+            config: all
+            extras: "all"
+            collect-coverage: true
+
     name: Test (${{ matrix.config }}, py${{ matrix.python-version }})
     steps:
       - name: Checkout

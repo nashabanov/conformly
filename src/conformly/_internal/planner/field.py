@@ -91,7 +91,9 @@ def plan_violation_task(
     allowed_violations = _define_allowed_violation_types(
         semantic=field.semantic,
         allow_type_mismatch=allow_type_mismatch if not field.nested_model else False,
-        allow_structural_violations=allow_structural_violations,
+        allow_structural_violations=(
+            allow_structural_violations and field.field_spec.is_required()
+        ),
     )
 
     if forced_violation is not None:

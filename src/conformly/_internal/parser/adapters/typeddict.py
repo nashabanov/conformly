@@ -17,7 +17,6 @@ from conformly.exceptions import ResolutionError
 
 
 def supports(model: type) -> bool:
-    print(is_typeddict(model))
     return is_typeddict(model)
 
 
@@ -45,7 +44,13 @@ def parse_fields(model: type) -> tuple[FieldSpec, ...]:
         parse_field(
             name=name,
             field_type=resolve_type(type_hints, name),
-            required=name in required,
+            required=(
+                False
+                if get_origin(type_hints[name]) is NotRequired
+                else True
+                if get_origin(type_hints[name]) is Required
+                else name in required
+            ),
         )
         for name in type_hints
     )
@@ -66,7 +71,8 @@ def parse_field(name: str, field_type: Any, required: bool) -> FieldSpec:
     return build_field_spec(
         name=name,
         field_type=field_type,
-        default=UNSET if required else None,
+        default=UNSET,
+        required=required,
         external_constraints=(),
         resolve_element=lambda node, field_name, constraints: build_element_spec(
             node=node,

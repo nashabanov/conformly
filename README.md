@@ -282,9 +282,25 @@ violation priority and chooses the first compatible key, value, or tuple element
 
 ## Optional Fields and Defaults
 
-- If a field is **optional** (`Optional[T]`), valid generation may produce `None`.
-- If a field has a **default value**, valid generation returns the default.
-- Invalid generation **requires at least one constraint** on the targeted field (raises `ValueError` otherwise).
+- For untargeted fields, priority is **override → nullable `None` → model default
+  or default factory → generation**. Nullable fields currently always return `None`
+  without an override, even with a non-`None` default; their factories are not called.
+- Model defaults, factory results and overrides are trusted and returned without
+  validation. `valid=True` guarantees the validity of generated values, not of
+  caller-supplied data. An invalid supplied value can also make an unrelated field
+  invalid when generating a negative case.
+- Invalid targets bypass their defaults, nullable priority and overrides. Other
+  fields retain the priority above. Default factories are called once per generated
+  payload when selected by this priority; attrs factories requiring `self` are unsupported.
+- TypedDict `NotRequired[T]` controls key presence independently of whether `T`
+  accepts `None`. Valid generation currently includes these keys with values of `T`;
+  `NotRequired[int]` does not become a present `None`.
+- `MISSING_FIELD` is offered only for required fields: nullable required fields can
+  be removed, but fields with defaults and TypedDict `NotRequired` keys cannot.
+  `EXTRA_FIELD` is offered for Pydantic only with `extra="forbid"`; `ignore` and
+  `allow` accept extra data. Other adapters treat undeclared keys as structural violations.
+- A target needs an applicable semantic, type or structural violation; impossible
+  explicit requests raise `PlanningError`.
 
 ## Constraints
 
