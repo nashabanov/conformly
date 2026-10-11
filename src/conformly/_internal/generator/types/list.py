@@ -1,5 +1,6 @@
 from typing import Any
 
+from .._errors import generation_error
 from ..context import GenerationContext
 from ._utils import (
     calculate_valid_collection_range,
@@ -9,17 +10,22 @@ from ._utils import (
     unique_collection_range,
 )
 
+from conformly._internal.planner.model import CollectionTarget
 from conformly._internal.resolver.semantics import ListSemantic
 from conformly._internal.types import ViolationType
 
 
 def generate_value(
-    ctx: GenerationContext, semantic: ListSemantic, violation: ViolationType | None
+    ctx: GenerationContext,
+    semantic: ListSemantic,
+    violation: ViolationType | None,
+    *,
+    target: CollectionTarget | None = None,
 ) -> list[Any]:
     return (
         _generate_valid_list(ctx, semantic)
         if not violation
-        else _generate_invalid_list(ctx, semantic, violation)
+        else _generate_invalid_list(ctx, semantic, violation, target)
     )
 
 
@@ -31,6 +37,12 @@ def _generate_valid_list(ctx: GenerationContext, semantic: ListSemantic) -> list
             min_len, max_len, semantic.element_semantic, collection="list"
         )
     length = ctx.rng.randint(min_len, max_len)
+    return _generate_list_of_length(ctx, semantic, length)
+
+
+def _generate_list_of_length(
+    ctx: GenerationContext, semantic: ListSemantic, length: int
+) -> list[Any]:
     if not semantic.is_unique_items:
         return [
             generate_collection_item(
@@ -69,56 +81,55 @@ def _generate_valid_list(ctx: GenerationContext, semantic: ListSemantic) -> list
 
 
 def _generate_invalid_list(
-    ctx: GenerationContext, semantic: ListSemantic, violation: ViolationType
+    ctx: GenerationContext,
+    semantic: ListSemantic,
+    violation: ViolationType,
+    target: CollectionTarget | None,
 ) -> list[Any]:
     min_len, max_len = calculate_valid_collection_range(semantic)
-
-    result: list[Any] = []
-
-    match violation:
-        case ViolationType.TOO_LESS_ITEMS:
-            length = max(0, min_len - 1)
-            return [
-                generate_collection_item(
-                    ctx, semantic.element_semantic, semantic.element_nested_model, None
-                )
-                for _ in range(length)
-            ]
-
-        case ViolationType.TOO_MANY_ITEMS:
-            length = max_len + 1
-            return [
-                generate_collection_item(
-                    ctx, semantic.element_semantic, semantic.element_nested_model, None
-                )
-                for _ in range(length)
-            ]
-
-        case ViolationType.DUPLICATE:
-            base = _generate_valid_list(ctx, semantic)
-
-            if not base:
-                item = generate_collection_item(
-                    ctx, semantic.element_semantic, semantic.element_nested_model, None
-                )
-                return [item, item]
-
-            duplicate_idx = ctx.rng.randint(0, len(base) - 1)
-            base.append(base[duplicate_idx])
-
-            return base
-
-        case _:
-            length = ctx.rng.randint(min_len, max_len)
-            violate_idx = ctx.rng.randint(0, length - 1)
-            for i in range(length):
-                item_violation = (violation,) if i == violate_idx else None
-                item = generate_collection_item(
-                    ctx,
-                    semantic.element_semantic,
-                    semantic.element_nested_model,
-                    item_violation,
-                )
-                result.append(item)
-
+    if violation == ViolationType.TOO_LESS_ITEMS:
+        lower = semantic.length_range.min_length if semantic.length_range else min_len
+        return _generate_list_of_length(ctx, semantic, max(0, lower - 1))
+    if violation == ViolationType.TOO_MANY_ITEMS:
+        return _generate_list_of_length(ctx, semantic, max_len + 1)
+    if violation == ViolationType.DUPLICATE:
+        if max_len < 2:
+            raise generation_error(
+                "No room for duplicate elements", code="invalid_collection_target"
+            )
+        length = ctx.rng.randint(max(2, min_len), max_len)
+        # Each element remains valid; the selected container violates uniqueness.
+        result = [
+            generate_collection_item(
+                ctx, semantic.element_semantic, semantic.element_nested_model, None
+            )
+            for _ in range(length - 1)
+        ]
+        return [*result, result[0]]
+    if target is None or target.side != "element":
+        raise generation_error(
+            "List element violation requires a planned target",
+            code="missing_collection_target",
+        )
+    if semantic.is_unique_items:
+        min_len, max_len = unique_collection_range(
+            min_len,
+            max_len,
+            semantic.element_semantic,
+            collection="list",
+            extra_values=1,
+        )
+    length = ctx.rng.randint(min_len, max_len)
+    if not 0 <= target.index < length:
+        raise generation_error(
+            "List target is outside collection",
+            code="invalid_collection_target",
+            index=target.index,
+            size=length,
+        )
+    result = _generate_list_of_length(ctx, semantic, length - 1)
+    item = generate_collection_item(
+        ctx, semantic.element_semantic, semantic.element_nested_model, (violation,)
+    )
+    result.insert(target.index, item)
     return result

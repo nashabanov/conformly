@@ -5,6 +5,7 @@ from .context import GenerationContext
 from .registry import choose_mismatch_kind, get_generator
 
 from conformly._internal.planner import PlannedTask
+from conformly._internal.planner.model import CollectionTarget
 from conformly._internal.resolver import (
     ResolvedField,
     ResolvedModel,
@@ -12,7 +13,9 @@ from conformly._internal.resolver import (
 )
 from conformly._internal.resolver.semantics import (
     DictSemantic,
+    FieldSemantics,
     ListSemantic,
+    ObjectSemantic,
     TupleSemantic,
 )
 from conformly._internal.tracer import Tracer, ValueSource
@@ -47,6 +50,8 @@ def generate_invalid(
         violations=task.allowed_violations,
         overrides=overrides,
         tracer=tracer,
+        collection_target=task.collection_target,
+        collection_steps=task.collection_steps,
     )
 
 
@@ -59,6 +64,8 @@ def _built_dict_with_violations(
     overrides: dict[FieldPath, Any] | None = None,
     tracer: Tracer | None = None,
     path_names: tuple[str, ...] = (),
+    collection_target: CollectionTarget | None = None,
+    collection_steps: tuple[tuple[FieldPath, CollectionTarget], ...] = (),
 ) -> dict[str, Any]:
     result: dict[str, Any] = {}
     target_index = target_path[depth]
@@ -92,7 +99,9 @@ def _built_dict_with_violations(
 
             if tracer:
                 tracer.set_target_path(".".join((*path_names, field.name)))
-            value = generate_field(ctx, field, violations, overrides, tracer)
+            value = generate_field(
+                ctx, field, violations, overrides, tracer, collection_target
+            )
             if value is not UNSET:
                 result[field.name] = value
 
@@ -104,7 +113,7 @@ def _built_dict_with_violations(
                     field=field.name,
                 )
 
-            result[field.name] = _built_dict_with_violations(
+            nested_value = _built_dict_with_violations(
                 ctx=ctx,
                 model=field.nested_model,
                 target_path=target_path,
@@ -113,7 +122,26 @@ def _built_dict_with_violations(
                 overrides=overrides,
                 tracer=tracer,
                 path_names=(*path_names, field.name),
+                collection_target=collection_target,
+                collection_steps=collection_steps,
             )
+
+            if isinstance(field.semantic, (ListSemantic, DictSemantic)):
+                step = next(
+                    (t for p, t in collection_steps if p == target_path[: depth + 1]),
+                    None,
+                )
+                if step is None:
+                    raise generation_error(
+                        "Nested collection requires a planned target",
+                        code="missing_collection_target",
+                    )
+                container = _generate_nested_collection(
+                    ctx, field.semantic, step, nested_value
+                )
+                result[field.name] = container
+            else:
+                result[field.name] = nested_value
 
     else:
         key, value = _generate_extra_field_value(ctx)
@@ -141,6 +169,7 @@ def generate_field(
     violations: tuple[ViolationType, ...] | None = None,
     overrides: dict[FieldPath, Any] | None = None,
     tracer: Tracer | None = None,
+    collection_target: CollectionTarget | None = None,
 ) -> Any:
     if violations is None:
         if overrides and field.path in overrides:
@@ -174,29 +203,48 @@ def generate_field(
         tracer.set_violation(violation)
         tracer.set_value_source(ValueSource.GENERATED)
 
-    if violation == ViolationType.TYPE_MISMATCH:
-        mismatch_kind = choose_mismatch_kind(field.semantic.kind)
-        mismatch_semantic = create_minimal_semantic(mismatch_kind)
-        value = get_generator(mismatch_kind).generate_value(
-            ctx, mismatch_semantic, None
-        )
-        if tracer:
-            tracer.set_generated_value(value)
-        return value
-
-    if violation == ViolationType.MISSING_FIELD:
-        if tracer:
-            tracer.set_generated_value(UNSET)
-        return UNSET
-
-    value = get_generator(field.semantic.kind).generate_value(
-        ctx, field.semantic, violation
+    value = generate_semantic_value(
+        ctx, field.semantic, field.nested_model, violations, collection_target
     )
-
     if tracer:
         tracer.set_generated_value(value)
-
     return value
+
+
+def generate_semantic_value(
+    ctx: GenerationContext,
+    semantic: FieldSemantics,
+    nested_model: ResolvedModel | None,
+    violations: tuple[ViolationType, ...] | None,
+    collection_target: CollectionTarget | None = None,
+) -> Any:
+    """Generate directly from resolved semantics, without synthetic field models."""
+    violation = _choose_violation(violations)
+    if violation == ViolationType.TYPE_MISMATCH:
+        mismatch_kind = choose_mismatch_kind(semantic.kind)
+        return get_generator(mismatch_kind).generate_value(
+            ctx, create_minimal_semantic(mismatch_kind), None
+        )
+    if violation == ViolationType.MISSING_FIELD:
+        return UNSET
+    if nested_model is not None and isinstance(semantic, ObjectSemantic):
+        if violation is not None:
+            raise generation_error(
+                "Nested model violation requires a field target",
+                code="missing_nested_target",
+            )
+        return generate_valid(ctx, nested_model)
+    from .types import dictionaries, list as lists, tuple as tuples
+
+    if isinstance(semantic, ListSemantic):
+        return lists.generate_value(ctx, semantic, violation, target=collection_target)
+    if isinstance(semantic, DictSemantic):
+        return dictionaries.generate_value(
+            ctx, semantic, violation, target=collection_target
+        )
+    if isinstance(semantic, TupleSemantic):
+        return tuples.generate_value(ctx, semantic, violation, target=collection_target)
+    return get_generator(semantic.kind).generate_value(ctx, semantic, violation)
 
 
 def _choose_violation(
@@ -213,3 +261,28 @@ def _generate_extra_field_value(ctx: GenerationContext) -> tuple[str, Any]:
     value = get_generator(semantic.kind).generate_value(ctx, semantic, None)
     key = "extra"
     return (key, value)
+
+
+def _generate_nested_collection(
+    ctx: GenerationContext,
+    semantic: ListSemantic | DictSemantic,
+    target: CollectionTarget,
+    nested_value: dict[str, Any],
+) -> Any:
+    from .types._utils import calculate_valid_collection_range, unique_collection_range
+    from .types.dictionaries import _generate_dict_of_length
+    from .types.list import _generate_list_of_length
+
+    lower, upper = calculate_valid_collection_range(semantic)
+    if isinstance(semantic, DictSemantic):
+        lower, upper = unique_collection_range(
+            lower, upper, semantic.key_semantic, collection="dict"
+        )
+        length = ctx.rng.randint(lower, upper)
+        return _generate_dict_of_length(
+            ctx, semantic, length, target=target, target_value=nested_value
+        )
+    length = ctx.rng.randint(lower, upper)
+    result = _generate_list_of_length(ctx, semantic, length - 1)
+    result.insert(target.index, nested_value)
+    return result

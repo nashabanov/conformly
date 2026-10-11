@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.4] - Planned
 
 ### Fixed
+- Plan compatible collection violation targets before generation, preserving
+  dictionary key/value routing and fixed tuple element order, including
+  `all_violations` and nested model fields inside collections.
+- Reject infeasible explicit targets and omit element violations for empty-only
+  collections; preserve allowed lengths for duplicate violations and count
+  distinct dictionary keys when generating size violations.
 - Respect zero, minimum-only, and large exact collection sizes for lists,
   dictionaries, and variadic tuples, including normalized sets and frozensets.
 - Enforce structural uniqueness for nested model values; retry collisions to fill
@@ -21,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   compose nested indexes from resolved children, and protect cached lookup mappings
   from modification.
 - Consolidate integer and float semantic construction.
+- Generate collection items directly from resolved semantics without synthetic
+  field models or generator calls to private planner applicability functions.
 
 ## [0.7.3] - 2026.09.08
 

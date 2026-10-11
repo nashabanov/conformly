@@ -1,5 +1,5 @@
 from ._errors import planning_error
-from .model import PlannedTask
+from .model import CollectionTarget, PlannedTask
 
 from conformly._internal.fields import SPECIAL_KINDS
 from conformly._internal.resolver import ResolvedModel
@@ -14,6 +14,7 @@ from conformly._internal.resolver.semantics import (
     TupleSemantic,
     UUIDSemantic,
 )
+from conformly._internal.resolver.semantics._domains import finite_cardinality
 from conformly._internal.resolver.semantics.dict import DictSemantic
 from conformly._internal.types import (
     FieldKind,
@@ -62,6 +63,8 @@ def plan_violation_task(
         if forced_violation == ViolationType.TYPE_MISMATCH:
             allow_type_mismatch = True
 
+    collection_steps = _plan_collection_steps(model, path)
+
     if _is_extra_field(model, path):
         if not allow_structural_violations:
             raise planning_error(
@@ -75,7 +78,9 @@ def plan_violation_task(
                 violation=forced_violation.value,
             )
 
-        return PlannedTask(path, (ViolationType.EXTRA_FIELD,))
+        return PlannedTask(
+            path, (ViolationType.EXTRA_FIELD,), collection_steps=collection_steps
+        )
 
     field = model.get_field(path)
 
@@ -94,9 +99,14 @@ def plan_violation_task(
                 allowed=[v.value for v in allowed_violations],
                 field=field.name,
             )
-        return PlannedTask(path, (forced_violation,))
+        allowed_violations = (forced_violation,)
 
-    return PlannedTask(path, allowed_violations)
+    target = (
+        _collection_target(field.semantic, allowed_violations[0])
+        if allowed_violations
+        else None
+    )
+    return PlannedTask(path, allowed_violations, target, collection_steps)
 
 
 def _is_extra_field(model: ResolvedModel, path: FieldPath) -> bool:
@@ -164,9 +174,7 @@ def _define_allowed_violation_types(
     if allow_structural_violations:
         violations.append(ViolationType.MISSING_FIELD)
 
-    violations.sort(key=lambda v: _VIOLATION_PRIORITY.index(v))
-
-    return tuple(violations)
+    return tuple(sorted(set(violations), key=_VIOLATION_PRIORITY.index))
 
 
 def _define_numeric_violations(
@@ -218,37 +226,41 @@ def _define_string_violations(
     return result
 
 
+def _has_elements(semantic: ListSemantic | DictSemantic | TupleSemantic) -> bool:
+    return semantic.length_range is None or semantic.length_range.max_length != 0
+
+
 def _define_list_violations(semantic: ListSemantic) -> list[ViolationType]:
-    collection_violations: list[ViolationType] = []
-
-    if semantic.is_unique_items is True:
-        collection_violations.append(ViolationType.DUPLICATE)
-
+    violations: list[ViolationType] = []
+    upper = semantic.length_range.max_length if semantic.length_range else None
+    if semantic.is_unique_items and (upper is None or upper >= 2):
+        violations.append(ViolationType.DUPLICATE)
     if semantic.length_range is not None:
         if semantic.length_range.min_length > 0:
-            collection_violations.append(ViolationType.TOO_LESS_ITEMS)
-
-        if semantic.length_range.max_length is not None:
-            collection_violations.append(ViolationType.TOO_MANY_ITEMS)
-
-    return [*collection_violations, *_safe_define(semantic.element_semantic)]
+            violations.append(ViolationType.TOO_LESS_ITEMS)
+        cardinality = finite_cardinality(semantic.element_semantic)
+        if upper is not None and (
+            not semantic.is_unique_items or cardinality is None or cardinality > upper
+        ):
+            violations.append(ViolationType.TOO_MANY_ITEMS)
+    if _has_elements(semantic):
+        violations.extend(_safe_define(semantic.element_semantic))
+    return violations
 
 
 def _define_dict_violations(semantic: DictSemantic) -> list[ViolationType]:
-    collection_violations: list[ViolationType] = []
-
+    violations: list[ViolationType] = []
     if semantic.length_range is not None:
         if semantic.length_range.min_length > 0:
-            collection_violations.append(ViolationType.TOO_LESS_ITEMS)
-
-        if semantic.length_range.max_length is not None:
-            collection_violations.append(ViolationType.TOO_MANY_ITEMS)
-
-    return [
-        *collection_violations,
-        *_safe_define(semantic.key_semantic),
-        *_safe_define(semantic.value_semantic),
-    ]
+            violations.append(ViolationType.TOO_LESS_ITEMS)
+        upper = semantic.length_range.max_length
+        cardinality = finite_cardinality(semantic.key_semantic)
+        if upper is not None and (cardinality is None or cardinality > upper):
+            violations.append(ViolationType.TOO_MANY_ITEMS)
+    if _has_elements(semantic):
+        violations.extend(_safe_define(semantic.key_semantic))
+        violations.extend(_safe_define(semantic.value_semantic))
+    return violations
 
 
 def _safe_define(semantic: FieldSemantics) -> list[ViolationType]:
@@ -260,16 +272,60 @@ def _safe_define(semantic: FieldSemantics) -> list[ViolationType]:
 
 def _define_tuple_violations(semantic: TupleSemantic) -> list[ViolationType]:
     result: list[ViolationType] = []
-
     if semantic.is_variadic and semantic.length_range is not None:
         if semantic.length_range.min_length > 0:
             result.append(ViolationType.TOO_LESS_ITEMS)
         if semantic.length_range.max_length is not None:
             result.append(ViolationType.TOO_MANY_ITEMS)
-
-    for item_semantic, _ in semantic.elements_semantics:
-        for violation in _safe_define(item_semantic):
-            if violation not in result:
-                result.append(violation)
-
+    if not semantic.is_variadic or _has_elements(semantic):
+        for item_semantic, _ in semantic.elements_semantics:
+            result.extend(_safe_define(item_semantic))
     return result
+
+
+def _collection_target(
+    semantic: FieldSemantics, violation: ViolationType
+) -> CollectionTarget | None:
+    if violation in (
+        ViolationType.DUPLICATE,
+        ViolationType.TOO_LESS_ITEMS,
+        ViolationType.TOO_MANY_ITEMS,
+        ViolationType.MISSING_FIELD,
+        ViolationType.TYPE_MISMATCH,
+    ):
+        return None
+    if isinstance(semantic, ListSemantic):
+        return CollectionTarget("element")
+    if isinstance(semantic, DictSemantic):
+        if violation in _safe_define(semantic.key_semantic):
+            return CollectionTarget("key")
+        return CollectionTarget("value")
+    if isinstance(semantic, TupleSemantic):
+        for i, (item, _) in enumerate(semantic.elements_semantics):
+            if violation in _safe_define(item):
+                return CollectionTarget("element", i)
+    return None
+
+
+def _plan_collection_steps(
+    model: ResolvedModel, path: FieldPath
+) -> tuple[tuple[FieldPath, CollectionTarget], ...]:
+    steps: list[tuple[FieldPath, CollectionTarget]] = []
+    for depth in range(1, len(path)):
+        parent_path = path[:depth]
+        parent = model.get_field(parent_path)
+        semantic = parent.semantic
+        if isinstance(semantic, (ListSemantic, DictSemantic)):
+            if not _has_elements(semantic):
+                raise planning_error(
+                    "Empty-only collection cannot contain the selected target",
+                    code="infeasible_collection_target",
+                    path=path,
+                )
+            target = (
+                CollectionTarget("element")
+                if isinstance(semantic, ListSemantic)
+                else CollectionTarget("value")
+            )
+            steps.append((parent_path, target))
+    return tuple(steps)

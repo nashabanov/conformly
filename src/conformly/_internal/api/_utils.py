@@ -62,7 +62,13 @@ def plan_tasks(
 
     if split_by_violations:
         return [
-            PlannedTask(path=path, allowed_violations=(violation,))
+            plan_violation_task(
+                model,
+                path,
+                allow_type_mismatch,
+                allow_structural_violations,
+                forced_violation=violation,
+            )
             for path in paths
             for violation in plan_violation_task(
                 model, path, allow_type_mismatch, allow_structural_violations

@@ -74,7 +74,6 @@ class TestListGeneration:
         assert len(items) == len({repr(i) for i in items})
 
     def test_items_duplicate_violation(self):
-        # Exact-length duplicate handling is tracked in issue #98.
         result = case(Order, valid=False, strategy="items::duplicate", seed=0)
 
         items = result["items"]

@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from conformly._internal.generator.types.dictionaries import generate_value
+from conformly._internal.planner.model import CollectionTarget
 from conformly._internal.resolver.semantics import DictSemantic
 from conformly._internal.types import ViolationType
 
@@ -121,12 +122,13 @@ def test_too_many_items_violation(ctx: Mock, dict_sem: DictSemantic) -> None:
 def test_violation_applied_to_key(ctx: Mock, dict_sem: DictSemantic) -> None:
     with patch(f"{DICT_MODULE}.calculate_valid_collection_range", return_value=(1, 3)):
         ctx.rng.randint = Mock(return_value=2)
-        ctx.rng.choice = Mock(return_value=True)
         with patch(
             f"{DICT_MODULE}.generate_collection_item",
             side_effect=["k1", "v1", "k2", "v2"],
         ) as mock_gen:
-            generate_value(ctx, dict_sem, ViolationType.TOO_SHORT)
+            generate_value(
+                ctx, dict_sem, ViolationType.TOO_SHORT, target=CollectionTarget("key")
+            )
 
             calls = mock_gen.call_args_list
             assert len(calls) == 4
@@ -139,12 +141,13 @@ def test_violation_applied_to_key(ctx: Mock, dict_sem: DictSemantic) -> None:
 def test_violation_applied_to_value(ctx: Mock, dict_sem: DictSemantic) -> None:
     with patch(f"{DICT_MODULE}.calculate_valid_collection_range", return_value=(1, 3)):
         ctx.rng.randint = Mock(return_value=2)
-        ctx.rng.choice = Mock(return_value=False)
         with patch(
             f"{DICT_MODULE}.generate_collection_item",
             side_effect=["k1", "v1", "k2", "v2"],
         ) as mock_gen:
-            generate_value(ctx, dict_sem, ViolationType.TOO_SHORT)
+            generate_value(
+                ctx, dict_sem, ViolationType.TOO_SHORT, target=CollectionTarget("value")
+            )
 
             calls = mock_gen.call_args_list
             assert len(calls) == 4
@@ -206,3 +209,25 @@ def test_nested_model_propagated_to_value(
             assert val_call_args[1] is value_sem
             assert val_call_args[2] is nested_model_mock
             assert val_call_args[3] is None
+
+
+@pytest.mark.parametrize(
+    "violation,bounds,size",
+    [
+        (ViolationType.TOO_LESS_ITEMS, (3, 5), 2),
+        (ViolationType.TOO_MANY_ITEMS, (1, 2), 3),
+    ],
+)
+def test_size_violations_retry_collisions_until_distinct_key_count(
+    ctx, dict_sem, violation, bounds, size
+):
+    candidates = ["k0", "v0", "k0", "k0", "k1", "v1"]
+    if size == 3:
+        candidates += ["k1", "k2", "v2"]
+    with (
+        patch(f"{DICT_MODULE}.calculate_valid_collection_range", return_value=bounds),
+        patch(f"{DICT_MODULE}.generate_collection_item", side_effect=candidates),
+    ):
+        result = generate_value(ctx, dict_sem, violation)
+    assert len(result) == size
+    assert all(value.startswith("v") for value in result.values())

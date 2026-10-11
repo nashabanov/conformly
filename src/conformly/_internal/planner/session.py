@@ -1,10 +1,12 @@
 from collections.abc import Mapping
 
 from ._errors import planning_error
+from .field import _plan_collection_steps, _safe_define
 
 from conformly._internal.generator import GenerationContext
 from conformly._internal.resolver import ResolvedModel
 from conformly._internal.types import CasesStrategy, FieldPath
+from conformly.exceptions import PlanningError
 
 NameIndexMap = tuple[tuple[FieldPath, str], ...]
 
@@ -48,16 +50,25 @@ def _filter_candidate_paths(
 
     for path, field in model.field_map.items():
         can_violate = (
-            field.semantic.has_constraints
+            (field.semantic.has_constraints and bool(_safe_define(field.semantic)))
             or (allow_type_mismatch and field.nested_model is None)
             or allow_structural_violations
         )
 
         if can_violate:
+            try:
+                _plan_collection_steps(model, path)
+            except PlanningError:
+                continue
             candidates.append(path)
 
     if allow_structural_violations:
-        candidates.extend(model.extra_paths)
+        for path in model.extra_paths:
+            try:
+                _plan_collection_steps(model, path)
+            except PlanningError:
+                continue
+            candidates.append(path)
 
     return tuple(candidates)
 

@@ -5,15 +5,13 @@ from ..context import GenerationContext
 
 from conformly._internal.resolver import ResolvedModel
 from conformly._internal.resolver.semantics import (
-    BooleanSemantic,
     DictSemantic,
-    EnumSemantic,
     FieldSemantics,
     ListSemantic,
-    NumericSemantic,
     TupleSemantic,
 )
-from conformly._internal.types import UNSET, FieldKind, ViolationType
+from conformly._internal.resolver.semantics._domains import finite_cardinality
+from conformly._internal.types import ViolationType
 from conformly.exceptions import GenerationError
 
 
@@ -31,30 +29,17 @@ def calculate_valid_collection_range(
     return lower, upper if upper is not None else max(3, lower)
 
 
-def finite_cardinality(semantic: FieldSemantics) -> int | None:
-    if isinstance(semantic, BooleanSemantic):
-        return 2
-    if isinstance(semantic, EnumSemantic):
-        # Equality, rather than type or identity, determines collection uniqueness.
-        values: list[Any] = []
-        for value in semantic.values:
-            if value not in values:
-                values.append(value)
-        return len(values)
-    if isinstance(semantic, NumericSemantic) and semantic.kind == FieldKind.INTEGER:
-        lower = int(semantic.valid_range.min_value)
-        upper = int(semantic.valid_range.max_value)
-        step = int(semantic.multiple_of) if semantic.multiple_of is not None else 1
-        if step > 0:
-            return max(0, upper // step - (lower - 1) // step)
-    return None
-
-
 def unique_collection_range(
-    lower: int, upper: int, semantic: FieldSemantics, *, collection: str
+    lower: int,
+    upper: int,
+    semantic: FieldSemantics,
+    *,
+    collection: str,
+    extra_values: int = 0,
 ) -> tuple[int, int]:
     cardinality = finite_cardinality(semantic)
     if cardinality is not None:
+        cardinality += extra_values
         if lower > cardinality:
             raise generation_error(
                 "Collection size exceeds the number of distinct valid values",
@@ -94,23 +79,6 @@ def generate_collection_item(
     item_nested_model: ResolvedModel | None,
     violations: tuple[ViolationType, ...] | None,
 ) -> Any:
-    from ..orchestration import generate_field
+    from ..orchestration import generate_semantic_value
 
-    from conformly._internal.parser import ElementSpec, FieldSpec
-    from conformly._internal.resolver import ResolvedField
-
-    mock_spec = FieldSpec(
-        name="__list_item",
-        element=ElementSpec(object, ()),
-        default=UNSET,
-        nullable=False,
-    )
-
-    elem_field = ResolvedField(
-        field_spec=mock_spec,
-        path=(),
-        semantic=item_semantic,
-        nested_model=item_nested_model,
-    )
-
-    return generate_field(ctx, elem_field, violations)
+    return generate_semantic_value(ctx, item_semantic, item_nested_model, violations)

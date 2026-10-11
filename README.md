@@ -264,11 +264,21 @@ For `case(Model, valid=False, strategy="<field>")`:
 - **If `allow_structural_violations=True`**, generator may substitute field missing in place of any other violations (avaliable only with `strategy="all"`)
 - **Exactly one field is targeted** (the one specified by `strategy`).
 - **The generator will violate constraints** for that field, making it invalid.
-- **If a field has multiple constraints**, the violated constraint may be chosen by generator logic (not necessarily the one you expect).
+- **Inside collections**, planning selects a compatible dictionary key, value, or
+  element before generation. Fixed tuples retain their length and order; unrelated
+  elements, keys, values, and model fields remain valid.
+- **Only the selected violation is guaranteed on its target**. Other constraints
+  on that same target are not guaranteed to remain satisfied. A `DUPLICATE`
+  violation preserves an allowed collection length; collections with a maximum
+  size below two cannot be targeted for duplication.
+- **Explicit impossible or unsupported violations raise `PlanningError`**;
+  empty-only collections do not offer element violations.
 - **For numeric bounds**, invalid values may violate the lower or upper bound (e.g., `age > 120` or `age < 18`).
 - **For float bounds**, invalid generation may produce `inf` when violating the upper boundary.
 
-If you need **deterministic control** over which exact constraint to violate, that is not implemented in yet (see Roadmap).
+Request an exact violation with `strategy="items::below_min"` or
+`path(Model, lambda m: m.items).violate(V.BELOW_MIN)`. Otherwise, the planner uses
+violation priority and chooses the first compatible key, value, or tuple element.
 
 ## Optional Fields and Defaults
 
