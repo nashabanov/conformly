@@ -2,8 +2,8 @@ from semantic_factories import numeric_semantic, string_semantic
 
 from conformly._internal.parser import ElementSpec, FieldSpec
 from conformly._internal.planner.session import _filter_candidate_paths
-from conformly._internal.resolver.models import ResolvedField, ResolvedModel
-from conformly._internal.resolver.resolve import _build_indexes
+from conformly._internal.resolver.models import ResolvedField
+from conformly._internal.resolver.resolve import create_resolved_model
 from conformly._internal.resolver.semantics import (
     BooleanSemantic,
     ObjectSemantic,
@@ -15,7 +15,7 @@ from conformly._internal.types import (
     Range,
 )
 
-resolved_model = ResolvedModel(
+resolved_model = create_resolved_model(
     name="User",
     fields=(
         ResolvedField(
@@ -65,7 +65,7 @@ resolved_model = ResolvedModel(
             ),
             path=(3,),
             semantic=ObjectSemantic(),
-            nested_model=ResolvedModel(
+            nested_model=create_resolved_model(
                 name="Profile",
                 fields=(
                     ResolvedField(
@@ -86,7 +86,6 @@ resolved_model = ResolvedModel(
 
 
 def test_gather_constrained_paths_default() -> None:
-    _build_indexes(resolved_model)
     assert _filter_candidate_paths(resolved_model) == (
         (0,),
         (1,),
@@ -94,7 +93,6 @@ def test_gather_constrained_paths_default() -> None:
 
 
 def test_gather_constrained_paths_allow_type_mismatch() -> None:
-    _build_indexes(resolved_model)
     assert _filter_candidate_paths(resolved_model, True) == (
         (0,),
         (1,),
@@ -104,7 +102,6 @@ def test_gather_constrained_paths_allow_type_mismatch() -> None:
 
 
 def test_gather_constrained_paths_allow_structural_violations() -> None:
-    _build_indexes(resolved_model)
     assert _filter_candidate_paths(resolved_model, False, True) == (
         (0,),
         (1,),

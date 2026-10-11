@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from ._errors import planning_error
 
 from conformly._internal.generator import GenerationContext
@@ -66,7 +68,7 @@ def _select_violation_fields(
     allow_all: bool,
     candidates: tuple[FieldPath, ...],
     count: int,
-    name_to_path: dict[str, FieldPath],
+    name_to_path: Mapping[str, FieldPath],
 ) -> tuple[FieldPath, ...]:
     if strategy not in ("all", "random", "first"):
         if strategy not in name_to_path:

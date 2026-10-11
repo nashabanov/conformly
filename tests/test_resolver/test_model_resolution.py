@@ -14,7 +14,6 @@ from conformly._internal.fields import Email
 from conformly._internal.parser import ElementSpec, FieldSpec, ModelSpec
 from conformly._internal.resolver import ResolvedModel
 from conformly._internal.resolver.resolve import (
-    _build_indexes,
     resolve_field,
     resolve_model,
 )
@@ -295,12 +294,8 @@ def test_resolve_model_empty():
     assert resolved.all_paths == ((0,),)
 
 
-# ===== TESTS for _build_indexes() =====
-
-
 def test_build_indexes_flat(simple_model_spec) -> None:
     resolved = resolve_model(simple_model_spec)
-    _build_indexes(resolved)
 
     assert len(resolved.field_map) == 4
     assert (0,) in resolved.field_map
@@ -337,7 +332,6 @@ def test_build_indexes_flat(simple_model_spec) -> None:
 
 def test_nested_field_map_contains_all_levels(nested_model_spec):
     model = resolve_model(nested_model_spec)
-    _build_indexes(model)
 
     assert (0,) in model.field_map
     assert (1,) in model.field_map
@@ -347,7 +341,6 @@ def test_nested_field_map_contains_all_levels(nested_model_spec):
 
 def test_nested_all_paths_has_extra_at_each_level(nested_model_spec):
     model = resolve_model(nested_model_spec)
-    _build_indexes(model)
 
     assert (0,) in model.all_paths
     assert (1,) in model.all_paths
@@ -366,29 +359,96 @@ def test_nested_all_paths_has_extra_at_each_level(nested_model_spec):
 
 def test_nested_constrained_paths_empty_if_no_constraints(nested_model_spec):
     model = resolve_model(nested_model_spec)
-    _build_indexes(model)
     assert len(model.constrained_paths) == 0
 
 
-def test_ensure_indexes_is_idempotent(simple_model_spec):
+def test_resolution_reuses_cached_model(simple_model_spec):
     model = resolve_model(simple_model_spec)
-
-    _build_indexes(model)
-
-    first_all_paths_len = len(model.all_paths)
-    first_field_map_len = len(model.field_map)
-
-    _build_indexes(model)
-
-    assert len(model.all_paths) == first_all_paths_len
-    assert len(model.field_map) == first_field_map_len
+    assert resolve_model(simple_model_spec) is model
 
 
 def test_extra_path_index_equals_fields_count(simple_model_spec):
     model = resolve_model(simple_model_spec)
-    _build_indexes(model)
 
     extra_paths = [p for p in model.all_paths if p not in model.field_map]
 
     assert len(extra_paths) == 1
     assert extra_paths[0] == (len(model.fields),)
+
+
+@pytest.mark.parametrize("collection_type", [None, list, dict])
+def test_repeated_nested_models_keep_relative_indexes(collection_type):
+    leaf = ModelSpec(
+        "Leaf",
+        "dataclass",
+        (FieldSpec("value", element=ElementSpec(int, (GreaterThan(0),))),),
+    )
+    element = ElementSpec(object, nested_model=leaf)
+    if collection_type is list:
+        branch = FieldSpec("leaf", collection_type=list, item=element)
+    elif collection_type is dict:
+        branch = FieldSpec(
+            "leaf", collection_type=dict, key=ElementSpec(str), value=element
+        )
+    else:
+        branch = FieldSpec("leaf", element=element)
+    inner = ModelSpec("Inner", "dataclass", (branch,))
+    spec = ModelSpec(
+        "Root",
+        "dataclass",
+        tuple(
+            FieldSpec(name, element=ElementSpec(object, nested_model=inner))
+            for name in ("left", "right")
+        ),
+    )
+    model = resolve_model(spec, (7,))
+
+    assert model.all_paths == (
+        (0,),
+        (0, 0),
+        (0, 0, 0),
+        (0, 0, 1),
+        (0, 1),
+        (1,),
+        (1, 0),
+        (1, 0, 0),
+        (1, 0, 1),
+        (1, 1),
+        (2,),
+    )
+    assert model.extra_paths == ((0, 0, 1), (0, 1), (1, 0, 1), (1, 1), (2,))
+    assert model.constrained_paths == ((0, 0, 0), (1, 0, 0))
+    assert model.name_to_path["left.leaf.value"] == (0, 0, 0)
+    assert model.name_to_path["right.leaf.value"] == (1, 0, 0)
+    for i in (0, 1):
+        nested = model.fields[i].nested_model
+        assert nested is resolve_model(inner, (7, i))
+        assert nested.all_paths == ((0,), (0, 0), (0, 1), (1,))
+        value = nested.get_field((0, 0))
+        assert model.get_field((i, 0, 0)) is value
+        assert value.path == (7, i, 0, 0)
+
+
+def test_empty_nested_model_indexes():
+    empty = ModelSpec("Empty", "dataclass", ())
+    model = resolve_model(
+        ModelSpec(
+            "Root",
+            "dataclass",
+            (FieldSpec("empty", element=ElementSpec(object, nested_model=empty)),),
+        )
+    )
+    assert model.all_paths == ((0,), (0, 0), (1,))
+    assert model.extra_paths == ((0, 0), (1,))
+    assert tuple(model.field_map) == ((0,),)
+    assert model.name_to_path == {"empty": (0,)}
+
+
+def test_cached_indexes_cannot_be_mutated(simple_model_spec):
+    model = resolve_model(simple_model_spec)
+    with pytest.raises(TypeError):
+        model.field_map[(0,)] = model.fields[1]
+    with pytest.raises(TypeError):
+        model.name_to_path["id"] = (1,)
+    assert resolve_model(simple_model_spec).get_field((0,)) is model.fields[0]
+    assert model.name_to_path["id"] == (0,)

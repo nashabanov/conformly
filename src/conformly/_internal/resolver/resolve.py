@@ -1,5 +1,6 @@
 from functools import lru_cache
 import math
+from types import MappingProxyType
 from typing import Any
 import uuid
 
@@ -54,14 +55,8 @@ from conformly.exceptions import ResolutionError, SchemaError
 
 @lru_cache(maxsize=128)
 def resolve_model(spec: ModelSpec, _prefix: FieldPath = ()) -> ResolvedModel:
-    model = ResolvedModel(
-        name=spec.name,
-        fields=tuple(
-            [resolve_field(f, (*_prefix, i)) for i, f in enumerate(spec.fields)]
-        ),
-    )
-    _build_indexes(model)
-    return model
+    fields = tuple(resolve_field(f, (*_prefix, i)) for i, f in enumerate(spec.fields))
+    return create_resolved_model(spec.name, fields)
 
 
 def resolve_field(field_spec: FieldSpec, path: FieldPath) -> ResolvedField:
@@ -163,43 +158,47 @@ def resolve_element(
     return semantic, nested
 
 
-def _build_indexes(model: ResolvedModel) -> None:
-    if model.field_map:
-        return
-
+def create_resolved_model(
+    name: str, fields: tuple[ResolvedField, ...]
+) -> ResolvedModel:
+    """Build relative indexes from already indexed children before construction."""
     field_map: dict[FieldPath, ResolvedField] = {}
     constrained_paths: list[FieldPath] = []
     all_paths: list[FieldPath] = []
     extra_paths: list[FieldPath] = []
     name_to_path: dict[str, FieldPath] = {}
 
-    def _collect(current: ResolvedModel, prefix: FieldPath, names: list[str]) -> None:
-        for i, field in enumerate(current.fields):
-            path = (*prefix, i)
+    for i, field in enumerate(fields):
+        path = (i,)
+        field_map[path] = field
+        all_paths.append(path)
+        name_to_path[field.name] = path
+        if field.semantic.has_constraints:
+            constrained_paths.append(path)
 
-            field_map[path] = field
-            all_paths.append(path)
+        nested = field.nested_model
+        if nested is not None:
+            field_map.update(((*path, *p), f) for p, f in nested.field_map.items())
+            constrained_paths.extend((*path, *p) for p in nested.constrained_paths)
+            all_paths.extend((*path, *p) for p in nested.all_paths)
+            extra_paths.extend((*path, *p) for p in nested.extra_paths)
+            name_to_path.update(
+                (f"{field.name}.{n}", (*path, *p))
+                for n, p in nested.name_to_path.items()
+            )
 
-            dotted = ".".join([*names, field.name])
-            name_to_path[dotted] = path
-
-            if field.semantic.has_constraints:
-                constrained_paths.append(path)
-
-            if field.nested_model:
-                _collect(field.nested_model, path, [*names, field.name])
-
-        extra_path = (*prefix, len(current.fields))
-        all_paths.append(extra_path)
-        extra_paths.append(extra_path)
-
-    _collect(model, (), [])
-
-    object.__setattr__(model, "field_map", field_map)
-    object.__setattr__(model, "constrained_paths", tuple(constrained_paths))
-    object.__setattr__(model, "all_paths", tuple(all_paths))
-    object.__setattr__(model, "extra_paths", tuple(extra_paths))
-    object.__setattr__(model, "name_to_path", name_to_path)
+    extra_path = (len(fields),)
+    all_paths.append(extra_path)
+    extra_paths.append(extra_path)
+    return ResolvedModel(
+        name=name,
+        fields=fields,
+        field_map=MappingProxyType(field_map),
+        constrained_paths=tuple(constrained_paths),
+        all_paths=tuple(all_paths),
+        extra_paths=tuple(extra_paths),
+        name_to_path=MappingProxyType(name_to_path),
+    )
 
 
 def create_scalar_semantic(
@@ -224,22 +223,10 @@ def create_scalar_semantic(
     if t is uuid.UUID:
         return UUIDSemantic(has_constraints=True)
 
-    if t is int:
+    if t in (int, float):
         valid_bounds = calculate_numeric_bounds(t, c)
         return NumericSemantic(
-            kind=FieldKind.INTEGER,
-            valid_range=valid_bounds,
-            invalid_ranges=calculate_invalid_numeric_ranges(
-                field_type=t, bounds=valid_bounds
-            ),
-            has_constraints=field_spec.has_constraints(),
-            multiple_of=_extract_numeric_multiple_of(c),
-        )
-
-    elif t is float:
-        valid_bounds = calculate_numeric_bounds(t, c)
-        return NumericSemantic(
-            kind=FieldKind.FLOAT,
+            kind=FieldKind.INTEGER if t is int else FieldKind.FLOAT,
             valid_range=valid_bounds,
             invalid_ranges=calculate_invalid_numeric_ranges(
                 field_type=t, bounds=valid_bounds

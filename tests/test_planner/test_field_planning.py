@@ -9,7 +9,7 @@ from conformly._internal.planner.field import (
     plan_violation_task,
 )
 from conformly._internal.resolver import ResolvedField, ResolvedModel
-from conformly._internal.resolver.resolve import _build_indexes
+from conformly._internal.resolver.resolve import create_resolved_model
 from conformly._internal.resolver.semantics import (
     ObjectSemantic,
 )
@@ -46,7 +46,7 @@ zip_field = ResolvedField(
     ),
 )
 
-second_nested = ResolvedModel("Address", (city_field, zip_field))
+second_nested = create_resolved_model("Address", (city_field, zip_field))
 
 address_field = ResolvedField(
     field_spec=FieldSpec(
@@ -67,7 +67,7 @@ phone_field = ResolvedField(
     ),
 )
 
-first_nested = ResolvedModel("Profile", (address_field, phone_field))
+first_nested = create_resolved_model("Profile", (address_field, phone_field))
 
 name_field = ResolvedField(
     field_spec=FieldSpec(
@@ -102,8 +102,7 @@ profile_field = ResolvedField(
 
 @pytest.fixture
 def base_model() -> ResolvedModel:
-    model = ResolvedModel("User", (name_field, age_field, profile_field))
-    _build_indexes(model)
+    model = create_resolved_model("User", (name_field, age_field, profile_field))
     return model
 
 

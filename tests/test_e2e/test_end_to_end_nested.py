@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Annotated
 
+import pytest
+
 from conformly import GreaterOrEqual, MinLength, case, cases
 from conformly._internal.api.path import path
 
@@ -50,3 +52,25 @@ def test_nested_overrides() -> None:
         User, valid=True, overrides=[path(User, lambda u: u.profile.age).set(19)]
     )
     assert user["profile"]["age"] == 19
+
+
+@dataclass
+class RepeatedProfiles:
+    left: Profile
+    right: Profile
+    profiles: list[Profile]
+
+
+@pytest.mark.parametrize("target", ["left", "right"])
+def test_repeated_nested_model_violation_targets_only_selected_branch(target):
+    data = case(RepeatedProfiles, valid=False, strategy=f"{target}.age", seed=42)
+    for name, branch in data.items():
+        if isinstance(branch, list):
+            ages = [item["age"] for item in branch]
+        else:
+            ages = [branch["age"]]
+        assert ages
+        if name == target:
+            assert any(age < 18 for age in ages)
+        else:
+            assert all(age >= 18 for age in ages)
