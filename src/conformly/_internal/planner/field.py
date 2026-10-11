@@ -1,3 +1,5 @@
+import re
+
 from ._errors import planning_error
 from .model import CollectionTarget, PlannedTask
 
@@ -15,6 +17,8 @@ from conformly._internal.resolver.semantics import (
     UUIDSemantic,
 )
 from conformly._internal.resolver.semantics._domains import finite_cardinality
+from conformly._internal.resolver.semantics._numeric import integer_multiple_step
+from conformly._internal.resolver.semantics._regex import is_universal_pattern
 from conformly._internal.resolver.semantics.dict import DictSemantic
 from conformly._internal.types import (
     FieldKind,
@@ -184,7 +188,10 @@ def _define_numeric_violations(
     valid = semantic.valid_range
     invalid_ranges = semantic.invalid_ranges
 
-    if semantic.multiple_of is not None:
+    if semantic.multiple_of is not None and (
+        semantic.kind != FieldKind.INTEGER
+        or integer_multiple_step(semantic.multiple_of) != 1
+    ):
         result.append(ViolationType.NOT_MULTIPLE)
 
     for r in invalid_ranges:
@@ -195,6 +202,16 @@ def _define_numeric_violations(
             result.append(ViolationType.ABOVE_MAX)
 
     return result
+
+
+def _pattern_is_universal(pattern: str) -> bool:
+    try:
+        re.compile(pattern)
+        return is_universal_pattern(pattern)
+    except re.error as e:
+        raise planning_error(
+            "Invalid regex pattern", code="invalid_regex_pattern", pattern=pattern
+        ) from e
 
 
 def _define_string_violations(
@@ -220,7 +237,8 @@ def _define_string_violations(
     if semantic.length_range.max_length is not None:
         result.append(ViolationType.TOO_LONG)
 
-    if semantic.pattern is not None:
+    # Exclude only obvious universal patterns; generation verifies all others.
+    if semantic.pattern is not None and not _pattern_is_universal(semantic.pattern):
         result.append(ViolationType.PATTERN_MISMATCH)
 
     return result

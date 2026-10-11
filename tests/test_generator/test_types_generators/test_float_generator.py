@@ -154,3 +154,31 @@ def test_generate_value_unbounded_uses_safe_range(ctx: GenerationContext) -> Non
     for v in values:
         assert -1e300 <= v <= 1e300
         assert math.isfinite(v)
+
+
+def test_float_multiple_tolerance_has_no_relative_component():
+    from conformly._internal.resolver.semantics._numeric import is_float_multiple
+
+    assert is_float_multiple(0.3, 0.1)
+    assert is_float_multiple(-0.3, 0.1)
+    assert is_float_multiple(3 + 5e-10, 1)
+    assert not is_float_multiple(3 + 2e-9, 1)
+    assert not is_float_multiple(1e9 + 0.25, 1)
+
+
+def test_float_violation_exhaustion_has_no_fallback(ctx, monkeypatch):
+    monkeypatch.setattr(ctx.rng, "uniform", lambda *_: 1.0)
+    with pytest.raises(GenerationError) as exc:
+        generate_value(ctx, semantic_10_20, ViolationType.NOT_MULTIPLE)
+    assert exc.value.context["code"] == "numeric_violation_exhausted"
+
+
+def test_float_singleton_subnormal(ctx):
+    low = math.nextafter(0.0, math.inf)
+    semantic = NumericSemantic(
+        kind=FieldKind.FLOAT,
+        valid_range=Range(low, low),
+        invalid_ranges=(),
+    )
+    for _ in range(20):
+        assert generate_value(ctx, semantic, None) == low

@@ -48,7 +48,7 @@ def test_pattern_no_length_constraints(ctx: GenerationContext) -> None:
 
 
 def test_invert_pattern_empty_string() -> None:
-    result = _invert_pattern_string("", r"a*")
+    result = _invert_pattern_string("", r"^a*$")
     assert result == "x"
 
 
@@ -223,52 +223,56 @@ def test_generate_invalid_pattern_violation(ctx: GenerationContext) -> None:
 
 
 def test_generate_invalid_no_constraints(ctx: GenerationContext) -> None:
-    result = _generate_invalid_string(
-        ctx,
-        StringSemantic(
-            kind=FieldKind.STRING, length_range=LengthRange(0, None), pattern=None
-        ),
-        None,
-    )
-    assert result == "INVALID"
+    with pytest.raises(GenerationError) as exc:
+        _generate_invalid_string(
+            ctx,
+            StringSemantic(
+                kind=FieldKind.STRING, length_range=LengthRange(0, None), pattern=None
+            ),
+            None,
+        )
+    assert exc.value.context["code"] == "unsupported_violation"
 
 
 def test_generate_invalid_string_too_short_with_min_0(ctx: GenerationContext) -> None:
-    result = _generate_invalid_string(
-        ctx,
-        StringSemantic(
-            kind=FieldKind.STRING, length_range=LengthRange(0, None), pattern=None
-        ),
-        ViolationType.TOO_SHORT,
-    )
-    assert result == "INVALID"
+    with pytest.raises(GenerationError) as exc:
+        _generate_invalid_string(
+            ctx,
+            StringSemantic(
+                kind=FieldKind.STRING, length_range=LengthRange(0, None), pattern=None
+            ),
+            ViolationType.TOO_SHORT,
+        )
+    assert exc.value.context["code"] == "unsupported_violation"
 
 
 def test_generate_invalid_string_too_long_with_max_none(ctx: GenerationContext) -> None:
-    result = _generate_invalid_string(
-        ctx,
-        StringSemantic(
-            kind=FieldKind.STRING,
-            length_range=LengthRange(5, None),
-            pattern=None,
-            has_constraints=True,
-        ),
-        ViolationType.TOO_LONG,
-    )
-    assert result == "INVALID"
+    with pytest.raises(GenerationError) as exc:
+        _generate_invalid_string(
+            ctx,
+            StringSemantic(
+                kind=FieldKind.STRING,
+                length_range=LengthRange(5, None),
+                pattern=None,
+                has_constraints=True,
+            ),
+            ViolationType.TOO_LONG,
+        )
+    assert exc.value.context["code"] == "unsupported_violation"
 
 
 def test_generate_invalid_string_pattern_mismatch_without_pattern(
     ctx: GenerationContext,
 ) -> None:
-    result = _generate_invalid_string(
-        ctx,
-        StringSemantic(
-            kind=FieldKind.STRING, length_range=LengthRange(0, None), pattern=None
-        ),
-        ViolationType.PATTERN_MISMATCH,
-    )
-    assert result == "INVALID"
+    with pytest.raises(GenerationError) as exc:
+        _generate_invalid_string(
+            ctx,
+            StringSemantic(
+                kind=FieldKind.STRING, length_range=LengthRange(0, None), pattern=None
+            ),
+            ViolationType.PATTERN_MISMATCH,
+        )
+    assert exc.value.context["code"] == "unsupported_violation"
 
 
 def test_generate_invalid_precedence_min_over_max(ctx: GenerationContext) -> None:
@@ -358,3 +362,34 @@ def test_pattern_generation_exhausts_retries(
 def test_nested_quantifiers_accept_matching_candidate(ctx, monkeypatch) -> None:
     monkeypatch.setattr(ctx.rstr, "xeger", Mock(return_value="aaa"))
     assert _random_pattern_with_length(ctx, r"(a+)+", 0, 10) == "aaa"
+
+
+@pytest.mark.parametrize("pattern", ["(?s).*", ""])
+def test_inversion_rejects_known_universal_pattern(pattern):
+    with pytest.raises(GenerationError) as exc:
+        _invert_pattern_string("", pattern)
+    assert exc.value.context["code"] == "impossible_violation"
+
+
+def test_inversion_verifies_empty_example_and_exhausts():
+    with pytest.raises(GenerationError) as exc:
+        _invert_pattern_string("", "a*")
+    assert exc.value.context["code"] == "pattern_inversion_exhausted"
+
+
+def test_inversion_invalid_pattern_is_structured():
+    with pytest.raises(GenerationError) as exc:
+        _invert_pattern_string("", "[")
+    assert exc.value.context["code"] == "invalid_regex_pattern"
+
+
+def test_valid_regex_candidate_is_verified(ctx, monkeypatch):
+    monkeypatch.setattr(ctx.rstr, "xeger", Mock(return_value="wrong"))
+    with pytest.raises(GenerationError) as exc:
+        _random_pattern_with_length(ctx, "^a+$", 1, 5)
+    assert exc.value.context["code"] == "pattern_generation_timeout"
+
+
+def test_valid_regex_uses_search_semantics(ctx, monkeypatch):
+    monkeypatch.setattr(ctx.rstr, "xeger", Mock(return_value="prefix-a-suffix"))
+    assert _random_pattern_with_length(ctx, "a", 1, 30) == "prefix-a-suffix"

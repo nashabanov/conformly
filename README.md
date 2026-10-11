@@ -304,6 +304,19 @@ violation priority and chooses the first compatible key, value, or tuple element
 | Collection | `MaxItems(n)` | `max_length=n` (for lists in `Field(...)`) |
 | Collection | `UniqueItems(bool)` | `set[T]`, `frozenset[T]` |
 
+`Pattern` uses Python regex search semantics, consistent with Pydantic: a match
+anywhere in the string is sufficient. Use anchors (`^...$`) to require a whole-string
+match. Pattern mismatches are verified; unsuccessful inversion raises a structured
+`GenerationError` instead of returning a matching value. Obvious universal patterns
+(such as `(?s).*`) are excluded from automatic planning, and explicit mismatch
+requests raise `PlanningError`.
+
+`MultipleOf` requires a finite positive divisor. For floats, a quotient within
+`1e-9` of an integer is treated as a multiple (no relative tolerance). Integer
+`NOT_MULTIPLE` requests for divisors such as `1` or `0.5`, which divide every integer,
+raise `PlanningError` and are excluded from automatic planning. A bounded range
+without a representable multiple raises `GenerationError` with code `no_multiples_of`.
+
 > Important: Pydantic's constr(), conint(), and functional validators are not interpreted as constraints.
 > Use Field() parameters for constraint extraction.
 

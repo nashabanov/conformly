@@ -4,6 +4,7 @@ import string
 from .._errors import generation_error
 from ..context import GenerationContext
 
+from conformly._internal.resolver.semantics._regex import is_universal_pattern
 from conformly._internal.resolver.semantics.string import StringSemantic
 from conformly._internal.types import MAX_GENERATION_ATTEMPTS, ViolationType
 
@@ -25,7 +26,7 @@ def generate_value(
 
 
 def _generate_valid_string(ctx: GenerationContext, semantic: StringSemantic) -> str:
-    if semantic.pattern:
+    if semantic.pattern is not None:
         return _random_pattern_with_length(
             ctx,
             semantic.pattern,
@@ -53,11 +54,15 @@ def _generate_invalid_string(
             )
 
         case ViolationType.PATTERN_MISMATCH if semantic.pattern is not None:
-            valid_example = ctx.rstr.xeger(semantic.pattern)
-            return _invert_pattern_string(valid_example, semantic.pattern)
+            # Inversion must also work when xeger cannot synthesize the pattern.
+            return _invert_pattern_string("", semantic.pattern)
 
         case _:
-            return "INVALID"
+            raise generation_error(
+                "Unsupported string violation",
+                code="unsupported_violation",
+                violation=violation.value if violation else None,
+            )
 
 
 def _random_string_with_length(
@@ -104,11 +109,11 @@ def _random_pattern_with_length(
             pattern=pattern,
         ) from e
 
-    if min_len == 0 and compiled.fullmatch(""):
+    if min_len == 0 and compiled.search(""):
         return ""
 
     if min_len == 0 and max_len == 0:
-        empty_ok = compiled.fullmatch("")
+        empty_ok = compiled.search("")
         if empty_ok:
             return ""
         else:
@@ -129,7 +134,7 @@ def _random_pattern_with_length(
 
         if len(candidate) > MAX_CANDIDATE_LENGTH:
             continue
-        if not compiled.fullmatch(candidate):
+        if not compiled.search(candidate):
             continue
         if len(candidate) < min_len:
             continue
@@ -149,31 +154,38 @@ def _random_pattern_with_length(
 
 
 def _invert_pattern_string(valid_example: str, pattern: str) -> str:
-    if not valid_example:
-        return "x"
+    try:
+        compiled = re.compile(pattern)
+    except re.error as e:
+        raise generation_error(
+            "Invalid or unsupported regex pattern",
+            code="invalid_regex_pattern",
+            pattern=pattern,
+        ) from e
 
-    compiled = re.compile(pattern)
+    if is_universal_pattern(pattern):
+        raise generation_error(
+            "Pattern matches every string under search semantics",
+            code="impossible_violation",
+            violation=ViolationType.PATTERN_MISMATCH.value,
+            pattern=pattern,
+        )
 
+    candidates = ["x", "", "a", "1", *BAD_CHARS_FOR_INVERSION]
     for ch in BAD_CHARS_FOR_INVERSION:
-        candidate = valid_example + ch
-        if compiled.fullmatch(candidate) is None:
+        candidates.extend(
+            (valid_example + ch, ch + valid_example, ch + valid_example[1:])
+        )
+    candidates.extend(
+        ch * length for length in (2, 8, 32) for ch in DEFAULT_CHARSET + "\n\x00"
+    )
+    for candidate in candidates:
+        if compiled.search(candidate) is None:
             return candidate
 
-    for ch in BAD_CHARS_FOR_INVERSION:
-        candidate = ch + valid_example
-        if compiled.fullmatch(candidate) is None:
-            return candidate
-
-    for ch in BAD_CHARS_FOR_INVERSION:
-        candidate = ch + valid_example[1:]
-        if compiled.fullmatch(candidate) is None:
-            return candidate
-
-    first = valid_example[0]
-    if first.isalpha():
-        invalid = "1"
-    elif first.isdigit():
-        invalid = "a"
-    else:
-        invalid = "x"
-    return invalid + valid_example[1:]
+    raise generation_error(
+        "Could not find a string that does not match the pattern",
+        code="pattern_inversion_exhausted",
+        pattern=pattern,
+        attempts=len(candidates),
+    )

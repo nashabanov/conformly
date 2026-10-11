@@ -2,6 +2,7 @@ from .._errors import generation_error
 from ..context import GenerationContext
 
 from conformly._internal.resolver.semantics import NumericSemantic
+from conformly._internal.resolver.semantics._numeric import integer_multiple_step
 from conformly._internal.types import ViolationType
 
 
@@ -14,13 +15,13 @@ def generate_value(
         max_val = int(valid_range.max_value)
 
         if semantic.multiple_of is not None:
-            multiple_of = int(semantic.multiple_of)
+            multiple_of = integer_multiple_step(semantic.multiple_of)
 
             first_multiple = ((min_val + multiple_of - 1) // multiple_of) * multiple_of
 
             if first_multiple > max_val:
                 raise generation_error(
-                    "Cannot generate valid float: no multiples of in valid range",
+                    "Cannot generate valid integer: no multiples of in valid range",
                     code="no_multiples_of",
                     multiple_of=multiple_of,
                     valid_range=[min_val, max_val],
@@ -41,10 +42,17 @@ def _generate_invalid_integer(
     ctx: GenerationContext, semantic: NumericSemantic, violation: ViolationType
 ) -> int:
     if violation == ViolationType.NOT_MULTIPLE and semantic.multiple_of is not None:
+        step = integer_multiple_step(semantic.multiple_of)
+        if step == 1:
+            raise generation_error(
+                "Every integer is a multiple of the divisor",
+                code="impossible_violation",
+                violation=violation.value,
+            )
         valid_range = semantic.valid_range
         return (
             ctx.rng.randint(int(valid_range.min_value), int(valid_range.max_value))
-            * int(semantic.multiple_of)
+            * integer_multiple_step(semantic.multiple_of)
             + 1
         )
 

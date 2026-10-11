@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.4] - Planned
 
 ### Fixed
+- Reject impossible integer `NOT_MULTIPLE` and obvious universal regex mismatch
+  requests during planning; verify regex inversion candidates and report structured
+  errors on exhaustion instead of returning unverified invalid values.
+- Correct fractional integer bounds and multiples, float decimal multiple endpoints,
+  narrow ranges and overflow-safe sampling; fail explicitly when no valid multiple
+  exists and verify numeric violations before returning them.
 - Plan compatible collection violation targets before generation, preserving
   dictionary key/value routing and fixed tuple element order, including
   `all_violations` and nested model fields inside collections.
@@ -23,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   collection size and key constraints are preserved.
 
 ### Changed
+- Use regex search semantics consistently with Pydantic, and define float
+  multiple-of tolerance as an absolute `1e-9` distance of the quotient to an integer.
+- Reject non-positive or non-finite `MultipleOf` divisors as schema errors.
 - Refactor the resolver to construct fully indexed models without runtime mutation,
   compose nested indexes from resolved children, and protect cached lookup mappings
   from modification.

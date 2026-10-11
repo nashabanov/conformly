@@ -349,17 +349,17 @@ def _calculate_int_bounds(constraints: tuple[Constraint, ...]) -> Range:
                 },
             )
 
-        v = int(c.value)
+        v = c.value
 
         match c:
             case GreaterThan():
-                low = max(low, v + 1)
+                low = max(low, math.floor(v) + 1)
             case GreaterOrEqual():
-                low = max(low, v)
+                low = max(low, math.ceil(v))
             case LessThan():
-                high = min(high, v - 1)
+                high = min(high, math.ceil(v) - 1)
             case LessOrEqual():
-                high = min(high, v)
+                high = min(high, math.floor(v))
 
     if low > high:
         raise SchemaError(
@@ -420,6 +420,11 @@ def _extract_numeric_multiple_of(
         if not isinstance(c, MultipleOf):
             continue
 
+        if not math.isfinite(c.value) or c.value <= 0:
+            raise SchemaError(
+                "MultipleOf must be finite and positive",
+                context={"code": "invalid_multiple_of", "value": c.value},
+            )
         return c.value
 
     return None

@@ -134,3 +134,15 @@ def test_generate_value_raises_on_ranges_conflict_with_multiple(
     )
     with pytest.raises(GenerationError):
         generate_value(ctx, semantic, None)
+
+
+def test_integer_generator_cannot_bypass_impossible_planning(ctx):
+    semantic = NumericSemantic(
+        kind=FieldKind.INTEGER,
+        valid_range=Range(-10, 10),
+        invalid_ranges=(),
+        multiple_of=1,
+    )
+    with pytest.raises(GenerationError) as exc:
+        generate_value(ctx, semantic, ViolationType.NOT_MULTIPLE)
+    assert exc.value.context["code"] == "impossible_violation"
