@@ -18,7 +18,7 @@ from ._internal.constraints import (
     Pattern,
     UniqueItems,
 )
-from ._internal.fields import Email, IPv4, IPv6, IPvAny
+from ._internal.fields import Email, HttpUrl, IPv4, IPv6, IPvAny, Url
 from ._internal.types import ViolationType as V
 from .exceptions import ConformlyError
 
@@ -27,6 +27,7 @@ __all__ = [
     "Email",
     "GreaterOrEqual",
     "GreaterThan",
+    "HttpUrl",
     "IPv4",
     "IPv6",
     "IPvAny",
@@ -40,6 +41,7 @@ __all__ = [
     "OneOf",
     "Pattern",
     "UniqueItems",
+    "Url",
     "V",
     "case",
     "cases",

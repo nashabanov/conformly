@@ -4,7 +4,7 @@ from .registry import (
     SPECIAL_STRINGS,
     SPECIAL_TYPE_TO_KIND,
 )
-from .special_types import Email, IPv4, IPv6, IPvAny, SpecialString
+from .special_types import Email, HttpUrl, IPv4, IPv6, IPvAny, SpecialString, Url
 
 __all__ = [
     "SPECIAL_KINDS",
@@ -12,8 +12,10 @@ __all__ = [
     "SPECIAL_STRINGS",
     "SPECIAL_TYPE_TO_KIND",
     "Email",
+    "HttpUrl",
     "IPv4",
     "IPv6",
     "IPvAny",
     "SpecialString",
+    "Url",
 ]
