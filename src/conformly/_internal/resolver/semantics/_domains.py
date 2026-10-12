@@ -2,11 +2,14 @@ from typing import Any
 
 from . import BooleanSemantic, EnumSemantic, FieldSemantics, NumericSemantic
 from ._numeric import integer_multiple_step
+from .temporal import TemporalSemantic
 
 from conformly._internal.types import FieldKind
 
 
 def finite_cardinality(semantic: FieldSemantics) -> int | None:
+    if isinstance(semantic, TemporalSemantic):
+        return semantic.max_value - semantic.min_value + 1
     if isinstance(semantic, BooleanSemantic):
         return 2
     if isinstance(semantic, EnumSemantic):

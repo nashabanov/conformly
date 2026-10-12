@@ -17,6 +17,7 @@ from .semantics import (
     TupleSemantic,
     UUIDSemantic,
 )
+from .semantics.temporal import TEMPORAL_TYPES, create_temporal_semantic
 
 from conformly._internal.constraints import (
     Constraint,
@@ -221,6 +222,10 @@ def create_scalar_semantic(
 
         return create_string_semantic(c, kind)
 
+    for kind, temporal_type in TEMPORAL_TYPES.items():
+        if t is temporal_type:
+            return create_temporal_semantic(kind, c)
+
     if t is uuid.UUID:
         return UUIDSemantic(has_constraints=True)
 
@@ -351,6 +356,11 @@ def _calculate_int_bounds(constraints: tuple[Constraint, ...]) -> Range:
             )
 
         v = c.value
+        if not isinstance(v, (int, float)):
+            raise SchemaError(
+                "Numeric bounds require numeric values",
+                context={"code": "invalid_numeric_bound_type"},
+            )
 
         match c:
             case GreaterThan():
@@ -382,6 +392,11 @@ def _calculate_float_bounds(constraints: tuple[Constraint, ...]) -> Range:
         if not isinstance(c, (GreaterThan, GreaterOrEqual, LessThan, LessOrEqual)):
             continue
 
+        if not isinstance(c.value, (int, float)):
+            raise SchemaError(
+                "Numeric bounds require numeric values",
+                context={"code": "invalid_numeric_bound_type"},
+            )
         v = float(c.value)
         if math.isnan(v):
             raise SchemaError(

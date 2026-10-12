@@ -6,6 +6,7 @@ from .list import ListSemantic
 from .numeric import NumericSemantic
 from .object import ObjectSemantic
 from .string import StringSemantic
+from .temporal import create_temporal_semantic
 from .tuple import TupleSemantic
 from .uuid import UUIDSemantic
 
@@ -65,6 +66,8 @@ def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
                     invalid_ranges=(Range(-10, 0), Range(100, 110)),
                 ),
             )
+        case FieldKind.DATETIME | FieldKind.DATE | FieldKind.TIME | FieldKind.TIMEDELTA:
+            return create_temporal_semantic(kind, ())
         case FieldKind.UUID:
             return UUIDSemantic()
         case FieldKind.TUPLE:

@@ -5,6 +5,7 @@ from .list import ListSemantic
 from .numeric import NumericSemantic
 from .object import ObjectSemantic
 from .string import StringSemantic
+from .temporal import TemporalSemantic
 from .tuple import TupleSemantic
 from .uuid import UUIDSemantic
 
@@ -17,6 +18,7 @@ FieldSemantics = (
     | ListSemantic
     | UUIDSemantic
     | DictSemantic
+    | TemporalSemantic
     | TupleSemantic
 )
 
@@ -30,6 +32,7 @@ __all__ = [
     "NumericSemantic",
     "ObjectSemantic",
     "StringSemantic",
+    "TemporalSemantic",
     "TupleSemantic",
     "UUIDSemantic",
 ]

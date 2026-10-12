@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026.10.13
+
+### Added
+- Native generation of `datetime`, `date`, `time`, and `timedelta`, including
+  collections and all model adapters, with reproducible seeded values.
+- Temporal `GreaterThan`, `GreaterOrEqual`, `LessThan`, and `LessOrEqual`
+  bounds, minimal `BELOW_MIN` / `ABOVE_MAX` violations, and aware datetime
+  bounds normalized to UTC. Reject incompatible or empty temporal ranges.
+
 ## [0.7.4] - 2026.10.11
 
 ### Fixed

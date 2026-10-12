@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from datetime import date, datetime, time, timedelta
 from typing import Annotated, Any, cast, get_args, get_origin
 
 from conformly._internal.constraints import (
@@ -120,6 +121,11 @@ def _coerce_constraint_value(k: ConstraintType, v: Any) -> Any:
                 "actual": type(v).__name__,
             },
         )
+
+    if k in ("gt", "ge", "lt", "le") and isinstance(
+        v, (date, datetime, time, timedelta)
+    ):
+        return v
 
     if k in NUMERIC_CONSTRAINTS:
         if isinstance(v, (int, float)) and not isinstance(v, bool):

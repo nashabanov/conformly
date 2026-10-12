@@ -11,6 +11,10 @@ class FieldKind(Enum):
     OBJECT = "object"
     ENUM = "enum"
     UUID = "uuid"
+    DATETIME = "datetime"
+    DATE = "date"
+    TIME = "time"
+    TIMEDELTA = "timedelta"
 
     # special strings
     EMAIL = "email"

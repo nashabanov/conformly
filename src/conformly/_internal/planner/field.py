@@ -13,6 +13,7 @@ from conformly._internal.resolver.semantics import (
     NumericSemantic,
     ObjectSemantic,
     StringSemantic,
+    TemporalSemantic,
     TupleSemantic,
     UUIDSemantic,
 )
@@ -151,6 +152,13 @@ def _define_allowed_violation_types(
                 ViolationType.WRONG_UUID_FORMAT,
                 ViolationType.WRONG_UUID_CHARACTER,
             ]
+
+        case TemporalSemantic():
+            violations = []
+            if semantic.min_value > semantic.domain_min:
+                violations.append(ViolationType.BELOW_MIN)
+            if semantic.max_value < semantic.domain_max:
+                violations.append(ViolationType.ABOVE_MAX)
 
         case (
             ObjectSemantic(kind=FieldKind.OBJECT)

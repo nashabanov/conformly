@@ -401,6 +401,43 @@ class Config(BaseModel):
     admin_email: EmailStr  # Automatically uses Email generator
 ```
 
+#### Date and time support
+
+Standard `datetime.datetime`, `datetime.date`, `datetime.time`, and
+`datetime.timedelta` fields generate native Python values, including inside
+collections and nested models. Generation is reproducible with `seed`.
+
+Use `GreaterThan`, `GreaterOrEqual`, `LessThan`, and `LessOrEqual` with bounds
+of the same type as the field:
+
+```python
+from dataclasses import dataclass
+from datetime import date, timedelta
+from typing import Annotated
+
+from conformly import GreaterOrEqual, LessThan, V, case, path
+
+@dataclass
+class Booking:
+    day: Annotated[date, GreaterOrEqual(date(2026, 1, 1)), LessThan(date(2027, 1, 1))]
+    duration: Annotated[timedelta, GreaterOrEqual(timedelta(hours=1))]
+
+booking = case(Booking, seed=42)
+invalid = case(Booking, valid=False, strategy=path("day").violate(V.BELOW_MIN))
+```
+
+Bounds also work in dataclass metadata and Pydantic `Field(gt=..., ge=...,
+lt=..., le=...)`. Empty or incompatible ranges raise `SchemaError`.
+`BELOW_MIN` and `ABOVE_MAX` produce the nearest value outside the valid range:
+one day for `date`, one microsecond for the other types. A violation beyond
+Python's representable limits raises `PlanningError`.
+
+Unconstrained `datetime` and `time` values are naive. Aware `datetime` bounds
+are compared as UTC instants and produce aware UTC values; mixing aware and
+naive bounds is rejected. `time` bounds must be naive and describe a linear
+interval within one day, without wrapping across midnight. Other temporal
+constraints, including `MultipleOf`, are not supported.
+
 #### UUID support
 
 Standard `uuid.UUID` fields are supported out of the box. Values are generated in canonical RFC 4122 v4 format (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`, lowercase).
