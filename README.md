@@ -66,19 +66,19 @@ assert 3 <= len(invalid["username"]) <= 32
 Results are dictionaries, not model instances. Invalid generation targets one
 field; only the selected violation is guaranteed on that target. Defaults and
 overrides are trusted rather than validated. See the
-[invalid generation contract](docs/strategies.md#invalid-generation-contract).
+[invalid generation contract](https://github.com/nashabanov/conformly/blob/main/docs/strategies.md#invalid-generation-contract).
 
 ## Documentation and examples
 
-Start with [Getting started](docs/getting-started.md), browse the
-[documentation index](docs/README.md), or run the [examples](examples/README.md).
-The [API reference](docs/api-reference.md) lists parameters and defaults.
+Start with [Getting started](https://github.com/nashabanov/conformly/blob/main/docs/getting-started.md), browse the
+[documentation index](https://github.com/nashabanov/conformly/blob/main/docs/README.md), or run the [examples](https://github.com/nashabanov/conformly/blob/main/examples/README.md).
+The [API reference](https://github.com/nashabanov/conformly/blob/main/docs/api-reference.md) lists parameters and defaults.
 
 ## Development and contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and checks, and
-[CHANGELOG.md](CHANGELOG.md) for release notes and migration guidance.
+See [CONTRIBUTING.md](https://github.com/nashabanov/conformly/blob/main/CONTRIBUTING.md) for setup and checks, and
+[CHANGELOG.md](https://github.com/nashabanov/conformly/blob/main/CHANGELOG.md) for release notes and migration guidance.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](https://github.com/nashabanov/conformly/blob/main/LICENSE).
