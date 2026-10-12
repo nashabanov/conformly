@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Temporal `GreaterThan`, `GreaterOrEqual`, `LessThan`, and `LessOrEqual`
   bounds, minimal `BELOW_MIN` / `ABOVE_MAX` violations, and aware datetime
   bounds normalized to UTC. Reject incompatible or empty temporal ranges.
+- Public `Url` and `HttpUrl` marker exports from `conformly`.
+
+### Changed
+- Reorganize user documentation into focused guides and a public API reference,
+  with standalone examples for generation, validation, nested models, Pydantic,
+  and attrs. Preserve generation contracts, defaults, and diagnostic guidance.
+- Use absolute GitHub links in the concise README so navigation works on PyPI.
 
 ## [0.7.4] - 2026.10.11
 
