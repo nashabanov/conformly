@@ -7,6 +7,7 @@ from conformly._internal.fields import SPECIAL_KINDS
 from conformly._internal.resolver import ResolvedModel
 from conformly._internal.resolver.semantics import (
     BooleanSemantic,
+    BytesSemantic,
     EnumSemantic,
     FieldSemantics,
     ListSemantic,
@@ -131,6 +132,13 @@ def _define_allowed_violation_types(
     match semantic:
         case StringSemantic(kind=kind) if kind in SPECIAL_KINDS | {FieldKind.STRING}:
             violations = _define_string_violations(semantic)
+
+        case BytesSemantic():
+            violations = []
+            if semantic.length_range.min_length > 0:
+                violations.append(ViolationType.TOO_SHORT)
+            if semantic.length_range.max_length is not None:
+                violations.append(ViolationType.TOO_LONG)
 
         case NumericSemantic(kind=(FieldKind.INTEGER | FieldKind.FLOAT)):
             violations = _define_numeric_violations(semantic)

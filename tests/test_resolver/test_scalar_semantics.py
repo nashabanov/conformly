@@ -409,7 +409,7 @@ def test_create_field_semantic_dispatch(
 
 
 def test_create_field_semantic_unsupported_type() -> None:
-    field_spec = FieldSpec("x", ElementSpec(bytes, ()))
+    field_spec = FieldSpec("x", ElementSpec(complex, ()))
     with pytest.raises(ResolutionError):
         create_scalar_semantic(field_spec.element, field_spec)  # type: ignore
 

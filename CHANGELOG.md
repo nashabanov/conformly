@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.8.0] - 2026.10.13
 
 ### Added
+- Native `bytes` generation with `MinLength` / `MaxLength`, minimal length
+  violations, and seeded reproducibility across adapters and collections.
 - Native generation of `datetime`, `date`, `time`, and `timedelta`, including
   collections and all model adapters, with reproducible seeded values.
 - Temporal `GreaterThan`, `GreaterOrEqual`, `LessThan`, and `LessOrEqual`

@@ -2,6 +2,7 @@ from ._errors import generation_error
 from .protocol import TypeGeneratorProtocol
 from .types import (
     boolean,
+    bytes,
     dictionaries,
     email,
     enum,
@@ -22,6 +23,7 @@ from conformly._internal.types import FieldKind
 
 _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
     FieldKind.STRING: string,
+    FieldKind.BYTES: bytes,
     FieldKind.BOOLEAN: boolean,
     FieldKind.FLOAT: float,
     FieldKind.INTEGER: integer,
@@ -44,6 +46,7 @@ _GENERATORS: dict[FieldKind, TypeGeneratorProtocol] = {
 
 _MISMATCH_MAPPING: dict[FieldKind, FieldKind] = {
     FieldKind.STRING: FieldKind.INTEGER,
+    FieldKind.BYTES: FieldKind.INTEGER,
     FieldKind.BOOLEAN: FieldKind.STRING,
     FieldKind.INTEGER: FieldKind.STRING,
     FieldKind.FLOAT: FieldKind.STRING,

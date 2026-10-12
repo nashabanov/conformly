@@ -401,6 +401,32 @@ class Config(BaseModel):
     admin_email: EmailStr  # Automatically uses Email generator
 ```
 
+#### Bytes support
+
+Standard `bytes` fields generate native byte sequences with values from the full
+byte range (0–255). `MinLength` and `MaxLength` count bytes and work through
+`Annotated`, dataclass metadata, and Pydantic `Field(min_length=..., max_length=...)`.
+
+```python
+from dataclasses import dataclass
+from typing import Annotated
+
+from conformly import MaxLength, MinLength, V, case, path
+
+@dataclass
+class Packet:
+    payload: Annotated[bytes, MinLength(2), MaxLength(16)]
+
+packet = case(Packet, seed=42)
+invalid = case(Packet, valid=False, strategy=path("payload").violate(V.TOO_SHORT))
+```
+
+Generation is reproducible with `seed`, including collections and nested models.
+`TOO_SHORT` produces `min_length - 1` bytes; `TOO_LONG` produces `max_length + 1`.
+`MaxLength(0)` generates `b""`. Without an upper bound, valid lengths range from
+`min_length` (default 0) to `min_length + 50`. Negative lengths, empty length
+ranges, and unsupported constraints such as `Pattern` raise `SchemaError`.
+
 #### Date and time support
 
 Standard `datetime.datetime`, `datetime.date`, `datetime.time`, and

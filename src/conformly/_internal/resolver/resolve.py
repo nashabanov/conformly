@@ -17,6 +17,7 @@ from .semantics import (
     TupleSemantic,
     UUIDSemantic,
 )
+from .semantics.bytes import create_bytes_semantic
 from .semantics.temporal import TEMPORAL_TYPES, create_temporal_semantic
 
 from conformly._internal.constraints import (
@@ -240,6 +241,9 @@ def create_scalar_semantic(
             has_constraints=field_spec.has_constraints(),
             multiple_of=_extract_numeric_multiple_of(c),
         )
+
+    elif t is bytes:
+        return create_bytes_semantic(c)
 
     elif t is str:
         return create_string_semantic(c)
@@ -567,7 +571,7 @@ def create_list_semantics(
         element_nested_model=element_nested_model,
         length_range=length_range,
         is_unique_items=is_unique_items,
-        has_constraints=has_constraints,
+        has_constraints=has_constraints or element_semantic.has_constraints,
     )
 
 
@@ -616,7 +620,11 @@ def create_dict_semantic(
         value_nested_model=value_nested_model,
         length_range=length_range,
         is_unique_items=False,
-        has_constraints=has_constraints,
+        has_constraints=(
+            has_constraints
+            or key_semantic.has_constraints
+            or value_semantic.has_constraints
+        ),
     )
 
 

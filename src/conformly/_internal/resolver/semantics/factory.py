@@ -1,5 +1,6 @@
 from . import FieldSemantics
 from .boolean import BooleanSemantic
+from .bytes import BytesSemantic
 from .dict import DictSemantic
 from .enum import EnumSemantic
 from .list import ListSemantic
@@ -27,6 +28,8 @@ def create_minimal_semantic(kind: FieldKind) -> FieldSemantics:
             return StringSemantic(
                 kind=kind, length_range=LengthRange(0, None), pattern=None
             )
+        case FieldKind.BYTES:
+            return BytesSemantic(length_range=LengthRange(0, None))
         case FieldKind.BOOLEAN:
             return BooleanSemantic()
         case FieldKind.INTEGER:

@@ -7,6 +7,7 @@ class FieldKind(Enum):
     INTEGER = "integer"
     FLOAT = "float"
     STRING = "string"
+    BYTES = "bytes"
     BOOLEAN = "boolean"
     OBJECT = "object"
     ENUM = "enum"
