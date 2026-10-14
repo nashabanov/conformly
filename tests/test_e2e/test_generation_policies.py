@@ -6,7 +6,7 @@ from typing import Annotated, NotRequired, Required, TypedDict
 import pytest
 
 from conformly import GreaterOrEqual, V, case, cases, path
-from conformly.exceptions import PlanningError
+from conformly.exceptions import GenerationError, PlanningError
 
 
 class Partial(TypedDict, total=False):
@@ -209,16 +209,20 @@ def test_nullable_defaults_and_unchecked_factory_policy(
 
 @pytest.mark.parametrize("api", [case, cases])
 @pytest.mark.parametrize("invalid", [False, True])
-def test_unchecked_overrides_win_unless_targeted(default_policy_model, api, invalid):
+@pytest.mark.parametrize("override_value", [-9, None])
+def test_unchecked_overrides_win_unless_targeted(
+    default_policy_model, api, invalid, override_value
+):
     model, calls = default_policy_model
+    target_override = 100 if override_value is not None else None
     kwargs = {
         "seed": 0,
         "valid": not invalid,
         "overrides": [
-            path("target").set(100),
-            path("value").set(-9),
-            path("nullable").set(-9),
-            path("factory").set(-9),
+            path("target").set(target_override),
+            path("value").set(override_value),
+            path("nullable").set(override_value),
+            path("factory").set(override_value),
         ],
     }
     if invalid:
@@ -226,9 +230,18 @@ def test_unchecked_overrides_win_unless_targeted(default_policy_model, api, inva
     result = api(model, **kwargs)
     payloads = result if api is cases else [result]
     for payload in payloads:
-        assert payload["value"] == payload["nullable"] == payload["factory"] == -9
+        assert (
+            payload["value"]
+            == payload["nullable"]
+            == payload["factory"]
+            == override_value
+        )
         assert payload["nullable_factory"] is None
-        assert payload["target"] < 10 if invalid else payload["target"] == 100
+        assert (
+            payload["target"] < 10
+            if invalid
+            else (payload["target"] == target_override)
+        )
     assert not calls
 
 
@@ -273,3 +286,31 @@ def test_defaulted_fields_are_not_missing_field_targets(adapter):
     assert all(payload["defaulted"] == 5 for payload in payloads)
     with pytest.raises(PlanningError):
         case(model, valid=False, target=path("defaulted").violate(V.MISSING_FIELD))
+
+
+@pytest.mark.parametrize("api", [case, cases])
+def test_typeddict_explicit_none_overrides_are_trusted(api):
+    kwargs = {
+        "seed": 42,
+        "overrides": [path("required").set(None), path("nullable").set(None)],
+    }
+    result = api(Partial, **kwargs)
+    assert result == api(Partial, **kwargs)
+    payload = result[0] if api is cases else result
+    assert payload["required"] is None
+    assert payload["nullable"] is None
+
+
+@pytest.mark.parametrize(
+    "selector,code",
+    [
+        (path("nonexistent").set(None), "invalid_override_path"),
+        (path("factory"), "invalid_override_selector"),
+    ],
+)
+def test_override_validation_precedes_factories(default_policy_model, selector, code):
+    model, calls = default_policy_model
+    with pytest.raises(GenerationError) as error:
+        case(model, seed=42, overrides=[selector])
+    assert error.value.context["code"] == code
+    assert not calls

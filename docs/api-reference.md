@@ -45,7 +45,7 @@ def cases(
 | `seed` | `int | None`; seeds internal generation |
 | `strategy` | `CaseStrategy = Literal["first", "random"]`; `CasesStrategy = Literal["first", "random", "all", "all_violations"]`; see [strategy table](strategies.md#selection-and-precedence) |
 | `target` | Selector from `path()`, or `None`; invalid generation only, with `strategy="first"` |
-| `overrides` | List of selectors created with `.set(value)`, or `None` |
+| `overrides` | List of selectors created with `.set(value)` for existing paths, or `None`; `.set(None)` is explicit; duplicates use the last value |
 | `count` | `int >= 1`; valid batch size or invalid path-selection count; must be 1 with a target; ignored by enumeration |
 | `allow_type_mismatch` | `bool`; enables invalid type planning |
 | `allow_structural_violations` | `bool`; `cases()` only; enables structural enumeration or explicit structural requests |
@@ -62,11 +62,22 @@ path(target: str)
 path(target: type[T], expr: Callable[[T], Any])
 ```
 
-Returns an immutable selector with `raw_path`, `forced_violation`, and `override`.
+Returns an immutable selector with `raw_path`, `forced_violation`, `override`,
+and `has_override`. The presence flag distinguishes `.set(None)` from a bare
+selector.
 Use `.violate(violation: V)` to select a violation or `.set(value: Any)` to
-supply an override. Each method returns a new selector. Attribute-only lambda
-chains and dotted strings are supported; indices and calls are unsupported.
+supply an override. `.set(value)` marks override presence, including for `None`.
+Each method returns a new selector and replaces the other operation's
+configuration. Attribute-only lambda chains and dotted strings are supported; indices and calls are unsupported.
 See [paths](strategies.md#paths-and-explicit-violations).
+
+## Overrides
+
+Override validation is identical in both APIs and generation modes. Unknown paths
+raise `GenerationError` with `code="invalid_override_path"`, `path`, and `available`.
+Bare, violation-only, or mixed-intent override selectors raise
+`GenerationError` with `code="invalid_override_selector"`. Override values remain
+trusted; the selected invalid field ignores its override.
 
 ## Constraints and marker types
 

@@ -24,10 +24,15 @@ invalid = case(
 assert invalid["tenant"] == "test-tenant"
 ```
 
-Overrides accept arbitrary values and are not validated. They override defaults,
+Override values are trusted without schema validation. They override defaults,
 but an invalid target bypasses its override. Nested paths apply to matching
-fields in generated nested models. Unknown override paths are currently ignored;
-check their spelling. `.set(None)` is supported. Selectors are immutable:
+fields in generated nested models. Unknown override paths raise
+`GenerationError` with `code="invalid_override_path"`, the requested `path`, and
+`available` field paths. Every override must be configured with `.set(value)`;
+bare or violation-only selectors raise `invalid_override_selector`.
+`.set(None)` is an intentional override, including for non-nullable fields, and
+bypasses defaults and factories. Duplicate paths use the last supplied value.
+Selectors are immutable:
 `.set()` and `.violate()` return new selectors and replace the other operation;
 do not chain them expecting a combined override and violation.
 
@@ -73,7 +78,7 @@ except PlanningError as error:
 | `SchemaError` | Malformed or unsupported schema/constraints | `unsupported_union`, `inconsistent_constraints`, `invalid_numeric_bounds`, `invalid_length_range`, `invalid_constraint_combination` |
 | `ResolutionError` | Unsupported model/type mapping | `adapter_not_found`, `unsupported_field_type`, `invalid_dict_key` |
 | `PlanningError` | No feasible negative target | `field_not_found`, `no_violation_candidate`, `no_constraints_field`, `invalid_forced_violation`, `too_many_requested`, `infeasible_collection_target` |
-| `GenerationError` | Invalid API options or generation failure | `invalid_count`, `invalid_strategy_for_valid`, `invalid_flag_for_valid`, `unsupported_strategy`, `invalid_target`, `invalid_target_for_valid`, `invalid_strategy_for_target`, `invalid_count_for_target`, `no_multiples_of`, `impossible_collection_size`, `collection_retry_exhausted` |
+| `GenerationError` | Invalid API options or generation failure | `invalid_override_path`, `invalid_override_selector`, `invalid_count`, `invalid_strategy_for_valid`, `invalid_flag_for_valid`, `unsupported_strategy`, `invalid_target`, `invalid_target_for_valid`, `invalid_strategy_for_target`, `invalid_count_for_target`, `no_multiples_of`, `impossible_collection_size`, `collection_retry_exhausted` |
 
 Diagnostic keys vary by error: e.g. `available` lists paths or violation names,
 `allowed` lists applicable violations, and collection errors include requested

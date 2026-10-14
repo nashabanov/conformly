@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.0] - 2026.10.14
 
 ### Changed
 - **Breaking:** Separate field targeting into keyword-only `target: PathSelector | None`
@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   targeted `cases()` calls now reject `count != 1` instead of ignoring it.
 
 ### Fixed
+- Reject unknown override paths with structured `invalid_override_path` API errors;
+  require `.set(value)` selectors, rejecting bare or violation selectors with
+  `invalid_override_selector`. Nested paths and last-write-wins duplicates remain
+  supported.
+- Track override presence separately from its value so `.set(None)` is explicit,
+  while bare selectors remain unset. Preserve trusted values, factory bypass,
+  and the selected invalid target's precedence over its override.
 - Consider explicit type mismatch and missing-field violations during target
   eligibility checks, so supported requests work without redundant capability flags.
 

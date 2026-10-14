@@ -31,9 +31,25 @@ def normalize_overrides(
     normalized_overrides: dict[FieldPath, Any] = {}
 
     for v in overrides:
-        path = model.name_to_path.get(v.raw_path)
-        if path:
-            normalized_overrides[path] = v.override
+        if (
+            not isinstance(v, PathSelector)
+            or not v.has_override
+            or v.forced_violation is not None
+        ):
+            raise api_error(
+                "Overrides must be selectors configured with .set(value)",
+                code="invalid_override_selector",
+                path=v.raw_path if isinstance(v, PathSelector) else None,
+            )
+        if v.raw_path not in model.name_to_path:
+            raise api_error(
+                "Override path not found",
+                code="invalid_override_path",
+                path=v.raw_path,
+                available=list(model.name_to_path),
+            )
+        path = model.name_to_path[v.raw_path]
+        normalized_overrides[path] = v.override
 
     return normalized_overrides
 

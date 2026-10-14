@@ -1,14 +1,18 @@
+from dataclasses import make_dataclass, replace
+from typing import Annotated
 import uuid
 
 from _models import User, UserUUID
 import pytest
 
 from conformly import (
+    MinLength,
     V,
     case,
     cases,
     path,
 )
+from conformly.exceptions import GenerationError
 
 
 class TestUUIDGeneration:
@@ -106,3 +110,92 @@ class TestOverrides:
         assert seen_broken_override, (
             "Override should be ignored when field is invalidated"
         )
+
+
+@pytest.fixture
+def override_model():
+    name = Annotated[str, MinLength(3)]
+    profile = make_dataclass("OverrideProfile", [("name", name)])
+    return make_dataclass("OverrideUser", [("username", name), ("profile", profile)])
+
+
+@pytest.mark.parametrize("api", [case, cases])
+@pytest.mark.parametrize("valid", [True, False])
+@pytest.mark.parametrize("requested", ["nonexistent", "profile.nonexistent"])
+def test_unknown_override_path(override_model, api, valid, requested):
+    with pytest.raises(GenerationError) as error:
+        api(
+            override_model,
+            valid=valid,
+            seed=42,
+            overrides=[path(requested).set("value")],
+        )
+    assert error.value.context["code"] == "invalid_override_path"
+    assert error.value.context["path"] == requested
+    assert set(error.value.context["available"]) == {
+        "username",
+        "profile",
+        "profile.name",
+    }
+
+
+@pytest.mark.parametrize("api", [case, cases])
+@pytest.mark.parametrize("valid", [True, False])
+@pytest.mark.parametrize(
+    "selector",
+    [
+        path("username"),
+        path("username").violate(V.TOO_SHORT),
+        path("username").set(None).violate(V.TOO_SHORT),
+        "username",
+        replace(path("username").set(None), forced_violation=V.TOO_SHORT),
+    ],
+)
+def test_invalid_override_selector(override_model, api, valid, selector):
+    with pytest.raises(GenerationError) as error:
+        api(override_model, valid=valid, seed=42, overrides=[selector])
+    assert error.value.context["code"] == "invalid_override_selector"
+
+
+@pytest.mark.parametrize("api", [case, cases])
+@pytest.mark.parametrize("valid", [True, False])
+def test_nested_override_is_trusted_and_seeded(override_model, api, valid):
+    kwargs = {
+        "valid": valid,
+        "seed": 42,
+        "overrides": [path(override_model, lambda m: m.profile.name).set("x")],
+    }
+    result = api(override_model, **kwargs)
+    assert result == api(override_model, **kwargs)
+    payload = result[0] if api is cases else result
+    assert payload["profile"]["name"] == "x"
+    assert len(payload["username"]) >= 3 if valid else len(payload["username"]) < 3
+
+
+@pytest.mark.parametrize("api", [case, cases])
+@pytest.mark.parametrize("values", [("Alice", None), (None, "Alice")])
+def test_duplicate_overrides_use_last_value(override_model, api, values):
+    result = api(
+        override_model,
+        seed=42,
+        overrides=[path("username").set(value) for value in values],
+    )
+    payload = result[0] if api is cases else result
+    assert payload["username"] == values[-1]
+
+
+@pytest.mark.parametrize("api", [case, cases])
+def test_explicit_none_target_override_is_ignored(override_model, api):
+    kwargs = {
+        "valid": False,
+        "seed": 42,
+        "target": path("username").violate(V.TOO_SHORT),
+    }
+    unrelated = path("profile.name").set(None)
+    result = api(
+        override_model, overrides=[path("username").set(None), unrelated], **kwargs
+    )
+    assert result == api(override_model, overrides=[unrelated], **kwargs)
+    payload = result[0] if api is cases else result
+    assert len(payload["username"]) < 3
+    assert payload["profile"]["name"] is None

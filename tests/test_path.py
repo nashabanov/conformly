@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import FrozenInstanceError, dataclass
 
 import pytest
 
@@ -88,3 +88,31 @@ def test_path_lambda_rejects_wrong_variable():
 def test_path_lambda_rejects_literal():
     with pytest.raises(GenerationError):
         path(User, lambda u: "just_a_string")
+
+
+@pytest.mark.parametrize("value", [None, "Alice", 0, False])
+def test_path_tracks_explicit_override_without_mutating_selector(value):
+    selector = path("username")
+    overridden = selector.set(value)
+
+    assert selector.override is None
+    assert not selector.has_override
+    assert overridden.override == value
+    assert overridden.has_override
+    assert overridden.forced_violation is None
+    assert overridden != selector
+    with pytest.raises(FrozenInstanceError):
+        overridden.has_override = False
+
+
+def test_path_methods_replace_configuration():
+    overridden = path("username").violate(V.TOO_SHORT).set(None)
+    assert overridden.has_override
+    assert overridden.override is None
+    assert overridden.forced_violation is None
+
+    violated = overridden.violate(V.TOO_SHORT)
+    assert not violated.has_override
+    assert violated.override is None
+    assert violated.forced_violation == V.TOO_SHORT
+    assert overridden.has_override
