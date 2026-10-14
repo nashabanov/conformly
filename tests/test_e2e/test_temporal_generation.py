@@ -39,8 +39,8 @@ def test_bounds_and_minimal_violations(kind, low, high, step, lower, upper):
         assert (value > low) if lower is GreaterThan else (value >= low)
         assert (value < high) if upper is LessThan else (value <= high)
         assert case(model, seed=seed) == case(model, seed=seed)
-    below = case(model, valid=False, strategy=path("value").violate(V.BELOW_MIN))
-    above = case(model, valid=False, strategy=path("value").violate(V.ABOVE_MAX))
+    below = case(model, valid=False, target=path("value").violate(V.BELOW_MIN))
+    above = case(model, valid=False, target=path("value").violate(V.ABOVE_MAX))
     assert below["value"] <= low if lower is GreaterThan else below["value"] < low
     assert above["value"] >= high if upper is LessThan else above["value"] > high
     if kind is not time:
@@ -65,7 +65,7 @@ def test_unconstrained_and_type_structural_violations(kind):
     invalid = case(
         model,
         valid=False,
-        strategy=path("value").violate(V.TYPE_MISMATCH),
+        target=path("value").violate(V.TYPE_MISMATCH),
         allow_type_mismatch=True,
     )
     assert not isinstance(invalid["value"], kind)
@@ -79,7 +79,7 @@ def test_unconstrained_and_type_structural_violations(kind):
     assert "value" not in missing
     assert type(missing["other"]) is kind
     with pytest.raises(PlanningError):
-        case(model, valid=False, strategy=path("value").violate(V.BELOW_MIN))
+        case(model, valid=False, target=path("value").violate(V.BELOW_MIN))
 
 
 @pytest.mark.parametrize("kind", [date, datetime, time, timedelta])
@@ -94,7 +94,7 @@ def test_domain_boundaries_have_no_violation(kind, bound, violation):
         case(
             model_for(kind, constraint),
             valid=False,
-            strategy=path("value").violate(violation),
+            target=path("value").violate(violation),
         )
     exclusive = GreaterThan(limit) if bound == "max" else LessThan(limit)
     with pytest.raises(SchemaError):
@@ -109,7 +109,7 @@ def test_aware_datetime_bounds_normalize_to_utc():
     assert value.tzinfo is UTC
     assert low < value < high
     for violation in (V.BELOW_MIN, V.ABOVE_MAX):
-        invalid = case(model, valid=False, strategy=path("value").violate(violation))[
+        invalid = case(model, valid=False, target=path("value").violate(violation))[
             "value"
         ]
         assert invalid == (low if violation == V.BELOW_MIN else high)
@@ -168,7 +168,7 @@ def test_pydantic_field_bounds():
         for violation in (V.BELOW_MIN, V.ABOVE_MAX):
             with pytest.raises(pydantic.ValidationError):
                 Model.model_validate(
-                    case(Model, valid=False, strategy=path(name).violate(violation))
+                    case(Model, valid=False, target=path(name).violate(violation))
                 )
 
 
@@ -200,8 +200,6 @@ def test_unique_date_collections_reject_impossible_size(collection):
 def test_nested_temporal_target_preserves_other_fields():
     child = model_for(date, GreaterOrEqual(date(2024, 1, 1)))
     parent = make_dataclass("Parent", [("left", child), ("right", child)])
-    payload = case(
-        parent, valid=False, strategy=path("left.value").violate(V.BELOW_MIN)
-    )
+    payload = case(parent, valid=False, target=path("left.value").violate(V.BELOW_MIN))
     assert payload["left"]["value"] == date(2023, 12, 31)
     assert payload["right"]["value"] >= date(2024, 1, 1)

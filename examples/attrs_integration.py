@@ -18,7 +18,7 @@ payload = case(Product)
 assert len(payload["name"]) >= 3
 assert payload["quantity"] >= 1
 assert payload["currency"] == "USD"
-invalid = case(Product, valid=False, strategy=path("quantity").violate(V.BELOW_MIN))
+invalid = case(Product, valid=False, target=path("quantity").violate(V.BELOW_MIN))
 assert invalid["quantity"] < 1
 assert len(invalid["name"]) >= 3
 print(payload)

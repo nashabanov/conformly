@@ -61,7 +61,7 @@ def test_invalid_generation_preserves_unrelated_overrides(
         model,
         valid=False,
         seed=0,
-        strategy=path(target_path).violate(violation),
+        target=path(target_path).violate(violation),
         overrides=overrides,
     )
     payload = result[0] if api is cases else result
@@ -110,9 +110,9 @@ def test_extra_fields_preserve_overrides_at_every_depth():
 @pytest.mark.parametrize("seed", [0, 1, -1])
 @pytest.mark.parametrize("violation", [V.WRONG_UUID_FORMAT, V.WRONG_UUID_CHARACTER])
 def test_uuid_invalid_generation_is_seeded(api, seed, violation):
-    strategy = path("identifier").violate(violation)
-    assert api(RandomFields, valid=False, seed=seed, strategy=strategy) == api(
-        RandomFields, valid=False, seed=seed, strategy=strategy
+    target = path("identifier").violate(violation)
+    assert api(RandomFields, valid=False, seed=seed, target=target) == api(
+        RandomFields, valid=False, seed=seed, target=target
     )
 
 
@@ -138,7 +138,7 @@ def test_default_factories_run_once_per_generated_field(api, valid):
         else:
             kwargs.update(strategy="all_violations", allow_structural_violations=True)
     elif not valid:
-        kwargs.update(strategy="target", tracer=Tracer())
+        kwargs.update(target=path("target"), tracer=Tracer())
     result = api(Defaults, **kwargs)
     payloads = result if api is cases else [result]
     factory_values = [

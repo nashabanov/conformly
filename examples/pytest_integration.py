@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Annotated, Any
 
-from conformly import GreaterOrEqual, MinLength, case, cases
+from conformly import GreaterOrEqual, MinLength, V, case, cases, path
 
 
 @dataclass
@@ -33,7 +33,9 @@ def test_rejects_invalid_users() -> None:
 
 
 def test_targeted_age_rejection() -> None:
-    assert not accepts(case(CreateUser, valid=False, strategy="age::below_min"))
+    assert not accepts(
+        case(CreateUser, valid=False, target=path("age").violate(V.BELOW_MIN))
+    )
 
 
 if __name__ == "__main__":

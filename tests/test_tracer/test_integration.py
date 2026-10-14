@@ -27,7 +27,7 @@ def test_tracer_happy_path() -> None:
         User,
         valid=False,
         seed=123,
-        strategy=path(User, lambda u: u.email).violate(V.WRONG_EMAIL_FORMAT),
+        target=path(User, lambda u: u.email).violate(V.WRONG_EMAIL_FORMAT),
         tracer=tracer,
     )
 
@@ -75,21 +75,36 @@ def test_trace_describes_selected_target(seed, target, nested, selection):
     model = Root if nested else Fields
     target_path = f"fields.{target}" if nested else target
     strategies = {
-        "dsl": path(target_path).violate(V.BELOW_MIN),
-        "string": f"{target_path}::below_min",
-        "plain": target_path,
+        "dsl": path(
+            model,
+            {
+                "before": (lambda m: m.fields.before)
+                if nested
+                else (lambda m: m.before),
+                "middle": (lambda m: m.fields.middle)
+                if nested
+                else (lambda m: m.middle),
+                "after": (lambda m: m.fields.after) if nested else (lambda m: m.after),
+            }[target],
+        ).violate(V.BELOW_MIN),
+        "string": path(target_path).violate(V.BELOW_MIN),
+        "plain": path(target_path),
         "first": "first",
         "random": "random",
     }
-    strategy = strategies[selection]
+    kwargs = (
+        {"strategy": strategies[selection]}
+        if selection in ("first", "random")
+        else {"target": strategies[selection]}
+    )
     tracer = Tracer()
     # Reuse must replace every piece of stale metadata.
     tracer.set_target_path("stale")
     tracer.set_violation(V.EXTRA_FIELD)
     tracer.set_value_source(ValueSource.OVERRIDDEN)
     tracer.set_generated_value("stale")
-    payload = case(model, valid=False, seed=seed, strategy=strategy, tracer=tracer)
-    assert payload == case(model, valid=False, seed=seed, strategy=strategy)
+    payload = case(model, valid=False, seed=seed, tracer=tracer, **kwargs)
+    assert payload == case(model, valid=False, seed=seed, **kwargs)
     trace = tracer.build()
     if selection not in ("first", "random"):
         assert trace.target_path == target_path
@@ -124,7 +139,7 @@ def test_trace_missing_field_preserves_target_metadata():
         Fields,
         valid=False,
         seed=0,
-        strategy=path("target").violate(V.MISSING_FIELD),
+        target=path("target").violate(V.MISSING_FIELD),
         tracer=tracer,
         overrides=[path("target").set(50), path("after").set("override")],
     )
@@ -155,11 +170,11 @@ def test_tracing_does_not_change_factory_calls_or_payload():
         after: list[int] = field(default_factory=factory)
         tail: str = "default"
 
-    plain = case(Fields, valid=False, seed=0, strategy="target")
+    plain = case(Fields, valid=False, seed=0, target=path("target"))
     assert calls == [1, 2]
     calls.clear()
     tracer = Tracer()
-    traced = case(Fields, valid=False, seed=0, strategy="target", tracer=tracer)
+    traced = case(Fields, valid=False, seed=0, target=path("target"), tracer=tracer)
     assert calls == [1, 2]
     assert traced == plain
     assert traced["before"] == [1]

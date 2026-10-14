@@ -26,7 +26,7 @@ def test_public_url_markers_generate_supported_schemes() -> None:
 
 def test_public_url_markers_support_explicit_scheme_violation() -> None:
     payload = case(
-        Links, valid=False, strategy=path("website").violate(V.WRONG_URL_SCHEME)
+        Links, valid=False, target=path("website").violate(V.WRONG_URL_SCHEME)
     )
     assert urlsplit(payload["website"]).scheme not in {"http", "https"}
     assert urlsplit(payload["resource"]).scheme

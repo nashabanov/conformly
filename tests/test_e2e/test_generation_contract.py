@@ -212,9 +212,7 @@ def test_valid_contract(contract_model, seed, api, capsys):
 )
 def test_explicit_target_contract(contract_model, target, violation, api, seed, capsys):
     adapter, model = contract_model
-    result = api(
-        model, valid=False, seed=seed, strategy=path(target).violate(violation)
-    )
+    result = api(model, valid=False, seed=seed, target=path(target).violate(violation))
     payloads = result if api is cases else [result]
     for payload in payloads:
         failures = violations(payload)

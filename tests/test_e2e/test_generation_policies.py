@@ -66,7 +66,7 @@ def test_typeddict_structural_violations_only_remove_required_keys(model):
     assert missing == required
     assert extra_seen
     with pytest.raises(PlanningError):
-        case(model, valid=False, strategy=path("optional").violate(V.MISSING_FIELD))
+        case(model, valid=False, target=path("optional").violate(V.MISSING_FIELD))
 
 
 @pytest.mark.parametrize("extra", [None, "ignore", "allow", "forbid"])
@@ -102,7 +102,7 @@ def test_pydantic_structural_policy(extra):
     assert extra_seen == (extra == "forbid")
     for name in ("defaulted", "optional"):
         with pytest.raises(PlanningError):
-            case(model, valid=False, strategy=path(name).violate(V.MISSING_FIELD))
+            case(model, valid=False, target=path(name).violate(V.MISSING_FIELD))
 
 
 def test_nested_pydantic_models_keep_their_own_extra_policy():
@@ -193,7 +193,7 @@ def test_nullable_defaults_and_unchecked_factory_policy(
     model, calls = default_policy_model
     kwargs = {"seed": 0, "valid": not invalid}
     if invalid:
-        kwargs["strategy"] = path("target").violate(V.BELOW_MIN)
+        kwargs["target"] = path("target").violate(V.BELOW_MIN)
     elif api is cases:
         kwargs["count"] = 3
     result = api(model, **kwargs)
@@ -222,7 +222,7 @@ def test_unchecked_overrides_win_unless_targeted(default_policy_model, api, inva
         ],
     }
     if invalid:
-        kwargs["strategy"] = path("target").violate(V.BELOW_MIN)
+        kwargs["target"] = path("target").violate(V.BELOW_MIN)
     result = api(model, **kwargs)
     payloads = result if api is cases else [result]
     for payload in payloads:
@@ -236,7 +236,7 @@ def test_invalid_generation_bypasses_nullable_and_model_default(default_policy_m
     model, calls = default_policy_model
     for name in ("value", "nullable", "nullable_factory"):
         payload = case(
-            model, valid=False, seed=0, strategy=path(name).violate(V.BELOW_MIN)
+            model, valid=False, seed=0, target=path(name).violate(V.BELOW_MIN)
         )
         assert isinstance(payload[name], int) and payload[name] < 10
     assert len(calls) == 3
@@ -272,4 +272,4 @@ def test_defaulted_fields_are_not_missing_field_targets(adapter):
     assert any(set(payload) - {"required", "defaulted"} for payload in payloads)
     assert all(payload["defaulted"] == 5 for payload in payloads)
     with pytest.raises(PlanningError):
-        case(model, valid=False, strategy=path("defaulted").violate(V.MISSING_FIELD))
+        case(model, valid=False, target=path("defaulted").violate(V.MISSING_FIELD))

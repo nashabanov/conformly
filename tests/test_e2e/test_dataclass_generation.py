@@ -15,6 +15,7 @@ import pytest
 from conformly import (
     case,
     cases,
+    path,
 )
 
 
@@ -32,16 +33,16 @@ class TestUserModel:
         assert user["role"] in ["admin", "guest", "user"]
 
     def test_invalid_user_short_username(self):
-        invalid = case(User, valid=False, strategy="username")
+        invalid = case(User, valid=False, target=path("username"))
         assert len(invalid["username"]) == 2
 
     def test_invalid_user_long_full_name(self):
-        invalid = case(User, valid=False, strategy="full_name")
+        invalid = case(User, valid=False, target=path("full_name"))
         n = len(invalid["full_name"])
         assert n < 2 or n > 100
 
     def test_invalid_user_not_allowed_literal(self):
-        invalid = case(User, valid=False, strategy="role")
+        invalid = case(User, valid=False, target=path("role"))
         assert invalid["role"] not in ["admin", "guest", "user"]
 
     def test_multiple_users(self):
@@ -52,7 +53,7 @@ class TestUserModel:
 
     def test_type_mismatching_case(self) -> None:
         invalid = case(
-            User, valid=False, strategy="is_blocked", allow_type_mismatch=True
+            User, valid=False, target=path("is_blocked"), allow_type_mismatch=True
         )
         assert not isinstance(invalid["is_blocked"], bool)
 
@@ -67,7 +68,7 @@ class TestUserModel:
         assert not isinstance(bool_case["is_blocked"], bool)
 
     def test_multiple_field_name(self) -> None:
-        invalid_users = cases(User, valid=False, strategy="role", count=5)
+        invalid_users = cases(User, valid=False, target=path("role"), count=1)
         assert len(invalid_users) == 1
         for user in invalid_users:
             assert user["role"] not in ["admin", "guest", "user"]
@@ -166,11 +167,11 @@ class TestBlogPostModel:
         assert 0 <= post["rating"] <= 5
 
     def test_invalid_post_title(self):
-        invalid = case(BlogPost, valid=False, strategy="title")
+        invalid = case(BlogPost, valid=False, target=path("title"))
         assert len(invalid["title"]) < 5 or len(invalid["title"]) > 200
 
     def test_invalid_post_bad_rating(self):
-        invalid = case(BlogPost, valid=False, strategy="rating")
+        invalid = case(BlogPost, valid=False, target=path("rating"))
         assert not (0 <= invalid["rating"] <= 5)
 
 
@@ -185,11 +186,11 @@ class TestProductModel:
         assert 0 <= product["discount"] <= 100 and product["discount"] % 5 == 0
 
     def test_invalid_product_zero_price(self):
-        invalid = case(Product, valid=False, strategy="price")
+        invalid = case(Product, valid=False, target=path("price"))
         assert invalid["price"] <= 0 or math.isinf(invalid["price"])
 
     def test_invalid_product_negative_stock(self):
-        invalid = case(Product, valid=False, strategy="stock")
+        invalid = case(Product, valid=False, target=path("stock"))
         MAX_INT64 = 2**63 - 1
         assert invalid["stock"] < 0 or invalid["stock"] > MAX_INT64
 
@@ -220,11 +221,11 @@ class TestCreateUserRequest:
         assert 3 <= len(req["nickname"]) <= 30
 
     def test_invalid_underage_user(self):
-        invalid = case(CreateUserRequest, valid=False, strategy="age")
+        invalid = case(CreateUserRequest, valid=False, target=path("age"))
         assert invalid["age"] < 18 or invalid["age"] > 120
 
     def test_invalid_password(self):
-        invalid = case(CreateUserRequest, valid=False, strategy="password")
+        invalid = case(CreateUserRequest, valid=False, target=path("password"))
         assert len(invalid["password"]) < 8 or len(invalid["password"]) > 120
 
     def test_bulk_valid_requests(self):
@@ -244,11 +245,11 @@ class TestOrderItem:
         assert item["unit_price"] > 0
 
     def test_invalid_order_item_zero_quantity(self):
-        invalid = case(OrderItem, valid=False, strategy="quantity")
+        invalid = case(OrderItem, valid=False, target=path("quantity"))
         assert invalid["quantity"] < 1 or invalid["quantity"] > 1000
 
     def test_invalid_order_item_invalid_product_id(self):
-        invalid = case(OrderItem, valid=False, strategy="product_id")
+        invalid = case(OrderItem, valid=False, target=path("product_id"))
         MAX_INT64 = 2**63 - 1
         assert invalid["product_id"] <= 0 or invalid["product_id"] > MAX_INT64
 
@@ -270,11 +271,11 @@ class TestTransaction:
         assert re.match(r"^[A-Z0-9]{12}$", tx["reference_code"])
 
     def test_invalid_transaction_bad_account(self):
-        invalid = case(Transaction, valid=False, strategy="account_id")
+        invalid = case(Transaction, valid=False, target=path("account_id"))
         assert not re.match(r"^ACC[0-9]{10}$", invalid["account_id"])
 
     def test_invalid_transaction_huge_amount(self):
-        invalid = case(Transaction, valid=False, strategy="amount")
+        invalid = case(Transaction, valid=False, target=path("amount"))
         assert invalid["amount"] > 1_000_000 or invalid["amount"] <= 0
 
     def test_transaction_batch(self):

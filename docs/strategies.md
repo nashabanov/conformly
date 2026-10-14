@@ -10,10 +10,15 @@ No eligible paths raises `PlanningError` (`no_violation_candidate`).
 | --- | --- | --- |
 | `"first"` (default) | First eligible path | First `count` distinct eligible paths |
 | `"random"` | Random eligible path | `count` distinct randomly sampled paths |
-| `"field"` | Selected dotted path | One case for that path, regardless of `count` |
-| `"field::violation"` or `path(...).violate(V.X)` | Exact violation | One case, regardless of `count` |
 | `"all"` | Unsupported | One case per eligible path; ignores `count` |
 | `"all_violations"` | Unsupported | One case per available violation per eligible path; ignores `count` |
+
+`strategy` accepts only these names. Unknown names, dotted paths, `::` strings,
+and selectors passed as strategy raise `GenerationError` (`unsupported_strategy`).
+Use `target=path("field")` to select exactly one field, optionally refined with
+`.violate(V.X)`. A target requires `valid=False` and `strategy="first"`.
+For `cases()` it also requires `count=1`; other counts raise an API error.
+Raw strings are not accepted as targets.
 
 `count` must still be at least one when ignored. `first` and `random` raise
 `too_many_requested` if `count` exceeds eligible paths. Randomness selects paths,
@@ -31,10 +36,12 @@ allow_structural_violations=True)`. Missing fields take priority over semantic
 violations; extra-field cases are added for models that reject undeclared fields.
 `all_violations` includes type and structural violations only when enabled.
 
-Explicit type or missing-field violations enable the corresponding planning
-option, but path eligibility is checked first. For an unconstrained field,
-pass `allow_type_mismatch=True`; for an unconstrained required field's removal,
-use `cases(..., allow_structural_violations=True)` with an explicit violation.
+Explicit `target=path("field").violate(V.TYPE_MISMATCH)` or
+`.violate(V.MISSING_FIELD)` enables the corresponding capability during path
+eligibility checking as well as violation planning. No redundant flag is needed,
+including for unconstrained fields. Only the requested path is selected;
+nested model objects do not support type mismatches, and nonrequired fields
+cannot be removed. Unknown or ineligible targets raise structured `PlanningError`.
 `case()` has no structural flag. Explicit extra-field targeting has no public
 named path; use structural enumeration.
 
@@ -67,13 +74,13 @@ class User:
 
 invalid = case(
     User, valid=False,
-    strategy=path(User, lambda u: u.profile.name).violate(V.TOO_SHORT),
+    target=path(User, lambda u: u.profile.name).violate(V.TOO_SHORT),
 )
 assert len(invalid["profile"]["name"]) < 3
 ```
 
-Equivalent selectors are `path("profile.name").violate(V.TOO_SHORT)` and
-`"profile.name::too_short"`. String paths are relative to the root model.
+Use `target=path("profile.name").violate(V.TOO_SHORT)` for the equivalent
+string-path selector. String paths are relative to the root model.
 The lambda form executes against an attribute proxy, so it works without source
 code in REPLs and notebooks too. The model argument provides editor type hints;
 it does not validate membership. Generation validates the resulting path.
@@ -87,9 +94,9 @@ applicable. An index cannot be specified.
 
 ## Invalid Generation Contract
 
-For `case(Model, valid=False, strategy="<field>")`:
+For `case(Model, valid=False, target=path("<field>"))`:
 
-- **Exactly one field is targeted** (the one specified by `strategy`).
+- **Exactly one field is targeted** (the one specified by `target`).
 - **The generator will violate constraints** for that field, making it invalid.
 - **Inside collections**, planning selects a compatible dictionary key, value, or
   element before generation. Fixed tuples retain their length and order; unrelated
@@ -103,8 +110,8 @@ For `case(Model, valid=False, strategy="<field>")`:
 - **For numeric bounds**, invalid values may violate the lower or upper bound (e.g., `age > 120` or `age < 18`).
 - **For float bounds**, invalid generation may produce `inf` when violating the upper boundary.
 
-Request an exact violation with `strategy="items::below_min"` or
-`path(Model, lambda m: m.items).violate(V.BELOW_MIN)`. Otherwise, the planner uses
+Request an exact violation with `target=path("items").violate(V.BELOW_MIN)` or
+`target=path(Model, lambda m: m.items).violate(V.BELOW_MIN)`. Otherwise, the planner uses
 violation priority and chooses the first compatible key, value, or tuple element.
 
 Here “minimal” means one planned target, not the smallest possible failing value.

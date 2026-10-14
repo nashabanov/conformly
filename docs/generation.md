@@ -3,7 +3,7 @@
 ## One payload or a batch
 
 `case(Model)` returns a `dict[str, Any]`. `cases(Model, count=10)` returns a
-list of dictionaries. Both default to `valid=True`, `strategy="first"`, and
+list of dictionaries. Both default to `valid=True`, `strategy="first"`, `target=None`, and
 `seed=None`; `cases()` defaults to `count=1`.
 
 Models are schemas, not constructors: Conformly does not instantiate or run
@@ -100,3 +100,8 @@ to reproduce a scenario rather than hardcoding generated values.
 
 [Invalid generation contract](strategies.md#invalid-generation-contract) ·
 [Constraints](constraints.md) · [API reference](api-reference.md)
+
+Explicit invalid targets use `target=path("field")`, optionally refined with
+`.violate(V.X)`. They require `strategy="first"`; targeted `cases()` calls require
+`count=1`. Valid generation requires `target=None`. See the
+[selection contract and migration](api-reference.md#migration-before-10).

@@ -12,11 +12,11 @@ class Order:
     quantity: Annotated[int, GreaterOrEqual(1)]
 
 
-invalid = case(Order, valid=False, strategy="quantity")
+invalid = case(Order, valid=False, target=path("quantity"))
 assert invalid["quantity"] < 1
 assert len(invalid["reference"]) >= 3
 short = case(
-    Order, valid=False, strategy=path(Order, lambda o: o.reference).violate(V.TOO_SHORT)
+    Order, valid=False, target=path(Order, lambda o: o.reference).violate(V.TOO_SHORT)
 )
 assert len(short["reference"]) < 3
 assert short["quantity"] >= 1

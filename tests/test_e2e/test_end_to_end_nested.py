@@ -32,7 +32,7 @@ def test_nested_invalid_first_strategy():
 
 
 def test_nested_invalid_by_dotten_path():
-    data = case(User, valid=False, strategy="profile.age")
+    data = case(User, valid=False, target=path("profile.age"))
 
     assert data["profile"]["age"] < 18
 
@@ -63,7 +63,7 @@ class RepeatedProfiles:
 
 @pytest.mark.parametrize("target", ["left", "right"])
 def test_repeated_nested_model_violation_targets_only_selected_branch(target):
-    data = case(RepeatedProfiles, valid=False, strategy=f"{target}.age", seed=42)
+    data = case(RepeatedProfiles, valid=False, target=path(f"{target}.age"), seed=42)
     for name, branch in data.items():
         if isinstance(branch, list):
             ages = [item["age"] for item in branch]

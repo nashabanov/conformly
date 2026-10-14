@@ -31,10 +31,15 @@ class TestApiErrors:
     def test_raises_if_strategy_not_all_and_structural_allowed(
         self, strategy: str
     ) -> None:
-        with pytest.raises(GenerationError):
+        with pytest.raises(GenerationError) as error:
             cases(
                 User, valid=False, strategy=strategy, allow_structural_violations=True
             )
+        assert error.value.context["code"] == (
+            "unsupported_strategy"
+            if strategy == "name"
+            else "invalid_strategy_for_structural"
+        )
 
     def test_raises_if_valid_and_structural_allowed(self) -> None:
         with pytest.raises(GenerationError):

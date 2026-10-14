@@ -31,7 +31,7 @@ def model_for(annotation):
 def test_impossible_integer_not_multiple_is_not_planned(divisor):
     model = model_for(Annotated[int, MultipleOf(divisor), GreaterOrEqual(0)])
     with pytest.raises(PlanningError) as exc:
-        case(model, valid=False, strategy=path("value").violate(V.NOT_MULTIPLE))
+        case(model, valid=False, target=path("value").violate(V.NOT_MULTIPLE))
     assert exc.value.context["code"] == "invalid_forced_violation"
     payloads = cases(model, valid=False, strategy="all_violations")
     assert len(payloads) == 1
@@ -46,7 +46,7 @@ def test_integer_not_multiple_actually_breaks_divisibility(divisor):
             model,
             valid=False,
             seed=seed,
-            strategy=path("value").violate(V.NOT_MULTIPLE),
+            target=path("value").violate(V.NOT_MULTIPLE),
         )["value"]
         assert Decimal(value) % Decimal(str(divisor)) != 0
 
@@ -129,7 +129,7 @@ def test_float_not_multiple_is_verified_even_in_singleton_range(divisor):
             model,
             valid=False,
             seed=seed,
-            strategy=path("value").violate(V.NOT_MULTIPLE),
+            target=path("value").violate(V.NOT_MULTIPLE),
         )["value"]
         quotient = value / divisor
         assert not math.isclose(quotient, round(quotient), rel_tol=0, abs_tol=1e-9)
@@ -139,16 +139,16 @@ def test_float_not_multiple_is_verified_even_in_singleton_range(divisor):
 def test_obvious_universal_patterns_are_not_planned(pattern):
     model = model_for(Annotated[str, Pattern(pattern), MinLength(1)])
     with pytest.raises(PlanningError):
-        case(model, valid=False, strategy=path("value").violate(V.PATTERN_MISMATCH))
+        case(model, valid=False, target=path("value").violate(V.PATTERN_MISMATCH))
     assert len(cases(model, valid=False, strategy="all_violations")) == 1
 
 
 @pytest.mark.parametrize("pattern", ["^a*$", "[a-z]{3}", "a", "^$"])
 def test_regex_mismatch_has_no_search_match(pattern):
     model = model_for(Annotated[str, Pattern(pattern)])
-    value = case(
-        model, valid=False, strategy=path("value").violate(V.PATTERN_MISMATCH)
-    )["value"]
+    value = case(model, valid=False, target=path("value").violate(V.PATTERN_MISMATCH))[
+        "value"
+    ]
     assert re.search(pattern, value) is None
 
 
@@ -156,7 +156,7 @@ def test_regex_mismatch_has_no_search_match(pattern):
 def test_unrecognized_universal_pattern_exhausts_with_structured_error(pattern):
     model = model_for(Annotated[str, Pattern(pattern)])
     with pytest.raises(GenerationError) as exc:
-        case(model, valid=False, strategy=path("value").violate(V.PATTERN_MISMATCH))
+        case(model, valid=False, target=path("value").violate(V.PATTERN_MISMATCH))
     assert exc.value.context["code"] == "pattern_inversion_exhausted"
     assert exc.value.context["attempts"] > 0
 

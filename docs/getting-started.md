@@ -44,7 +44,7 @@ assert len(payloads) == 10
 
 ```python
 invalid = case(
-    CreateUser, valid=False, strategy=path("age").violate(V.BELOW_MIN)
+    CreateUser, valid=False, target=path("age").violate(V.BELOW_MIN)
 )
 assert invalid["age"] < 18
 assert 3 <= len(invalid["username"]) <= 32

@@ -100,7 +100,7 @@ class Packet:
     payload: Annotated[bytes, MinLength(2), MaxLength(16)]
 
 packet = case(Packet, seed=42)
-invalid = case(Packet, valid=False, strategy=path("payload").violate(V.TOO_SHORT))
+invalid = case(Packet, valid=False, target=path("payload").violate(V.TOO_SHORT))
 ```
 
 Generation is reproducible with `seed`, including collections and nested models.
@@ -131,7 +131,7 @@ class Booking:
     duration: Annotated[timedelta, GreaterOrEqual(timedelta(hours=1))]
 
 booking = case(Booking, seed=42)
-invalid = case(Booking, valid=False, strategy=path("day").violate(V.BELOW_MIN))
+invalid = case(Booking, valid=False, target=path("day").violate(V.BELOW_MIN))
 ```
 
 Bounds also work in dataclass metadata and Pydantic `Field(gt=..., ge=...,
@@ -169,7 +169,7 @@ class Links:
 payload = case(Links)
 assert payload["endpoint"].startswith(("http://", "https://"))
 invalid = case(
-    Links, valid=False, strategy=path("endpoint").violate(V.WRONG_URL_SCHEME)
+    Links, valid=False, target=path("endpoint").violate(V.WRONG_URL_SCHEME)
 )
 assert not invalid["endpoint"].startswith(("http://", "https://"))
 ```

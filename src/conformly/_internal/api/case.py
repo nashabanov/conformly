@@ -1,7 +1,12 @@
 from typing import Any
 
 from ._errors import api_error
-from ._utils import ensure_model_or_spec, normalize_overrides, plan_tasks
+from ._utils import (
+    ensure_model_or_spec,
+    normalize_overrides,
+    plan_tasks,
+    validate_selection,
+)
 from .path import PathSelector
 
 from conformly._internal.generator.context import create_context
@@ -16,7 +21,8 @@ def case(
     *,
     valid: bool = True,
     seed: int | None = None,
-    strategy: CaseStrategy | PathSelector = "first",
+    strategy: CaseStrategy = "first",
+    target: PathSelector | None = None,
     overrides: list[PathSelector] | None = None,
     allow_type_mismatch: bool = False,
     tracer: Tracer | None = None,
@@ -52,16 +58,10 @@ def case(
 
             - "random": violate a random constrained field
 
-            - "field_name":
-                violate a specific field using a dotted path
-                (e.g. strategy="user.email")
-
-            - "field_name::violation":
-                violate a specific field with specific type
-                (e.g. strategy="user.profile::below_min")
-
-            - PathSelector DSL:
-                path("user.email").violate(V.TOO_SHORT)
+        target:
+            Optional selector from path("field") or path(Model, lambda m: m.field).
+            Only available with valid=False and strategy="first".
+            Use .violate(V.X) to request an exact violation.
 
         overrides:
             Optional list of `PathSelector` to set field values.
@@ -99,27 +99,22 @@ def case(
                 flag="allow_type_mismatch",
             )
 
-        if strategy != "first":
-            raise api_error(
-                "Strategy selection is only applicable when valid=False",
-                code="invalid_strategy_for_valid",
-                strategy=strategy,
-            )
+    validate_selection(
+        valid=valid,
+        strategy=strategy,
+        target=target,
+        allow_all=False,
+        count=1,
+    )
 
+    if valid:
         return generate_valid(ctx, model, _overrides)
-
-    if strategy == "all":
-        raise api_error(
-            "The 'all' strategy is not supported in 'case()' — use 'cases()' instead",
-            code="unsupported_strategy",
-            function="case",
-            strategy=strategy,
-        )
 
     task = plan_tasks(
         model,
         ctx=ctx,
         strategy=strategy,
+        target=target,
         allow_all=False,
         count=1,
         allow_type_mismatch=allow_type_mismatch,

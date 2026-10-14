@@ -1,8 +1,13 @@
 from typing import Any
 
 from ._errors import api_error
-from ._utils import ensure_model_or_spec, normalize_overrides, plan_tasks
-from .path import PathSelector, parse_strategy_input
+from ._utils import (
+    ensure_model_or_spec,
+    normalize_overrides,
+    plan_tasks,
+    validate_selection,
+)
+from .path import PathSelector
 
 from conformly._internal.generator.context import create_context
 from conformly._internal.generator.orchestration import generate_invalid, generate_valid
@@ -15,7 +20,8 @@ def cases(
     *,
     valid: bool = True,
     seed: int | None = None,
-    strategy: CasesStrategy | PathSelector = "first",
+    strategy: CasesStrategy = "first",
+    target: PathSelector | None = None,
     count: int = 1,
     allow_type_mismatch: bool = False,
     allow_structural_violations: bool = False,
@@ -60,19 +66,13 @@ def cases(
                 generate one invalid case per every available violations
                 including constraints, structural and type violations (ignores count)
 
-            - "field_name":
-                violate a specific field using a dotted path
-                (e.g. strategy="user.email")
-
-            - "field_name::violation":
-                violate a specific field with specific type
-                (e.g. strategy="user.profile::below_min")
-
-            - PathSelector DSL:
-                path("user.email").violate(V.TOO_SHORT)
+        target:
+            Optional selector from path("field") or path(Model, lambda m: m.field).
+            Only available with valid=False and strategy="first".
+            Use .violate(V.X) to request an exact violation.
 
         count:
-            Number of cases to generate (ignored if strategy="all").
+            Number of cases; target requires 1. Enumeration ignores count.
 
         overrides:
             Optional list of `PathSelector` to set field values.
@@ -89,7 +89,7 @@ def cases(
             violations and cases with extra field in each model.
             Structural violations are available only when:
                 - valid=False
-                - strategy="all"
+                - strategy="all" or "all_violations", or an explicit violation
 
     Returns:
         A list of dictionaries.
@@ -122,59 +122,39 @@ def cases(
                 flag="allow_structural_violations",
             )
 
-        if strategy != "first":
-            raise api_error(
-                "Strategy selection is only applicable when valid=False",
-                code="invalid_strategy_for_valid",
-                strategy=strategy,
-            )
+    validate_selection(
+        valid=valid,
+        strategy=strategy,
+        target=target,
+        allow_all=True,
+        count=count,
+    )
 
+    if valid:
         return [generate_valid(ctx, model, _overrides) for _ in range(count)]
-
-    field_strategy, forced_violation = parse_strategy_input(strategy)
 
     if (
         allow_structural_violations
-        and field_strategy not in ("all", "all_violations")
-        and forced_violation is None
+        and strategy not in ("all", "all_violations")
+        and (target is None or target.forced_violation is None)
     ):
         raise api_error(
             "Structural violations require strategy='all', 'all_violations', "
-            "or explicit '::' syntax",
+            "or an explicit violation on target",
             code="invalid_strategy_for_structural",
             strategy=strategy,
         )
 
-    if strategy == "all":
-        tasks = plan_tasks(
-            model,
-            ctx=ctx,
-            strategy="all",
-            allow_all=True,
-            allow_type_mismatch=allow_type_mismatch,
-            allow_structural_violations=allow_structural_violations,
-            split_by_violations=False,
-        )
-
-    elif strategy == "all_violations":
-        tasks = plan_tasks(
-            model,
-            ctx=ctx,
-            strategy="all",
-            allow_all=True,
-            allow_type_mismatch=allow_type_mismatch,
-            allow_structural_violations=allow_structural_violations,
-            split_by_violations=True,
-        )
-
-    else:
-        tasks = plan_tasks(
-            model,
-            ctx=ctx,
-            strategy=strategy,
-            allow_all=False,
-            count=count,
-            allow_type_mismatch=allow_type_mismatch,
-        )
+    tasks = plan_tasks(
+        model,
+        ctx=ctx,
+        strategy="all" if strategy == "all_violations" else strategy,
+        target=target,
+        allow_all=True,
+        count=count,
+        allow_type_mismatch=allow_type_mismatch,
+        allow_structural_violations=allow_structural_violations,
+        split_by_violations=strategy == "all_violations",
+    )
 
     return [generate_invalid(ctx, model, task, _overrides) for task in tasks]

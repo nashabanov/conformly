@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Breaking:** Separate field targeting into keyword-only `target: PathSelector | None`
+  on `case()` and `cases()`. Replace `strategy="field"`, `strategy="field::violation"`,
+  and `strategy=path(...)` with `target=path(...)` (and `.violate(V.X)` when needed).
+- **Breaking:** Restrict strategies to `first` / `random` for `case()` and additionally
+  `all` / `all_violations` for `cases()`, with strict Literal annotations and runtime
+  validation. Explicit targets require `valid=False` and `strategy="first"`;
+  targeted `cases()` calls now reject `count != 1` instead of ignoring it.
+
+### Fixed
+- Consider explicit type mismatch and missing-field violations during target
+  eligibility checks, so supported requests work without redundant capability flags.
+
 ## [0.8.0] - 2026.10.13
 
 ### Added

@@ -4,6 +4,7 @@ from _models import User, UserUUID
 import pytest
 
 from conformly import (
+    V,
     case,
     cases,
     path,
@@ -25,7 +26,9 @@ class TestUUIDGeneration:
             uuid.UUID(result["id"])
 
     def test_valid_false_respects_violation_type(self):
-        result = case(UserUUID, valid=False, strategy="id::wrong_uuid_character")
+        result = case(
+            UserUUID, valid=False, target=path("id").violate(V.WRONG_UUID_CHARACTER)
+        )
         hex_clean = result["id"].replace("-", "").lower()
         assert not all(c in "0123456789abcdef" for c in hex_clean)
 

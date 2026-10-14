@@ -1,11 +1,9 @@
-from collections.abc import Mapping
-
 from ._errors import planning_error
 from .field import _plan_collection_steps, _safe_define
 
 from conformly._internal.generator import GenerationContext
 from conformly._internal.resolver import ResolvedModel
-from conformly._internal.types import CasesStrategy, FieldPath
+from conformly._internal.types import CasesStrategy, FieldPath, ViolationType
 from conformly.exceptions import PlanningError
 
 NameIndexMap = tuple[tuple[FieldPath, str], ...]
@@ -17,15 +15,36 @@ def select_paths(
     ctx: GenerationContext,
     strategy: CasesStrategy,
     allow_all: bool,
+    target: str | None = None,
+    forced_violation: ViolationType | None = None,
     count: int = 1,
     allow_type_mismatch: bool = False,
     allow_structural_violations: bool = False,
 ) -> tuple[FieldPath, ...]:
     candidates = _filter_candidate_paths(
         model=model,
-        allow_type_mismatch=allow_type_mismatch,
-        allow_structural_violations=allow_structural_violations,
+        allow_type_mismatch=allow_type_mismatch
+        or (target is not None and forced_violation == ViolationType.TYPE_MISMATCH),
+        allow_structural_violations=allow_structural_violations
+        or (target is not None and forced_violation == ViolationType.MISSING_FIELD),
     )
+
+    if target is not None:
+        if target not in model.name_to_path:
+            raise planning_error(
+                f"Field '{target}' not found",
+                code="field_not_found",
+                field=target,
+                available=list(model.name_to_path),
+            )
+        path = model.name_to_path[target]
+        if path not in candidates:
+            raise planning_error(
+                f"Field '{target}' has no eligible violations",
+                code="no_constraints_field",
+                field=target,
+            )
+        return (path,)
 
     if not candidates:
         raise planning_error(
@@ -36,9 +55,7 @@ def select_paths(
             allow_structural_violations=allow_structural_violations,
         )
 
-    return _select_violation_fields(
-        ctx, strategy, allow_all, candidates, count, model.name_to_path
-    )
+    return _select_violation_fields(ctx, strategy, allow_all, candidates, count)
 
 
 def _filter_candidate_paths(
@@ -79,27 +96,7 @@ def _select_violation_fields(
     allow_all: bool,
     candidates: tuple[FieldPath, ...],
     count: int,
-    name_to_path: Mapping[str, FieldPath],
 ) -> tuple[FieldPath, ...]:
-    if strategy not in ("all", "random", "first"):
-        if strategy not in name_to_path:
-            raise planning_error(
-                f"Field '{strategy}' not found",
-                code="field_not_found",
-                field=strategy,
-                available=list(name_to_path.keys()),
-            )
-
-        path = name_to_path[strategy]
-        if path not in candidates:
-            raise planning_error(
-                f"Field '{strategy} has no constraints'",
-                code="no_constraints_field",
-                field=strategy,
-            )
-
-        return (path,)
-
     if strategy == "all":
         if not allow_all:
             raise planning_error(

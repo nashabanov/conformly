@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 import pytest
 
-from conformly import V
-from conformly._internal.api.path import PathSelector, parse_strategy_input, path
+from conformly import V, path
+from conformly._internal.api.path import PathSelector
 from conformly.exceptions import GenerationError
 
 
@@ -88,34 +88,3 @@ def test_path_lambda_rejects_wrong_variable():
 def test_path_lambda_rejects_literal():
     with pytest.raises(GenerationError):
         path(User, lambda u: "just_a_string")
-
-
-def test_parse_strategy_string_simple():
-    raw, violation = parse_strategy_input("username")
-    assert raw == "username"
-    assert violation is None
-
-
-def test_parse_strategy_string_with_violation():
-    raw, violation = parse_strategy_input("age::below_min")
-    assert raw == "age"
-    assert violation == V.BELOW_MIN
-
-
-def test_parse_strategy_string_invalid_violation():
-    with pytest.raises(GenerationError, match="invalid_violation_type"):
-        parse_strategy_input("age::non_existent_violation")
-
-
-def test_parse_strategy_path_selector():
-    selector = path(User, lambda u: u.profile.email).violate(V.TOO_SHORT)
-    raw, violation = parse_strategy_input(selector)
-    assert raw == "profile.email"
-    assert violation == V.TOO_SHORT
-
-
-def test_parse_strategy_path_selector_no_violation():
-    selector = path("username")
-    raw, violation = parse_strategy_input(selector)
-    assert raw == "username"
-    assert violation is None

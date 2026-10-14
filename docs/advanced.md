@@ -18,7 +18,7 @@ class User:
 payload = case(User, overrides=[path("tenant").set("test-tenant")])
 assert payload["tenant"] == "test-tenant"
 invalid = case(
-    User, valid=False, strategy=path("name").violate(V.TOO_SHORT),
+    User, valid=False, target=path("name").violate(V.TOO_SHORT),
     overrides=[path("tenant").set("test-tenant")],
 )
 assert invalid["tenant"] == "test-tenant"
@@ -52,8 +52,8 @@ third-party code are not guaranteed to carry Conformly diagnostic codes.
 from dataclasses import dataclass
 from typing import Annotated
 
-from conformly import MinLength, case
-from conformly.exceptions import GenerationError
+from conformly import MinLength, V, case, path
+from conformly.exceptions import PlanningError
 
 
 @dataclass
@@ -62,10 +62,10 @@ class User:
 
 
 try:
-    case(User, valid=False, strategy="name::invalid_type")
-except GenerationError as error:
-    assert error.context["code"] == "invalid_violation_type"
-    assert "too_short" in error.context["available"]
+    case(User, valid=False, target=path("name").violate(V.BELOW_MIN))
+except PlanningError as error:
+    assert error.context["code"] == "invalid_forced_violation"
+    assert "too_short" in error.context["allowed"]
 ```
 
 | Exception (`conformly.exceptions`) | Meaning | Representative codes |
@@ -73,7 +73,7 @@ except GenerationError as error:
 | `SchemaError` | Malformed or unsupported schema/constraints | `unsupported_union`, `inconsistent_constraints`, `invalid_numeric_bounds`, `invalid_length_range`, `invalid_constraint_combination` |
 | `ResolutionError` | Unsupported model/type mapping | `adapter_not_found`, `unsupported_field_type`, `invalid_dict_key` |
 | `PlanningError` | No feasible negative target | `field_not_found`, `no_violation_candidate`, `no_constraints_field`, `invalid_forced_violation`, `too_many_requested`, `infeasible_collection_target` |
-| `GenerationError` | Invalid API options or generation failure | `invalid_count`, `invalid_strategy_for_valid`, `invalid_flag_for_valid`, `unsupported_strategy`, `invalid_violation_type`, `no_multiples_of`, `impossible_collection_size`, `collection_retry_exhausted` |
+| `GenerationError` | Invalid API options or generation failure | `invalid_count`, `invalid_strategy_for_valid`, `invalid_flag_for_valid`, `unsupported_strategy`, `invalid_target`, `invalid_target_for_valid`, `invalid_strategy_for_target`, `invalid_count_for_target`, `no_multiples_of`, `impossible_collection_size`, `collection_retry_exhausted` |
 
 Diagnostic keys vary by error: e.g. `available` lists paths or violation names,
 `allowed` lists applicable violations, and collection errors include requested
@@ -91,7 +91,7 @@ from conformly.tracer import Tracer
 # Using User from the override example above:
 tracer = Tracer()
 payload = case(
-    User, valid=False, strategy=path("name").violate(V.TOO_SHORT),
+    User, valid=False, target=path("name").violate(V.TOO_SHORT),
     seed=42, tracer=tracer,
 )
 trace = tracer.build()

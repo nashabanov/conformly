@@ -8,32 +8,34 @@ selector instances come from `path()`, not an internal import.
 ## `case()`
 
 ```python
-case(
-    model_or_spec,
+def case(
+    model_or_spec: type,
     *,
-    valid=True,
-    seed=None,
-    strategy="first",
-    overrides=None,
-    allow_type_mismatch=False,
-    tracer=None,
-) -> dict[str, Any]
+    valid: bool = True,
+    seed: int | None = None,
+    strategy: CaseStrategy = "first",
+    target: PathSelector | None = None,
+    overrides: list[PathSelector] | None = None,
+    allow_type_mismatch: bool = False,
+    tracer: Tracer | None = None,
+) -> dict[str, Any]: ...
 ```
 
 ## `cases()`
 
 ```python
-cases(
-    model_or_spec,
+def cases(
+    model_or_spec: type,
     *,
-    valid=True,
-    seed=None,
-    strategy="first",
-    count=1,
-    allow_type_mismatch=False,
-    allow_structural_violations=False,
-    overrides=None,
-) -> list[dict[str, Any]]
+    valid: bool = True,
+    seed: int | None = None,
+    strategy: CasesStrategy = "first",
+    target: PathSelector | None = None,
+    count: int = 1,
+    allow_type_mismatch: bool = False,
+    allow_structural_violations: bool = False,
+    overrides: list[PathSelector] | None = None,
+) -> list[dict[str, Any]]: ...
 ```
 
 | Argument | Accepted value and behavior |
@@ -41,14 +43,15 @@ cases(
 | `model_or_spec` | Model class; required positional argument |
 | `valid` | `bool`; choose valid or negative generation |
 | `seed` | `int | None`; seeds internal generation |
-| `strategy` | String or selector from `path()`; see [strategy table](strategies.md#selection-and-precedence) |
+| `strategy` | `CaseStrategy = Literal["first", "random"]`; `CasesStrategy = Literal["first", "random", "all", "all_violations"]`; see [strategy table](strategies.md#selection-and-precedence) |
+| `target` | Selector from `path()`, or `None`; invalid generation only, with `strategy="first"` |
 | `overrides` | List of selectors created with `.set(value)`, or `None` |
-| `count` | `int >= 1`; valid batch size or invalid path-selection count; ignored by explicit paths and enumeration |
+| `count` | `int >= 1`; valid batch size or invalid path-selection count; must be 1 with a target; ignored by enumeration |
 | `allow_type_mismatch` | `bool`; enables invalid type planning |
 | `allow_structural_violations` | `bool`; `cases()` only; enables structural enumeration or explicit structural requests |
 | `tracer` | `conformly.tracer.Tracer | None`; invalid `case()` only |
 
-Only `strategy="first"` is accepted with `valid=True`. Flags are false and
+Only `strategy="first"` and `target=None` are accepted with `valid=True`. Flags are false and
 tracer is absent in valid mode. Return values are payloads, not model instances.
 See [generation](generation.md) for defaults, nullability, and reproducibility.
 
@@ -89,3 +92,25 @@ There are no additional public configuration constants.
 `Tracer()` is imported from `conformly.tracer`. Pass it to invalid `case()`,
 then call `.build()` for the trace. See [advanced usage](advanced.md) for
 error codes, trace fields, and experimental stability.
+
+## Migration before 1.0
+
+Paths and violations are no longer parsed from `strategy`. Use a selector in
+`target`; both dotted strings and typed lambdas remain supported.
+
+```python
+# Before
+case(User, valid=False, strategy="email::too_short")
+
+# After
+case(
+    User,
+    valid=False,
+    target=path("email").violate(V.TOO_SHORT),
+)
+```
+
+Likewise, replace `strategy="profile.email"` with `target=path("profile.email")`
+and `strategy=path(...)` with `target=path(...)`. Set `count=1` for targeted
+`cases()` calls; larger counts are rejected rather than silently ignored.
+There are no compatibility aliases or deprecation warnings.

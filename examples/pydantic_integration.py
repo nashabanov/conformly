@@ -13,7 +13,7 @@ class CreateUser(BaseModel):
 payload = case(CreateUser)
 user = CreateUser.model_validate(payload)
 assert user.age >= 18
-invalid = case(CreateUser, valid=False, strategy=path("age").violate(V.BELOW_MIN))
+invalid = case(CreateUser, valid=False, target=path("age").violate(V.BELOW_MIN))
 try:
     CreateUser.model_validate(invalid)
 except ValidationError as error:

@@ -41,7 +41,7 @@ def test_dictionary_violations_route_to_applicable_side(
         ],
     )
     selector = path(model, lambda m: m.items).violate(violation)
-    result = case(model, valid=False, strategy=selector, seed=seed)
+    result = case(model, valid=False, target=selector, seed=seed)
     assert len(result["safe"]) >= 5
     items = result["items"]
     assert len(items) == 3
@@ -66,7 +66,7 @@ class MixedTuple:
 @pytest.mark.parametrize("seed", [0, 42, -1])
 def test_fixed_tuple_targets_compatible_element_and_keeps_order(violation, index, seed):
     result = case(
-        MixedTuple, valid=False, strategy=f"items::{violation.value}", seed=seed
+        MixedTuple, valid=False, target=path("items").violate(violation), seed=seed
     )
     items = result["items"]
     assert isinstance(items, tuple) and len(items) == 3
@@ -93,7 +93,9 @@ def test_one_collection_element_is_invalid_and_others_are_valid(annotation):
             ("safe", SizedKey),
         ],
     )
-    result = case(model, valid=False, strategy="items::below_min", seed=42)
+    result = case(
+        model, valid=False, target=path("items").violate(V.BELOW_MIN), seed=42
+    )
     assert len(result["items"]) == 3
     assert sum(value < 10 for value in result["items"]) == 1
     assert len(result["safe"]) >= 3
@@ -114,8 +116,10 @@ def test_empty_only_collection_rejects_element_target_and_supports_size_target(
 ):
     model = make_dataclass("Empty", [("items", Annotated[annotation, MaxItems(0)])])
     with pytest.raises(PlanningError):
-        case(model, valid=False, strategy="items::too_short")
-    result = case(model, valid=False, strategy="items::too_many_items", seed=0)
+        case(model, valid=False, target=path("items").violate(V.TOO_SHORT))
+    result = case(
+        model, valid=False, target=path("items").violate(V.TOO_MANY_ITEMS), seed=0
+    )
     assert len(result["items"]) == 1
     if isinstance(result["items"], dict):
         assert all(
@@ -142,7 +146,9 @@ def test_duplicate_violation_preserves_allowed_exact_size(annotation, size):
             )
         ],
     )
-    items = case(model, valid=False, strategy="items::duplicate", seed=0)["items"]
+    items = case(model, valid=False, target=path("items").violate(V.DUPLICATE), seed=0)[
+        "items"
+    ]
     assert len(items) == size
     assert len(set(items)) < size
     assert all(isinstance(item, int) for item in items)
@@ -159,9 +165,9 @@ class DuplicateObjects:
 
 
 def test_duplicate_nested_objects_need_no_feasible_unique_base():
-    assert case(DuplicateObjects, valid=False, strategy="items::duplicate", seed=0)[
-        "items"
-    ] == [{"value": 1}, {"value": 1}]
+    assert case(
+        DuplicateObjects, valid=False, target=path("items").violate(V.DUPLICATE), seed=0
+    )["items"] == [{"value": 1}, {"value": 1}]
 
 
 @pytest.mark.parametrize(
@@ -181,7 +187,7 @@ def test_dictionary_size_violation_counts_distinct_keys(violation, size):
             )
         ],
     )
-    result = case(model, valid=False, strategy=f"items::{violation.value}", seed=42)[
+    result = case(model, valid=False, target=path("items").violate(violation), seed=42)[
         "items"
     ]
     assert len(result) == size
@@ -204,7 +210,7 @@ def test_impossible_explicit_dictionary_size_target_does_not_substitute_violatio
         ],
     )
     with pytest.raises(PlanningError):
-        case(model, valid=False, strategy="items::too_many_items")
+        case(model, valid=False, target=path("items").violate(V.TOO_MANY_ITEMS))
 
 
 def test_all_violations_keeps_dictionary_routes():
@@ -250,7 +256,9 @@ def test_nested_collection_field_target_preserves_shape_and_unrelated_elements(
             ("safe", SizedKey),
         ],
     )
-    result = case(model, valid=False, strategy="items.number::below_min", seed=42)
+    result = case(
+        model, valid=False, target=path("items.number").violate(V.BELOW_MIN), seed=42
+    )
     items = result["items"]
     assert len(items) == 3
     if isinstance(items, dict):
@@ -271,7 +279,7 @@ def test_empty_only_nested_collection_does_not_offer_nested_field_targets(annota
         "EmptyNested", [("items", Annotated[annotation, MaxItems(0)])]
     )
     with pytest.raises(PlanningError):
-        case(model, valid=False, strategy="items.number::below_min")
+        case(model, valid=False, target=path("items.number").violate(V.BELOW_MIN))
     results = cases(model, valid=False, strategy="all_violations", seed=42)
     assert len(results) == 1
     assert len(results[0]["items"]) == 1
@@ -284,7 +292,10 @@ class SingletonUnique:
 
 def test_nested_field_invalidation_does_not_require_a_valid_unique_target():
     items = case(
-        SingletonUnique, valid=False, strategy="items.value::not_allowed_value", seed=0
+        SingletonUnique,
+        valid=False,
+        target=path("items.value").violate(V.NOT_ALLOWED_VALUE),
+        seed=0,
     )["items"]
     assert len(items) == 2
     assert items[0]["value"] != 1
@@ -302,9 +313,9 @@ def test_invalid_target_can_add_one_value_outside_finite_domain(annotation):
     model = make_dataclass(
         "Finite", [("items", Annotated[annotation, MinItems(3), MaxItems(3)])]
     )
-    result = case(model, valid=False, strategy="items::not_allowed_value", seed=42)[
-        "items"
-    ]
+    result = case(
+        model, valid=False, target=path("items").violate(V.NOT_ALLOWED_VALUE), seed=42
+    )["items"]
     assert len(result) == 3
     assert len(set(result)) == 3
     assert sum(value not in ("a", "b") for value in result) == 1

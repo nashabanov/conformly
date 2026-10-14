@@ -1,7 +1,9 @@
 from _models import Order
 
 from conformly import (
+    V,
     case,
+    path,
 )
 
 
@@ -74,7 +76,9 @@ class TestListGeneration:
         assert len(items) == len({repr(i) for i in items})
 
     def test_items_duplicate_violation(self):
-        result = case(Order, valid=False, strategy="items::duplicate", seed=0)
+        result = case(
+            Order, valid=False, target=path("items").violate(V.DUPLICATE), seed=0
+        )
 
         items = result["items"]
 
@@ -82,7 +86,7 @@ class TestListGeneration:
         assert any(item in items[:i] for i, item in enumerate(items))
 
     def test_codes_length_violation(self):
-        result = case(Order, valid=False, strategy="codes")
+        result = case(Order, valid=False, target=path("codes"))
 
         codes = result["codes"]
 

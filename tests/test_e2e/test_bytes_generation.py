@@ -45,7 +45,7 @@ def test_bytes_across_adapters(adapter):
         if adapter == "pydantic":
             model.model_validate(payload)
     for violation, length in ((V.TOO_SHORT, 1), (V.TOO_LONG, 6)):
-        payload = case(model, valid=False, strategy=path("value").violate(violation))
+        payload = case(model, valid=False, target=path("value").violate(violation))
         assert type(payload["value"]) is bytes
         assert len(payload["value"]) == length
         assert 2 <= len(payload["other"]) <= 5
@@ -55,7 +55,7 @@ def test_bytes_across_adapters(adapter):
     payload = case(
         model,
         valid=False,
-        strategy=path("value").violate(V.TYPE_MISMATCH),
+        target=path("value").violate(V.TYPE_MISMATCH),
         allow_type_mismatch=True,
     )
     assert type(payload["value"]) is int
@@ -76,15 +76,13 @@ def test_unconstrained_empty_and_minimum_only(constraints):
     if constraints == (MaxLength(0),):
         assert value == b""
         assert (
-            case(model, valid=False, strategy=path("value").violate(V.TOO_LONG))[
-                "value"
-            ]
+            case(model, valid=False, target=path("value").violate(V.TOO_LONG))["value"]
             != b""
         )
     elif constraints:
         assert len(value) >= 1
     with pytest.raises(PlanningError):
-        case(model, valid=False, strategy=path("value").violate(V.PATTERN_MISMATCH))
+        case(model, valid=False, target=path("value").violate(V.PATTERN_MISMATCH))
 
 
 @pytest.mark.parametrize("collection", [list, set, frozenset, tuple])
@@ -96,7 +94,7 @@ def test_bytes_in_collections(collection):
     assert all(
         type(value) is bytes and 2 <= len(value) <= 5 for value in payload["value"]
     )
-    invalid = case(model, valid=False, strategy=path("value").violate(V.TOO_SHORT))
+    invalid = case(model, valid=False, target=path("value").violate(V.TOO_SHORT))
     assert sum(len(value) == 1 for value in invalid["value"]) == 1
     assert all(1 <= len(value) <= 5 for value in invalid["value"])
 
@@ -107,7 +105,7 @@ def test_nested_bytes_inside_dictionary_values():
         "Parent", [("children", dict[str, child]), ("other", bytes)]
     )
     payload = case(
-        parent, valid=False, strategy=path("children.value").violate(V.TOO_SHORT)
+        parent, valid=False, target=path("children.value").violate(V.TOO_SHORT)
     )
     assert sum(len(child["value"]) == 1 for child in payload["children"].values()) == 1
     assert type(payload["other"]) is bytes
@@ -143,4 +141,4 @@ def test_all_length_violations_on_dictionary_values():
 def test_too_short_not_available_for_empty_bytes():
     model = make_dataclass("Empty", [("value", Annotated[bytes, MaxLength(0)])])
     with pytest.raises(PlanningError):
-        case(model, valid=False, strategy=path("value").violate(V.TOO_SHORT))
+        case(model, valid=False, target=path("value").violate(V.TOO_SHORT))
