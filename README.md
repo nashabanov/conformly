@@ -4,11 +4,7 @@
 [![codecov](https://codecov.io/github/nashabanov/conformly/graph/badge.svg?branch=main)](https://codecov.io/github/nashabanov/conformly)
 [![PyPI](https://img.shields.io/pypi/v/conformly.svg)](https://pypi.org/project/conformly/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/conformly.svg)](https://pypi.org/project/conformly/)
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Status: Beta](https://img.shields.io/badge/status-beta-orange?style=flat-square)](https://github.com/nashabanov/conformly/releases)
-[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 **Declarative test data generator for Python.**
 

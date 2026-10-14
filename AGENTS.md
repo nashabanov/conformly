@@ -37,6 +37,11 @@
 - Pydantic integration tests use `pytest.importorskip`; without the optional dependency they are skipped, not expected to pass through the adapter.
 - Add integration coverage when changing cross-layer behavior, and mark performance tests with pytest's `benchmark` marker.
 
+## Documentation
+
+- Follow [Documentation maintenance](CONTRIBUTING.md#documentation-maintenance) for page ownership, public-API examples, links, changelog entries, and verification.
+- Update documentation alongside user-visible behavior changes; verify claims against source and tests and keep current syntax consistent across guides and examples.
+
 ## Environment And Commands
 
 - Use Python `>=3.12` and `uv`; `make install-dev` installs development dependencies, while `make install-all` also installs Pydantic and attrs extras.
