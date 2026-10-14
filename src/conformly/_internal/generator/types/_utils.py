@@ -11,7 +11,7 @@ from conformly._internal.resolver.semantics import (
     TupleSemantic,
 )
 from conformly._internal.resolver.semantics._domains import finite_cardinality
-from conformly._internal.types import ViolationType
+from conformly._internal.types import FieldPath, ViolationType
 from conformly.exceptions import GenerationError
 
 
@@ -78,7 +78,11 @@ def generate_collection_item(
     item_semantic: FieldSemantics,
     item_nested_model: ResolvedModel | None,
     violations: tuple[ViolationType, ...] | None,
+    *,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> Any:
     from ..orchestration import generate_semantic_value
 
-    return generate_semantic_value(ctx, item_semantic, item_nested_model, violations)
+    return generate_semantic_value(
+        ctx, item_semantic, item_nested_model, violations, overrides=overrides
+    )

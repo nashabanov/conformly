@@ -12,7 +12,7 @@ from ._utils import (
 
 from conformly._internal.planner.model import CollectionTarget
 from conformly._internal.resolver.semantics import ListSemantic
-from conformly._internal.types import ViolationType
+from conformly._internal.types import FieldPath, ViolationType
 
 
 def generate_value(
@@ -21,15 +21,22 @@ def generate_value(
     violation: ViolationType | None,
     *,
     target: CollectionTarget | None = None,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> list[Any]:
     return (
-        _generate_valid_list(ctx, semantic)
+        _generate_valid_list(ctx, semantic, overrides=overrides)
         if not violation
-        else _generate_invalid_list(ctx, semantic, violation, target)
+        else _generate_invalid_list(
+            ctx, semantic, violation, target, overrides=overrides
+        )
     )
 
 
-def _generate_valid_list(ctx: GenerationContext, semantic: ListSemantic) -> list[Any]:
+def _generate_valid_list(
+    ctx: GenerationContext,
+    semantic: ListSemantic,
+    overrides: dict[FieldPath, Any] | None = None,
+) -> list[Any]:
     min_len, max_len = calculate_valid_collection_range(semantic)
 
     if semantic.is_unique_items:
@@ -37,16 +44,23 @@ def _generate_valid_list(ctx: GenerationContext, semantic: ListSemantic) -> list
             min_len, max_len, semantic.element_semantic, collection="list"
         )
     length = ctx.rng.randint(min_len, max_len)
-    return _generate_list_of_length(ctx, semantic, length)
+    return _generate_list_of_length(ctx, semantic, length, overrides=overrides)
 
 
 def _generate_list_of_length(
-    ctx: GenerationContext, semantic: ListSemantic, length: int
+    ctx: GenerationContext,
+    semantic: ListSemantic,
+    length: int,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> list[Any]:
     if not semantic.is_unique_items:
         return [
             generate_collection_item(
-                ctx, semantic.element_semantic, semantic.element_nested_model, None
+                ctx,
+                semantic.element_semantic,
+                semantic.element_nested_model,
+                None,
+                overrides=overrides,
             )
             for _ in range(length)
         ]
@@ -59,7 +73,11 @@ def _generate_list_of_length(
         if len(result) == length:
             return result
         item = generate_collection_item(
-            ctx, semantic.element_semantic, semantic.element_nested_model, None
+            ctx,
+            semantic.element_semantic,
+            semantic.element_nested_model,
+            None,
+            overrides=overrides,
         )
         if is_hashable(item):
             if item in seen or item in unhashable:
@@ -85,13 +103,16 @@ def _generate_invalid_list(
     semantic: ListSemantic,
     violation: ViolationType,
     target: CollectionTarget | None,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> list[Any]:
     min_len, max_len = calculate_valid_collection_range(semantic)
     if violation == ViolationType.TOO_LESS_ITEMS:
         lower = semantic.length_range.min_length if semantic.length_range else min_len
-        return _generate_list_of_length(ctx, semantic, max(0, lower - 1))
+        return _generate_list_of_length(
+            ctx, semantic, max(0, lower - 1), overrides=overrides
+        )
     if violation == ViolationType.TOO_MANY_ITEMS:
-        return _generate_list_of_length(ctx, semantic, max_len + 1)
+        return _generate_list_of_length(ctx, semantic, max_len + 1, overrides=overrides)
     if violation == ViolationType.DUPLICATE:
         if max_len < 2:
             raise generation_error(
@@ -101,7 +122,11 @@ def _generate_invalid_list(
         # Each element remains valid; the selected container violates uniqueness.
         result = [
             generate_collection_item(
-                ctx, semantic.element_semantic, semantic.element_nested_model, None
+                ctx,
+                semantic.element_semantic,
+                semantic.element_nested_model,
+                None,
+                overrides=overrides,
             )
             for _ in range(length - 1)
         ]
@@ -127,9 +152,13 @@ def _generate_invalid_list(
             index=target.index,
             size=length,
         )
-    result = _generate_list_of_length(ctx, semantic, length - 1)
+    result = _generate_list_of_length(ctx, semantic, length - 1, overrides=overrides)
     item = generate_collection_item(
-        ctx, semantic.element_semantic, semantic.element_nested_model, (violation,)
+        ctx,
+        semantic.element_semantic,
+        semantic.element_nested_model,
+        (violation,),
+        overrides=overrides,
     )
     result.insert(target.index, item)
     return result

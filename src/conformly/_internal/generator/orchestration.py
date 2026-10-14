@@ -137,7 +137,7 @@ def _built_dict_with_violations(
                         code="missing_collection_target",
                     )
                 container = _generate_nested_collection(
-                    ctx, field.semantic, step, nested_value
+                    ctx, field.semantic, step, nested_value, overrides
                 )
                 result[field.name] = container
             else:
@@ -204,7 +204,12 @@ def generate_field(
         tracer.set_value_source(ValueSource.GENERATED)
 
     value = generate_semantic_value(
-        ctx, field.semantic, field.nested_model, violations, collection_target
+        ctx,
+        field.semantic,
+        field.nested_model,
+        violations,
+        collection_target,
+        overrides=overrides,
     )
     if tracer:
         tracer.set_generated_value(value)
@@ -217,6 +222,8 @@ def generate_semantic_value(
     nested_model: ResolvedModel | None,
     violations: tuple[ViolationType, ...] | None,
     collection_target: CollectionTarget | None = None,
+    *,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> Any:
     """Generate directly from resolved semantics, without synthetic field models."""
     violation = _choose_violation(violations)
@@ -233,17 +240,21 @@ def generate_semantic_value(
                 "Nested model violation requires a field target",
                 code="missing_nested_target",
             )
-        return generate_valid(ctx, nested_model)
+        return generate_valid(ctx, nested_model, overrides)
     from .types import dictionaries, list as lists, tuple as tuples
 
     if isinstance(semantic, ListSemantic):
-        return lists.generate_value(ctx, semantic, violation, target=collection_target)
+        return lists.generate_value(
+            ctx, semantic, violation, target=collection_target, overrides=overrides
+        )
     if isinstance(semantic, DictSemantic):
         return dictionaries.generate_value(
-            ctx, semantic, violation, target=collection_target
+            ctx, semantic, violation, target=collection_target, overrides=overrides
         )
     if isinstance(semantic, TupleSemantic):
-        return tuples.generate_value(ctx, semantic, violation, target=collection_target)
+        return tuples.generate_value(
+            ctx, semantic, violation, target=collection_target, overrides=overrides
+        )
     return get_generator(semantic.kind).generate_value(ctx, semantic, violation)
 
 
@@ -268,6 +279,7 @@ def _generate_nested_collection(
     semantic: ListSemantic | DictSemantic,
     target: CollectionTarget,
     nested_value: dict[str, Any],
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> Any:
     from .types._utils import calculate_valid_collection_range, unique_collection_range
     from .types.dictionaries import _generate_dict_of_length
@@ -280,9 +292,14 @@ def _generate_nested_collection(
         )
         length = ctx.rng.randint(lower, upper)
         return _generate_dict_of_length(
-            ctx, semantic, length, target=target, target_value=nested_value
+            ctx,
+            semantic,
+            length,
+            target=target,
+            target_value=nested_value,
+            overrides=overrides,
         )
     length = ctx.rng.randint(lower, upper)
-    result = _generate_list_of_length(ctx, semantic, length - 1)
+    result = _generate_list_of_length(ctx, semantic, length - 1, overrides=overrides)
     result.insert(target.index, nested_value)
     return result

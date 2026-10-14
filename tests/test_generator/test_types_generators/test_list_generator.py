@@ -54,7 +54,7 @@ def test_violation_applied_to_planned_element(ctx, list_sem) -> None:
     ctx.rng.randint = Mock(return_value=3)
     with patch(
         "conformly._internal.generator.orchestration.generate_semantic_value",
-        side_effect=lambda ctx, semantic, nested, violations: (
+        side_effect=lambda ctx, semantic, nested, violations, *, overrides=None: (
             "bad" if violations else "good"
         ),
     ) as mock_gen:

@@ -103,7 +103,7 @@ def test_structural_duplicates_exhaust_retries(ctx_deterministic):
     with (
         patch(
             "conformly._internal.generator.types.list.generate_collection_item",
-            side_effect=lambda *args: {"data": {"nested": [1, 2]}},
+            side_effect=lambda *args, **kwargs: {"data": {"nested": [1, 2]}},
         ),
         pytest.raises(GenerationError) as exc,
     ):

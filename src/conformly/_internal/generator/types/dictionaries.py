@@ -12,7 +12,7 @@ from ._utils import (
 
 from conformly._internal.planner.model import CollectionTarget
 from conformly._internal.resolver.semantics import DictSemantic
-from conformly._internal.types import UNSET, ViolationType
+from conformly._internal.types import UNSET, FieldPath, ViolationType
 
 
 def generate_value(
@@ -21,16 +21,21 @@ def generate_value(
     violation: ViolationType | None = None,
     *,
     target: CollectionTarget | None = None,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> dict[Any, Any]:
     return (
-        _generate_valid_dict(ctx, semantic)
+        _generate_valid_dict(ctx, semantic, overrides=overrides)
         if violation is None
-        else _generate_invalid_dict(ctx, semantic, violation, target)
+        else _generate_invalid_dict(
+            ctx, semantic, violation, target, overrides=overrides
+        )
     )
 
 
 def _generate_valid_dict(
-    ctx: GenerationContext, semantic: DictSemantic
+    ctx: GenerationContext,
+    semantic: DictSemantic,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> dict[Any, Any]:
     min_len, max_len = calculate_valid_collection_range(semantic)
 
@@ -38,7 +43,7 @@ def _generate_valid_dict(
         min_len, max_len, semantic.key_semantic, collection="dict"
     )
     length = ctx.rng.randint(min_len, max_len)
-    return _generate_dict_of_length(ctx, semantic, length)
+    return _generate_dict_of_length(ctx, semantic, length, overrides=overrides)
 
 
 def _generate_dict_of_length(
@@ -48,6 +53,7 @@ def _generate_dict_of_length(
     violation: ViolationType | None = None,
     target: CollectionTarget | None = None,
     target_value: Any = UNSET,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> dict[Any, Any]:
     result: dict[Any, Any] = {}
     max_attempts = max(100, length * 20)
@@ -71,7 +77,9 @@ def _generate_dict_of_length(
             and violation is not None
             else None
         )
-        key = generate_collection_item(ctx, semantic.key_semantic, None, key_violation)
+        key = generate_collection_item(
+            ctx, semantic.key_semantic, None, key_violation, overrides=overrides
+        )
         if not is_hashable(key) or key in result:
             continue
         result[key] = (
@@ -82,6 +90,7 @@ def _generate_dict_of_length(
                 semantic.value_semantic,
                 semantic.value_nested_model,
                 value_violation,
+                overrides=overrides,
             )
         )
     if len(result) == length:
@@ -99,6 +108,7 @@ def _generate_invalid_dict(
     semantic: DictSemantic,
     violation: ViolationType,
     target: CollectionTarget | None,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> dict[Any, Any]:
     min_len, max_len = calculate_valid_collection_range(semantic)
     if violation == ViolationType.TOO_LESS_ITEMS:
@@ -107,13 +117,13 @@ def _generate_invalid_dict(
         unique_collection_range(
             length, length, semantic.key_semantic, collection="dict"
         )
-        return _generate_dict_of_length(ctx, semantic, length)
+        return _generate_dict_of_length(ctx, semantic, length, overrides=overrides)
     if violation == ViolationType.TOO_MANY_ITEMS:
         length = max_len + 1
         unique_collection_range(
             length, length, semantic.key_semantic, collection="dict"
         )
-        return _generate_dict_of_length(ctx, semantic, length)
+        return _generate_dict_of_length(ctx, semantic, length, overrides=overrides)
     if target is None or target.side not in ("key", "value"):
         raise generation_error(
             "Dictionary violation requires a planned key or value target",
@@ -134,4 +144,6 @@ def _generate_invalid_dict(
             index=target.index,
             size=length,
         )
-    return _generate_dict_of_length(ctx, semantic, length, violation, target)
+    return _generate_dict_of_length(
+        ctx, semantic, length, violation, target, overrides=overrides
+    )

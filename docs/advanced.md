@@ -26,7 +26,9 @@ assert invalid["tenant"] == "test-tenant"
 
 Override values are trusted without schema validation. They override defaults,
 but an invalid target bypasses its override. Nested paths apply to matching
-fields in generated nested models. Unknown override paths raise
+fields in generated nested models, including every model item in lists and
+dictionary values. The selected invalid field still bypasses its override;
+other items retain theirs. Unknown override paths raise
 `GenerationError` with `code="invalid_override_path"`, the requested `path`, and
 `available` field paths. Every override must be configured with `.set(value)`;
 bare or violation-only selectors raise `invalid_override_selector`.

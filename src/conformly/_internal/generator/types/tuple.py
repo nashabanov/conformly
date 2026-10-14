@@ -6,7 +6,7 @@ from ._utils import calculate_valid_collection_range, generate_collection_item
 
 from conformly._internal.planner.model import CollectionTarget
 from conformly._internal.resolver.semantics import TupleSemantic
-from conformly._internal.types import ViolationType
+from conformly._internal.types import FieldPath, ViolationType
 
 
 def generate_value(
@@ -15,15 +15,20 @@ def generate_value(
     violation: ViolationType | None = None,
     *,
     target: CollectionTarget | None = None,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> tuple[Any, ...]:
     if violation is None:
-        return _generate_valid_tuple(ctx, semantic)
+        return _generate_valid_tuple(ctx, semantic, overrides=overrides)
 
-    return _generate_invalid_tuple(ctx, semantic, violation, target)
+    return _generate_invalid_tuple(
+        ctx, semantic, violation, target, overrides=overrides
+    )
 
 
 def _generate_valid_tuple(
-    ctx: GenerationContext, semantic: TupleSemantic
+    ctx: GenerationContext,
+    semantic: TupleSemantic,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> tuple[Any, ...]:
     if not semantic.is_variadic:
         elements = semantic.elements_semantics
@@ -33,7 +38,9 @@ def _generate_valid_tuple(
         elements = semantic.elements_semantics * length
 
     return tuple(
-        generate_collection_item(ctx, item_semantic, nested_model, None)
+        generate_collection_item(
+            ctx, item_semantic, nested_model, None, overrides=overrides
+        )
         for item_semantic, nested_model in elements
     )
 
@@ -43,6 +50,7 @@ def _generate_invalid_tuple(
     semantic: TupleSemantic,
     violation: ViolationType,
     target: CollectionTarget | None,
+    overrides: dict[FieldPath, Any] | None = None,
 ) -> tuple[Any, ...]:
     if violation in (ViolationType.TOO_LESS_ITEMS, ViolationType.TOO_MANY_ITEMS):
         if not semantic.is_variadic:
@@ -58,7 +66,9 @@ def _generate_invalid_tuple(
             else max_len + 1
         )
         return tuple(
-            generate_collection_item(ctx, *semantic.elements_semantics[0], None)
+            generate_collection_item(
+                ctx, *semantic.elements_semantics[0], None, overrides=overrides
+            )
             for _ in range(length)
         )
 
@@ -88,6 +98,7 @@ def _generate_invalid_tuple(
             item_semantic,
             nested_model,
             (violation,) if i == violate_idx else None,
+            overrides=overrides,
         )
         for i, (item_semantic, nested_model) in enumerate(elements)
     )

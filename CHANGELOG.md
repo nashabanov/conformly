@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   targeted `cases()` calls now reject `count != 1` instead of ignoring it.
 
 ### Fixed
+- Preserve nested field overrides in generated collection items, including
+  dictionary values and untargeted siblings of explicit invalid targets.
 - Reject unknown override paths with structured `invalid_override_path` API errors;
   require `.set(value)` selectors, rejecting bare or violation selectors with
   `invalid_override_selector`. Nested paths and last-write-wins duplicates remain
