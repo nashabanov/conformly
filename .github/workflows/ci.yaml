@@ -92,6 +92,26 @@ jobs:
             extras: "all"
             collect-coverage: true
 
+          - python-version: "3.15"
+            config: core
+            extras: ""
+            collect-coverage: false
+
+          - python-version: "3.15"
+            config: pydantic
+            extras: "pydantic"
+            collect-coverage: false
+
+          - python-version: "3.15"
+            config: attrs
+            extras: "attrs"
+            collect-coverage: false
+
+          - python-version: "3.15"
+            config: all
+            extras: "all"
+            collect-coverage: false
+
     name: Test (${{ matrix.config }}, py${{ matrix.python-version }})
     steps:
       - name: Checkout
